@@ -598,9 +598,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="codebox" id="roomCode">-----</div>
     <button class="cta alt sm" id="shareRoom">📤 EINLADUNG TEILEN</button>
     <div class="teams">
-      <div class="team A"><h4>TEAM LILA</h4><div id="teamA"></div></div>
+      <div class="team A"><h4 id="teamAH">TEAM LILA</h4><div id="teamA"></div></div>
       <div class="vs">VS</div>
-      <div class="team B"><h4>TEAM GELB</h4><div id="teamB"></div></div>
+      <div class="team B"><h4 id="teamBH">TEAM GELB</h4><div id="teamB"></div></div>
     </div>
     <div class="tlab" style="text-align:center">In der Mitte hängt:</div>
     <div class="midtool" id="midTool"></div>
@@ -1740,6 +1740,7 @@ function renderLobby(){
   ["A","B"].forEach(t=>{ const box=$("team"+t); box.innerHTML=""; const ps=st.people.filter(p=>p.role==="player"&&p.team===t); const cap=st.format==="2v2"?2:1;
     ps.forEach(p=>{ const d=document.createElement("div"); d.className="p"; d.textContent=`${p.isBot?"🤖":(p.badge||"🥊")} ${p.name}${p.id===R.you?" (du)":""}`; if(p.id===st.hostId){ const h=document.createElement("span"); h.className="host"; h.textContent="👑"; d.appendChild(h); } box.appendChild(d); });
     for(let i=ps.length;i<cap;i++){ const s=document.createElement("div"); s.className="slot"; s.textContent="Wartet …"; box.appendChild(s); } });
+  $("teamAH").textContent=st.format==="2v2"?"TEAM LILA":"SPIELER 1"; $("teamBH").textContent=st.format==="2v2"?"TEAM GELB":"SPIELER 2";
   const mt=$("midTool"); mt.innerHTML=""; mt.appendChild(midToolBtn());
   const specs=st.people.filter(p=>p.role==="spectator"); $("specLine").textContent=specs.length?`👀 Zuschauer: ${specs.map(p=>p.name).join(", ")}`:"";
   $("hostCtl").style.display=isHost?"block":"none";
@@ -1825,7 +1826,7 @@ function fFloat(e){ const d=document.createElement("div"); d.className="floatE";
 function geo(){ const top=FH*.14, range=FW*.3, bw=Math.min(FW*.34,FH*.32,210), bh=bw*1.3; return {top,range,bw,bh,cx:FW/2+FT.dp*range,cy:top+FH*.1}; }
 function fHitFx(side){
   const G2=geo(), dir=side==="L"?1:-1, x=G2.cx-dir*G2.bw*.45, y=G2.cy+G2.bh*rand(.35,.7);
-  FT.gloves.push({side,x,y,t:0}); if(FT.gloves.length>12) FT.gloves.shift();
+  FT.gloves=FT.gloves.filter(g=>g.side!==side); FT.gloves.push({side,x,y,t:0});
   FT.swingV+=dir*rand(1.4,2.2); FT.flash[side]=.12;
   if(side==="L"||FT.spec){ sfx.punch(); if(Math.random()<.35) fWord(pick(["POW!","BAM!","ZACK!","WUMMS!"]),x+dir*10,y-30,clamp(FW*.06,20,30),"#ffd23f",.5); for(let i=0;i<5;i++){ const a=rand(0,Math.PI*2),v=rand(80,260); FT.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,r:rand(2,4),c:pick(["#ffd23f","#fff"]),life:.4,max:.4}); } }
   else if(Math.random()<.5) sfx.thud();
