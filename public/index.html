@@ -709,7 +709,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 <div class="overlay hidden" id="gchat"><div class="card">
   <button class="x" data-close="gchat">✕</button>
   <div class="mid">💬 CHAT</div>
-  <div class="sub" style="margin:6px 0 8px">Für alle, die gerade online sind. <b>Nichts wird gespeichert</b> – nach ein paar Stunden ist alles weg.</div>
+  <div class="sub" style="margin:6px 0 8px">Für alle aus dem Kurs. Nachrichten bleiben <b>23 Stunden</b>, danach ist alles weg.</div>
   <div class="clist scroll" id="gList"></div>
   <div class="cnote" id="gNote"></div>
   <div class="cin" id="gNameRow" style="display:none"><input class="field" id="gName" maxlength="16" placeholder="Erst Spitznamen wählen …" autocomplete="off"><button id="gNameOk">OK</button></div>
@@ -1974,9 +1974,11 @@ $("challengeAll").onclick=()=>{ if(!R.st) return; lbAnnounce(); setTimeout(()=>l
 /* ===================== Chat (nur live, nichts gespeichert) ===================== */
 const CHAT={g:[],r:[],unread:0};
 function chatNode(m){ const d=document.createElement("div"); const mine=m.name===saved.name; d.className="cmsg"+(mine?" me":""); const b=document.createElement("b"); b.textContent=mine?"Du":m.name; d.appendChild(b); d.appendChild(document.createTextNode(m.text)); return d; }
-function renderChat(listId,arr){ const el=$(listId); if(!el) return; const atEnd=el.scrollHeight-el.scrollTop-el.clientHeight<40; el.innerHTML="";
+function renderChat(listId,arr){ const el=$(listId); if(!el) return; el.innerHTML="";
   if(!arr.length){ const d=document.createElement("div"); d.className="cmsg sys"; d.textContent=listId==="gList"?"Noch ruhig hier. Sag Hallo! 👋":"Noch keine Nachrichten. Sprüche klopfen erlaubt 😉"; el.appendChild(d); }
-  arr.forEach(m=>el.appendChild(chatNode(m))); if(atEnd||arr.length<=1) el.scrollTop=el.scrollHeight; }
+  arr.forEach(m=>el.appendChild(chatNode(m))); chatBottom(el); }
+// immer zur neuesten Nachricht nach unten scrollen
+function chatBottom(el){ el.scrollTop=el.scrollHeight; requestAnimationFrame(()=>{ el.scrollTop=el.scrollHeight; setTimeout(()=>{ el.scrollTop=el.scrollHeight; },320); }); }
 let chatNoteT=0;
 function chatNote(msg){ ["gNote","rNote"].forEach(id=>{ const el=$(id); if(el) el.textContent=msg||""; }); clearTimeout(chatNoteT); if(msg) chatNoteT=setTimeout(()=>chatNote(""),4000); if(FT.on&&msg) toast(msg,2400); }
 function chatNeedsName(){ if(saved.name&&saved.name.length>=2) return false; chatNote("Leg erst einen Spitznamen an, dann kannst du chatten."); chatNameUI(); return true; }
@@ -1986,12 +1988,12 @@ function saveChatName(){ const n=$("gName").value.trim().slice(0,16); if(n.lengt
   api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:n,badge:myBadge(),kind:"profile"})}).catch(()=>{}); chatNote(""); chatNameUI(); setTimeout(()=>$("gIn").focus(),50); }
 function sendGlobal(){ const t=$("gIn").value.trim(); if(!t) return; if(chatNeedsName()) return; if(!LB.ws||LB.ws.readyState!==1){ chatNote("Keine Verbindung – versuch’s gleich nochmal."); if(!LB.ws) lbConnect(); return; } lbSend({t:"chat",text:t}); $("gIn").value=""; }
 function sendRoom(inp){ const t=$(inp).value.trim(); if(!t) return; if(chatNeedsName()) return; if(!R.ws||R.ws.readyState!==1){ chatNote("Keine Verbindung zum Raum."); return; } rsend({t:"chat",text:t}); $(inp).value=""; }
-function onLobbyChat(m){ if(m.t==="chatlog"){ CHAT.g=m.msgs||[]; } else { CHAT.g.push(m); if(CHAT.g.length>25) CHAT.g.shift(); if($("gchat").classList.contains("hidden")&&m.name!==saved.name){ CHAT.unread++; } }
+function onLobbyChat(m){ if(m.t==="chatlog"){ CHAT.g=m.msgs||[]; } else { CHAT.g.push(m); if(CHAT.g.length>150) CHAT.g.shift(); if($("gchat").classList.contains("hidden")&&m.name!==saved.name){ CHAT.unread++; } }
   const bd=$("chatBadge"); bd.textContent=CHAT.unread>9?"9+":CHAT.unread; bd.classList.toggle("on",CHAT.unread>0); renderChat("gList",CHAT.g); }
 function onRoomChat(m){ if(m.t==="chatlog") CHAT.r=m.msgs||[]; else { CHAT.r.push(m); if(CHAT.r.length>15) CHAT.r.shift();
     if(FT.on){ const box=$("fChat"); const n=chatNode(m); box.appendChild(n); while(box.children.length>3) box.firstChild.remove(); setTimeout(()=>n.remove(),5200); } }
   renderChat("rList",CHAT.r); }
-$("chatBtn").onclick=()=>{ CHAT.unread=0; $("chatBadge").classList.remove("on"); renderChat("gList",CHAT.g); chatNameUI(); chatNote(LB.ws?"":"Verbindung wird gesucht … gleich klappt’s."); show("gchat"); };
+$("chatBtn").onclick=()=>{ CHAT.unread=0; $("chatBadge").classList.remove("on"); renderChat("gList",CHAT.g); chatNameUI(); chatNote(LB.ws?"":"Verbindung wird gesucht … gleich klappt’s."); show("gchat"); chatBottom($("gList")); };
 $("gNameOk").onclick=saveChatName; $("gName").addEventListener("keydown",e=>{ if(e.key==="Enter") saveChatName(); });
 $("gSend").onclick=sendGlobal; $("gIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendGlobal(); });
 $("rSend").onclick=()=>sendRoom("rIn"); $("rIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendRoom("rIn"); });

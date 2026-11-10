@@ -269,8 +269,11 @@ export class Room extends DurableObject {
 
 /* ======================= Treffpunkt: Wer ist online, offene Duelle, Herausforderungen ======================= */
 export class Lobby extends DurableObject {
-  constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; this.chat = []; }
+  constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; this.chat = []; this.loaded = false; }
+  // Chat für alle: bleibt 23 Stunden gespeichert, danach verschwindet er
+  fresh() { const cut = Date.now() - 23 * 3600000; this.chat = this.chat.filter(x => x.ts > cut); return this.chat; }
   async fetch(req) {
+    if (!this.loaded) { this.loaded = true; try { this.chat = (await this.ctx.storage.get("chat")) || []; } catch (e) { this.chat = []; } this.fresh(); }
     if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
     if (this.conns.size >= 300) return new Response("Voll", { status: 429 });
     const pair = new WebSocketPair(); const [client, server] = Object.values(pair); server.accept();
@@ -297,9 +300,9 @@ export class Lobby extends DurableObject {
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
     const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
     if (m.t === "ping") return;
-    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") { this.send(c, this.view()); this.send(c, { t: "chatlog", msgs: this.chat.filter(x => Date.now() - x.ts < 3 * 3600000) }); } this.sync(); return; }
+    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") { this.send(c, this.view()); this.send(c, { t: "chatlog", msgs: this.fresh() }); } this.sync(); return; }
     if (m.t === "chat") { const r = chatCheck(c, m.text); if (r.err !== undefined) { if (r.err) this.send(c, { t: "chatErr", msg: r.err }); return; }
-      this.chat.push(r.msg); if (this.chat.length > 25) this.chat.shift(); const s = JSON.stringify(r.msg); for (const o of this.conns.values()) { try { o.ws.send(s); } catch (e) {} } return; }
+      this.fresh(); this.chat.push(r.msg); if (this.chat.length > 150) this.chat.shift(); this.ctx.storage.put("chat", this.chat).catch(() => {}); const s = JSON.stringify(r.msg); for (const o of this.conns.values()) { try { o.ws.send(s); } catch (e) {} } return; }
     if (m.t === "open" && code.length >= 4) {
       const cap = m.format === "2v2" ? 4 : 2, count = Math.max(1, Math.min(cap, Math.floor(Number(m.count) || 1)));
       const r = this.rooms.get(code); if (r && r.by !== c.id) return;
