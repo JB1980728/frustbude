@@ -81,7 +81,7 @@ async function ensureSchema(db) {
     db.prepare("CREATE INDEX IF NOT EXISTS wall_vis ON wall(reports, id)"),
     db.prepare("CREATE TABLE IF NOT EXISTS lb (sid TEXT PRIMARY KEY, name TEXT NOT NULL, badge TEXT, wins INTEGER NOT NULL DEFAULT 0, duels INTEGER NOT NULL DEFAULT 0, best_duel INTEGER NOT NULL DEFAULT 0, best_time INTEGER NOT NULL DEFAULT 0, boss INTEGER NOT NULL DEFAULT 0, ts INTEGER)"),
   ]);
-  for (const col of ["best_time_hard", "best_ko", "best_ko_hard"]) { try { await db.prepare(`ALTER TABLE lb ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {} }
+  for (const col of ["best_time_hard", "best_ko", "best_ko_hard", "boss_time", "boss_time_hard"]) { try { await db.prepare(`ALTER TABLE lb ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {} }
   schemaReady = true;
 }
 
@@ -411,6 +411,11 @@ export default {
           const col = b.kind === "koHard" ? "best_ko_hard" : "best_ko", score = Math.max(0, Math.min(200, Math.floor(Number(b.score) || 0)));
           await db.prepare(`INSERT INTO lb (sid, name, badge, ${col}, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, ${col} = MAX(${col}, excluded.${col}), ts = excluded.ts`)
             .bind(sid, name, badge, score, Date.now()).run();
+        } else if (b.kind === "bossTime" || b.kind === "bossTimeHard") {
+          // Endgegner-Bestzeit: kleiner ist besser (mindestens 5 s, damit nichts Unsinniges reinkommt)
+          const col = b.kind === "bossTimeHard" ? "boss_time_hard" : "boss_time", ms = Math.floor(Number(b.score) || 0);
+          if (ms >= 5000 && ms <= 3600000) await db.prepare(`INSERT INTO lb (sid, name, badge, ${col}, boss, ts) VALUES (?, ?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, ${col} = CASE WHEN ${col} = 0 OR excluded.${col} < ${col} THEN excluded.${col} ELSE ${col} END, boss = boss + 1, ts = excluded.ts`)
+            .bind(sid, name, badge, ms, Date.now()).run();
         } else if (b.kind === "boss") {
           await db.prepare("INSERT INTO lb (sid, name, badge, boss, ts) VALUES (?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, boss = boss + 1, ts = excluded.ts")
             .bind(sid, name, badge, Date.now()).run();
@@ -424,8 +429,9 @@ export default {
         const q = (col, extra) => db.prepare(`SELECT name, badge, ${col} AS v FROM lb WHERE ${col} > 0 ${extra || ""} ORDER BY ${col} DESC, ts ASC LIMIT 15`).all().then(r => r.results || []);
         // Duell: alle, die schon ein Duell gespielt haben – auch mit 0 Siegen
         const winsQ = db.prepare("SELECT name, badge, wins AS v, duels AS d FROM lb WHERE duels > 0 ORDER BY wins DESC, duels DESC, ts ASC LIMIT 30").all().then(r => r.results || []);
-        const [wins, duel, time, timeHard, boss] = await Promise.all([winsQ, q("best_duel"), q("best_ko"), q("best_ko_hard"), q("boss")]);
-        return json({ wins, duel, time, timeHard, boss });
+        const qt = col => db.prepare(`SELECT name, badge, ${col} AS v FROM lb WHERE ${col} > 0 ORDER BY ${col} ASC, ts ASC LIMIT 15`).all().then(r => r.results || []);
+        const [wins, duel, time, timeHard, boss, bossTime, bossTimeHard] = await Promise.all([winsQ, q("best_duel"), q("best_ko"), q("best_ko_hard"), q("boss"), qt("boss_time"), qt("boss_time_hard")]);
+        return json({ wins, duel, time, timeHard, boss, bossTime, bossTimeHard });
       }
 
       if (path === "/api/recap" && req.method === "GET") {

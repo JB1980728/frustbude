@@ -508,6 +508,11 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .pc.me{box-shadow:0 0 0 2px #ffd23f}.pc.me b{color:#ffd23f}
 #fSpecNote{display:none;margin:8px;padding:12px;border-radius:16px;text-align:center;font-weight:900;color:#cbd5e1;background:rgba(255,255,255,.06);border:1.5px dashed rgba(255,255,255,.2)}
 #fight.spec #fSpecNote{display:block}
+
+/* Pill oben: Stufe klein darüber, K.O.-Zähler darunter */
+#koPill{display:flex;flex-direction:column;align-items:center;line-height:1.05;padding:3px 10px;white-space:nowrap}
+@media (max-width:390px){.logo{font-size:20px;letter-spacing:.6px}}
+#lvEmoji{display:block;font-size:9.5px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;color:#fde047}
 </style>
 </head>
 <body>
@@ -515,7 +520,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <header>
     <div class="brand"><div class="logo">FRUST·BUDE</div><div class="tag">Tools nerven? Hau drauf.</div></div>
     <div class="spacer"></div>
-    <div class="pill" id="koPill" title="K.O.s bis zum Endgegner"><span id="lvEmoji">😤</span> 👑 <span id="koCount">0/3</span></div>
+    <div class="pill" id="koPill" title="K.O.s bis zum Endgegner"><span id="lvEmoji">😤</span><span>👑 <span id="koCount">0/3</span></span></div>
     <button class="iconbtn" id="wallBtn" aria-label="Frust-Wand">📝</button>
     <button class="iconbtn" id="menuBtn" aria-label="Menü">🏠</button>
     <button class="iconbtn" id="muteBtn" aria-label="Ton an/aus">🔊</button>
@@ -886,7 +891,7 @@ const WEAPONS = [
   {id:"banana",   emoji:"🍌", name:"Banane",    dmg:8,  colors:["#ffd23f","#e9b800","#6b4a1f"], words:["FLATSCH!","BANANE!","KLATSCH!"]},
   {id:"egg",      emoji:"🥚", name:"Ei",        dmg:6,  colors:["#fffaf0","#ffb703","#ffffff"], drip:true, words:["KNACKS!","PLATSCH!","EIEIEI!"]},
   {id:"pie",      emoji:"🥧", name:"Torte",     dmg:30, colors:["#fff3e0","#ff8fab","#d00000"], big:true, words:["SCHMATZ!","TORTE!","KLATSCH!"]},
-  {id:"highfive", emoji:"🙌🏻", name:"High Five", dmg:7,  melee:true, double:true, words:["HIGH FIVE!","KLATSCH!","DOPPELT!"], unlock:{type:"ko",n:3,label:"3 K.O."}},
+  {id:"highfive", emoji:"🙌🏻", name:"High Five", dmg:10,  melee:true, double:true, words:["HIGH FIVE!","KLATSCH!","DOPPELT!"], unlock:{type:"ko",n:3,label:"3 K.O."}},
   {id:"rocket",   emoji:"🚀", name:"Rakete",    dmg:75, colors:["#2b2118","#ff7b00","#ffd23f"], rocket:true, big:true, words:["KAWUMM!","LIFT-OFF!","BOOM!"], unlock:{type:"combo",n:10,label:"Combo ×10"}},
   {id:"love",     emoji:"❤️", name:"Liebe",     dmg:36, colors:["#ff4d8d","#ff8fab","#ffffff"], love:true, words:["LOVE!","HERZLICH!","MIT LIEBE!"], unlock:{type:"ko",n:8,label:"8 K.O."}},
 ];
@@ -1058,6 +1063,8 @@ function renderGlobal(tick){
   if(tick && performance.now()-lastGlobalShown>180){ lastGlobalShown=performance.now(); p.classList.remove("tick"); void p.offsetWidth; p.classList.add("tick"); }
 }
 function topTool(per){ let best=null,bv=0; for(const k in per){ if(!NAMES[k]||k==="custom"||k==="boss") continue; if(per[k]>bv){bv=per[k];best=k;} } return best; }
+function lvText(){ return chill?"👊 Einfach":`${lv.emoji} ${lv.label}`; }
+function fmtTime(ms){ const t=Math.max(0,ms)/1000, m=Math.floor(t/60), sec=t-m*60; return `${m}:${sec<10?"0":""}${sec.toFixed(1).replace(".",",")}`; }
 function postScore(kind,score){ if(!saved.name) return; api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:saved.name,badge:myBadge(),kind,score})}).catch(()=>{}); }
 
 /* ===================== Zustand ===================== */
@@ -1567,7 +1574,7 @@ const BossMusic={timer:null,step:0,
 function startBoss(){
   mode="boss"; state="bossIntro"; speech=null; projectiles=[]; fists=[]; bagSplats=[]; items=[]; screenSplats=[];
   B={s:G.bs,x:W/2,targetX:W/2,hp:lv.bossHP,max:lv.bossHP,phase:0,throwT:2.2,runT:rand(6,9),hidden:false,fleeing:false,hideT:0,jumpY:0,jumpV:0,enterY:-H*1.2,enterV:0,
-     walk:0,moving:false,armT:0,hurt:0,flash:0,squash:0,splats:[],hearts:lv.hearts,dir:1,introT:0,speedBoost:0,gone:false};
+     walk:0,moving:false,armT:0,hurt:0,flash:0,squash:0,splats:[],hearts:lv.hearts,dir:1,introT:0,speedBoost:0,gone:false,time:0};
   buzz([100,60,100]);
   updateHUD(); renderChips();
 }
@@ -1588,7 +1595,7 @@ function hitBoss(x,y,w,fromRage,mv){
   bossPhaseCheck(); if(B.hp<=0) bossDefeated(); updateHUD();
 }
 function updateBoss(dt){
-  if(!B) return;
+  if(!B) return; if(state==="boss") B.time+=dt;
   B.hurt-=dt; B.flash=Math.max(0,B.flash-dt*4); B.squash-=B.squash*10*dt; B.armT-=dt;
   if(state==="bossIntro"){
     B.enterV+=2600*dt; B.enterY+=B.enterV*dt;
@@ -1610,7 +1617,10 @@ function updateBoss(dt){
       B.throwT=[rand(2.1,2.9),rand(1.5,2.1),rand(1,1.4)][B.phase]*lv.bossThrow; if(Math.random()<.25&&performance.now()-lastSpeech>2500) say(pick(BOSS_LINES)); } }
 }
 function bossDefeated(){
-  state="bossDead"; items=[]; saved.bossWins++; if(saved.level==="hard") saved.bossHard++; persist(); addHate("_boss"); postScore("boss",1);
+  state="bossDead"; items=[]; saved.bossWins++; if(saved.level==="hard") saved.bossHard++;
+  const hard=saved.level==="hard", ms=Math.round(B.time*1000), bb=saved.bossBest||(saved.bossBest={}), key=hard?"hard":"easy", rec=!bb[key]||ms<bb[key]; if(rec) bb[key]=ms;
+  persist(); addHate("_boss"); postScore(hard?"bossTimeHard":"bossTime",ms); // zählt auch den Sieg mit
+  setTimeout(()=>word(`⏱️ ${fmtTime(ms)}${rec?" BESTZEIT!":""}`,W/2,H*.47,clamp(W*.08,26,46),rec?"#4ade80":"#fff",2.4),1600);
   const [cx,cy]=bossCenter();
   for(let k=0;k<6;k++) setTimeout(()=>{ explosion(cx+rand(-B.s*.4,B.s*.4),cy+rand(-B.s*.4,B.s*.4),26); sfx.smallBoom(); if(!reduced) shake=24; },k*180);
   setTimeout(()=>{ confetti(cx,cy,120); confetti(W*.2,H*.8,60); confetti(W*.8,H*.8,60); sfx.boom(); sfx.ding(); B.gone=true; word("SIEG!",W/2,H*.35,clamp(W*.22,70,140),"#ffd23f",2); buzz([60,40,60,40,200]); checkBadges(true); },1150);
@@ -1702,7 +1712,7 @@ function updateHUD(){
   $("hpLbl").textContent=boss?"Boss-Power":"Nerv-Power"; $("hpBar").classList.toggle("boss",!!boss);
   const v=boss?B.hp/B.max*100:hp/hpMax*100; $("hpVal").textContent=Math.ceil(boss?B.hp:hp); $("hpFill").style.width=v+"%";
   $("hearts").textContent=boss?"❤️".repeat(Math.max(0,B.hearts))+"🖤".repeat(Math.max(0,lv.hearts-Math.max(0,B.hearts))):"";
-  $("koCount").textContent=boss?"BOSS!":`${Math.min(koRound,3)}/3`; $("lvEmoji").textContent=lv.emoji;
+  $("koCount").textContent=boss?"BOSS!":`${Math.min(koRound,3)}/3`; $("lvEmoji").textContent=lvText();
   let f;
   if(mode==="time"||mode==="duel") f=Math.max(0,Math.round(100-Math.min(100,score/80)));
   else if(boss) f=Math.max(0,Math.round(15*B.hp/B.max));
@@ -1738,7 +1748,7 @@ function renderWeapons(fresh){
   if(fresh){ const el=box.children[WEAPONS.findIndex(w=>w.id===fresh)]; if(el&&el.scrollIntoView) el.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}); }
 }
 function renderLevelUI(){ if($("lvHint")) $("lvHint").textContent=saved.level==="hard"?"Schwer: Die Tools werfen zurück – wegtippen!":"Leicht: Nichts fliegt zurück.";
-  document.querySelectorAll("#levelSeg button").forEach(b=>b.classList.toggle("on",b.dataset.lv===saved.level)); $("lvEmoji").textContent=lv.emoji;
+  document.querySelectorAll("#levelSeg button").forEach(b=>b.classList.toggle("on",b.dataset.lv===saved.level)); $("lvEmoji").textContent=lvText();
 }
 
 /* ===================== Overlays ===================== */
@@ -1794,15 +1804,15 @@ function renderStats(){
   $("statsTitle").textContent=statsMain==="rank"?"RANGLISTEN":"MEISTGEHASST";
   const sub=$("statsSubTabs"), list=$("rankList"); list.innerHTML="";
   if(statsMain==="rank"){
-    const tabs=[["time","⏱️ 30 Sek. leicht"],["timeHard","⏱️ 30 Sek. schwer"],["wins","⚔️ Duell-Siege"],["boss","👑 Boss"]];
+    const tabs=[["time","⏱️ 30 Sek. leicht"],["timeHard","⏱️ 30 Sek. schwer"],["wins","⚔️ Duell-Siege"],["bossTime","👑 Boss leicht"],["bossTimeHard","👑 Boss schwer"]];
     if(!tabs.some(t=>t[0]===statsSub)) statsSub="time";
     sub.innerHTML=tabs.map(([k,l])=>`<button data-s="${k}" class="${k===statsSub?"on":""}">${l}</button>`).join("");
     sub.querySelectorAll("button").forEach(b=>b.onclick=()=>{ statsSub=b.dataset.s; renderStats(); });
     $("statsSub").textContent = saved.name ? `Du spielst als „${saved.name}“ ${myBadge()}` : "Lege im Profil einen Spitznamen an, um in die Ranglisten zu kommen.";
     if(!LBDATA){ list.innerHTML='<div class="empty">Ranglisten laden … oder gerade nicht erreichbar.</div>'; return; }
-    const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Treffer",time:"K.O.s",timeHard:"K.O.s",boss:"×"}[statsSub];
+    const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Treffer",time:"K.O.s",timeHard:"K.O.s",bossTime:"Bestzeit",bossTimeHard:"Bestzeit"}[statsSub], isT=statsSub.startsWith("bossTime");
     if(!rows.length){ list.innerHTML='<div class="empty">Noch niemand hier. Sei die erste Person! 🏆</div>'; return; }
-    rows.forEach((r,i)=>{ const d=document.createElement("div"); d.className="lbrow"; d.innerHTML=`<div class="pos">${i+1}</div><div class="nm"></div><div class="v">${fmt(r.v)} <small style="font-family:Nunito;font-size:11px;color:var(--muted)">${unit}${r.d!==undefined?` · ${fmt(r.d)} ${r.d===1?"Duell":"Duelle"}`:""}</small></div>`;
+    rows.forEach((r,i)=>{ const d=document.createElement("div"); d.className="lbrow"; d.innerHTML=`<div class="pos">${i+1}</div><div class="nm"></div><div class="v">${isT?fmtTime(r.v):fmt(r.v)} <small style="font-family:Nunito;font-size:11px;color:var(--muted)">${unit}${r.d!==undefined?` · ${fmt(r.d)} ${r.d===1?"Duell":"Duelle"}`:""}</small></div>`;
       d.querySelector(".nm").textContent=`${r.badge||""} ${r.name}`; list.appendChild(d); });
   } else {
     const tabs=[["all","🌍 Ganze Klasse"],["me","🙋 Nur ich"]]; if(!["all","me"].includes(statsSub)) statsSub=NET.online?"all":"me";
@@ -2551,7 +2561,7 @@ const W_INFO={fist:"Die schnellste Waffe. Einfach drauflos – damit überbrück
   banana:"Das Tool rutscht aus und wirft 4 Sekunden lang nichts zurück. Nur auf „Schwer“ wichtig.",
   egg:"Klebt: Das Tool wackelt und verrutscht 4 Sekunden nicht mehr und ist leichter zu treffen. Gut gegen Wix, Stitch, ChatGPT, Gemini.",
   pie:"Viel Schaden und das Tool ist blind: 4 Sekunden keine Macke. Gut gegen Meet, Mixpanel, Amplitude, Slack, Miro.",
-  highfive:"Trifft zweimal auf einmal.",
+  highfive:"Trifft zweimal auf einmal und macht so mehr Schaden als Boxen, lädt aber etwas länger. Am grünen Schwachpunkt zählen beide Treffer ×3.",
   rocket:"Der größte Treffer im Spiel – aber lange Nachladezeit. Zwischendurch zünden, dann mit den Fäusten weiter.",
   love:"Guter Schaden und füllt deinen OVERKILL-Kreis um 12 % – nimm sie, wenn der OVERKILL fast voll ist."};
 function openWInfo(){ const box=$("wInfoList"); box.innerHTML="";
