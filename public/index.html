@@ -371,6 +371,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 }
 
 #fCtl{display:block!important;padding:8px}
+.fpow{font-weight:900;font-size:12px;color:#fde047;min-height:15px}.fside.R .fpow{text-align:right}
 #fTap{width:100%;padding:16px 8px 12px;border-radius:20px;font-family:var(--comic);font-size:30px;letter-spacing:1.5px;color:#1a0830;background:linear-gradient(180deg,#ffe680,#ffb703);box-shadow:0 6px 0 #b45309;touch-action:none;display:flex;flex-direction:column;align-items:center;gap:2px}
 #fTap small{font-family:Nunito,system-ui;font-size:11.5px;font-weight:800;letter-spacing:0}
 #fTap.press{transform:translateY(4px);box-shadow:0 2px 0 #b45309}
@@ -620,12 +621,12 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 <!-- Duell: Tauziehen -->
 <div id="fight" class="hidden">
   <div class="fbar">
-    <div class="fside L"><div class="fn"><small id="fYouTag">DU</small><span id="fNameL"></span></div><span class="pips" id="fPipsL"></span><div class="fsub" id="fSubL"></div></div>
+    <div class="fside L"><div class="fn"><small id="fYouTag">DU</small><span id="fNameL"></span></div><span class="pips" id="fPipsL"></span><div class="fsub" id="fSubL"></div><div class="fpow" id="fPowL"></div></div>
     <div class="fmid"><div class="ftime" id="fTime">30</div><div class="fround" id="fRound">RUNDE 1</div></div>
-    <div class="fside R"><div class="fn"><span id="fNameR"></span></div><span class="pips" id="fPipsR"></span><div class="fsub" id="fSubR"></div></div>
+    <div class="fside R"><div class="fn"><span id="fNameR"></span></div><span class="pips" id="fPipsR"></span><div class="fsub" id="fSubR"></div><div class="fpow" id="fPowR"></div></div>
   </div>
   <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div>
-    <div id="fStun"><b>😵‍💫 OVERLOADED!</b><span>Getroffen – kurz nicht hauen</span><div class="bar"><i id="fStunBar"></i></div></div>
+    <div id="fStun"><b id="fStunT">😵‍💫 OVERLOADED!</b><span id="fStunS">Getroffen – kurz nicht hauen</span><div class="bar"><i id="fStunBar"></i></div></div>
     <button class="iconbtn muteToggle" id="fMute" aria-label="Ton aus">🔊</button>
     <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
   <div id="fCtl"><button id="fTap">👊 HAU DRAUF! <small>so schnell du kannst – oder überall aufs Bild tippen</small></button></div>
@@ -892,7 +893,7 @@ let tools=TOOLS.slice();
 let mode="free";   // free | time | boss | duel
 let lv=LV[saved.level];
 let curIdx=0, cur=tools[0], weapon=W_BY.tomato;
-let stunMax=1.3, immuneUntil=0, chill=false, cdUntil=0;
+let stunMax=1.3, immuneUntil=0, chill=false, cdUntil=0, weak=null, weakT=3, raging=false;
 let hp=100, hpMax=100, state="idle", theta=0, omega=0, dropY=0, dropV=0, squash=0, hurt=0, flash=0, blush=0, koT=0, stunT=0;
 let lookX=0, lookY=0;
 let bagSplats=[], plasters=[], wallSplats=[], screenSplats=[], projectiles=[], fists=[], parts=[], texts=[], items=[], speech=null;
@@ -961,6 +962,10 @@ function drawBag(){
   ctx.fillStyle="rgba(255,255,255,.2)"; ctx.beginPath(); ctx.ellipse(-bw*.29,chain+bh*.42,bw*.06,bh*.25,0,0,Math.PI*2); ctx.fill();
   drawFace(ink); drawLabel(); plasters.forEach(drawPlaster); bagSplats.forEach(s=>drawSplat(s,1));
   if(flash>0){ ctx.fillStyle=`rgba(255,255,255,${flash*.55})`; ctx.fillRect(-bw,0,bw*2,chain+bh+10); }
+  if(raging){ ctx.fillStyle=`rgba(255,30,30,${.22+.14*Math.sin(performance.now()/90)})`; ctx.fillRect(-bw,0,bw*2,chain+bh+10); }
+  if(weak){ const pul=1+.12*Math.sin(performance.now()/80), r=G.bw*.17*pul; ctx.save(); ctx.globalAlpha=Math.min(1,weak.t*2);
+    ctx.fillStyle="rgba(74,222,128,.35)"; ctx.beginPath(); ctx.arc(weak.lx,weak.ly,r*1.3,0,Math.PI*2); ctx.fill();
+    [1,.66,.33].forEach((k,i)=>{ ctx.fillStyle=i%2?"#ffffff":"#22c55e"; ctx.beginPath(); ctx.arc(weak.lx,weak.ly,r*k,0,Math.PI*2); ctx.fill(); }); ctx.restore(); }
   ctx.restore();
   bodyPath(); ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,.5)"; ctx.stroke();
   ctx.restore();
@@ -1177,6 +1182,7 @@ function hitBag(lx,ly,x,y,w,fromRage,mv){
   bagHits++; if(cur.id==="classroom"&&!deadline&&mode!=="boss"){ deadline=performance.now()+(saved.level==="hard"?7000:saved.level==="easy"?12000:9000); }
   if(cur.id==="clarity") heat.push({x,y,age:0});
   let dmg=registerHit(w,fromRage,mv?mv.mult:1);
+  if(weak&&!fromRage&&Math.hypot(lx-weak.lx,ly-weak.ly)<G.bw*.2){ dmg*=3; weak=null; weakT=rand(3,5); word("VOLLTREFFER ×3!",x,y-40,clamp(W*.07,22,36),"#4ade80",.9); sfx.unlock(); stars(x,y,true); }
   if(cur.id==="contentsquare" && mode!=="boss" && !fromRage){ const inZone=zoneTop?ly<G.chain+G.bh*.5:ly>=G.chain+G.bh*.5; dmg*=inZone?2:.5; if(inZone&&Math.random()<.3) word("ZONE! ×2",x,y-34,22,"#f0abfc",.6); }
   if(cur.id==="ga" && mode!=="boss"){ const tool=cur; if(Math.random()<.3) note("⏳ Daten werden verarbeitet …");
     setTimeout(()=>{ if(cur===tool&&state==="alive") applyBagDmg(dmg,lx,ly,x,y,w,mv,true); },900); bagFx(lx,ly,x,y,w,mv,dmg); return; }
@@ -1184,7 +1190,7 @@ function hitBag(lx,ly,x,y,w,fromRage,mv){
 }
 function bagFx(lx,ly,x,y,w,mv,dmg){
   addHate(cur.custom?"custom":cur.id);
-  omega+=((lx>=0?1:-1)*(.9+dmg*.07)+rand(-.25,.25))*lv.swing; squash=Math.min(.3,.09+dmg*.007); hurt=w.love?0:.42; flash=1;
+  omega+=((lx>=0?1:-1)*(.9+dmg*.07)+rand(-.25,.25))*lv.swing*(raging?1.7:1); squash=Math.min(.3,.09+dmg*.007); hurt=w.love?0:.42; flash=1;
   if(mv&&mv.kind==="haken") omega+=mv.dir*3.4;
   if(mv&&mv.kind==="uppercut"){ dropV-=1250; omega+=rand(-1.5,1.5); }
   if(w.love) blush=2.2;
@@ -1760,13 +1766,13 @@ function modeInfo(kind,o){
     free:{e:"🥊",t:"FREIES SPIEL",g:"Such dir ein Tool aus und hau es K.O. Nach 3 K.O.s wartet der Endgegner.",
       l:(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Wenig“: Es wirft nichts zurück"]]
         :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: Du kannst kurz nicht schlagen und dein OVERKILL verliert 30 %"]])
-        .concat([["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
+        .concat([["🎯","Grüne Zielscheibe auf der Boxbirne? Triff sie – dreifacher Schaden!"],["😡","Kurz vor dem K.O. rastet das Tool aus: Es glüht rot und wehrt sich stärker"],["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
     time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
-      l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
+      l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🎯","Grüne Zielscheibe? Triff sie – dreifacher Schaden!"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
     fight:{e:"⚔️",t:"DUELL: TAUZIEHEN",g:"Eine Boxbirne hängt zwischen euch. Hau drauf, so schnell du kannst – jeder Treffer schiebt sie zum Gegner. Erreicht sie deine Seite, verlierst du die Runde.",
-      l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
+      l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⚡","Superkräfte tauchen im Feld auf – wer zuerst tippt, bekommt sie: ⚡ Turbo (doppelt schieben), 🧊 Einfrieren (Gegner kurz lahm), 💥 Mega-Schlag (großer Schubs)"],["🔥","Endspurt: In den letzten 10 Sekunden zählt jeder Treffer doppelt – Aufholen geht immer!"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
         .concat((o&&o.level||saved.level)==="hard"?[["🛡️","Schwer: Die Boxbirne wirft Sachen nach dir – antippen, sonst bist du kurz „Overloaded“"]]:[]).concat(touchDev?[]:[["⌨️","Am Computer: Leertaste oder jede Buchstabentaste"]])},
   };
   return M[kind];
@@ -1809,13 +1815,14 @@ function startBotFight(tool){
 function fHit(x,y){
   if(!FT.on||FT.spec||!FT.v||FT.v.phase!=="fight") return;
   if(fHitItem(x,y)) return;
-  if(FT.stun>0){ sfx.thud(); return; }
+  const v=FT.v; if(v.pu){ const px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH; if(Math.hypot(x-px,y-py)<Math.max(48,FW*.1)){ if(FT.local) FIGHT.act(FT.g,"me","grab",v.pu.id); else rsend({t:"act",a:"grab",id:v.pu.id}); sfx.pop(); return; } }
+  if(FT.stun>0||v.frozen[FT.myTeam]>0){ sfx.thud(); return; }
   if(FT.local) FIGHT.act(FT.g,"me","hit"); else { rsend({t:"act",a:"hit"}); fHitFx("L"); }
 }
 function fWord(txt,x,y,size,col,life){ FT.words.push({txt,x,y,size,c:col,age:0,max:life||.6}); if(FT.words.length>14) FT.words.shift(); }
 function fBanner(txt,sub,t){ FT.banner=txt; FT.bannerSub=sub||""; FT.bannerT=t||1.2; }
 function fFloat(e){ const d=document.createElement("div"); d.className="floatE"; d.textContent=e; d.style.left=rand(8,88)+"%"; $("fReact").appendChild(d); setTimeout(()=>d.remove(),2300); }
-function geo(){ const top=FH*.14, range=FW*.34, bw=Math.min(FW*.26,FH*.3,180), bh=bw*1.3; return {top,range,bw,bh,cx:FW/2+FT.dp*range,cy:top+FH*.18}; }
+function geo(){ const top=FH*.14, range=FW*.3, bw=Math.min(FW*.34,FH*.32,210), bh=bw*1.3; return {top,range,bw,bh,cx:FW/2+FT.dp*range,cy:top+FH*.1}; }
 function fHitFx(side){
   const G2=geo(), dir=side==="L"?1:-1, x=G2.cx-dir*G2.bw*.45, y=G2.cy+G2.bh*rand(.35,.7);
   FT.gloves.push({side,x,y,t:0}); if(FT.gloves.length>12) FT.gloves.shift();
@@ -1826,6 +1833,9 @@ function fHitFx(side){
 function fEvents(evs){
   for(const e of evs){
     if(e.k==="hit"){ const s=sideOf(e.team); if(FT.local||!(s==="L"&&e.pid===FT.myId)) fHitFx(s); if(!FT.spec&&e.pid===FT.myId) addHate(FT.v.tool); }
+    else if(e.k==="grab"){ const P=FIGHT.POWERS[e.kind], mine=!FT.spec&&e.team===FT.myTeam; sfx.unlock(); fBanner(`${P.e} ${P.name}`,`${mine?"Für dich!":(FT.spec?teamTitle(e.team):"Für den Gegner!")}${e.kind==="freeze"?(mine?" Der Gegner ist eingefroren.":" Du bist eingefroren."):e.kind==="turbo"?" Treffer zählen doppelt.":" Ein Riesenschubs!"}`,1.3); if(e.kind==="mega") FT.swingV+=(sideOf(e.team)==="L"?1:-1)*5; }
+    else if(e.k==="pu"){ sfx.pop(); }
+    else if(e.k==="rush"){ fBanner("ENDSPURT!","Letzte 10 Sekunden: jeder Treffer zählt doppelt",1.4); sfx.roar(); }
     else if(e.k==="round"){ const lose=!FT.spec&&e.winner!=="draw"&&e.winner!==FT.myTeam; fBanner(e.ko?(FT.spec?"K.O.!":lose?"AUTSCH!":"K.O.!"):"ZEIT!",e.winner==="draw"?"Unentschieden":`${teamTitle(e.winner)} holt die Runde`,2.4); e.ko?sfx.boom():sfx.ding(); if(e.ko) FT.swingV+=(sideOf(e.winner)==="L"?1:-1)*6; }
   }
 }
@@ -1846,8 +1856,11 @@ function fHud(){
   ["L","R"].forEach(s=>{ $("fPips"+s).innerHTML=[0,1].map(i=>`<i class="${i<v.wins[teamOf(s)]?"on":""}"></i>`).join(""); });
   const left=Math.max(0,Math.ceil(v.dur-v.t)); $("fTime").textContent=v.phase==="intro"&&v.round===1?"⏳":left; $("fTime").classList.toggle("warn",v.phase==="fight"&&left<=5);
   $("fRound").textContent=`RUNDE ${v.round}`;
-  const st=$("fStun"); const on=FT.stun>0&&!FT.spec; st.style.display=on?"block":"none"; if(on) $("fStunBar").style.width=clamp(FT.stun/1.6,0,1)*100+"%";
-  $("fTap").classList.toggle("dis",FT.stun>0||v.phase!=="fight");
+  const fr=v.frozen[FT.myTeam]||0, st=$("fStun"); const on=(FT.stun>0||fr>0)&&!FT.spec; st.style.display=on?"block":"none";
+  if(on){ if(fr>0){ $("fStunT").textContent="🧊 EINGEFROREN!"; $("fStunS").textContent="Der Gegner hat dich eingefroren"; $("fStunBar").style.width=clamp(fr/FIGHT.POWERS.freeze.dur,0,1)*100+"%"; } else { $("fStunT").textContent="😵‍💫 OVERLOADED!"; $("fStunS").textContent="Getroffen – kurz nicht hauen"; $("fStunBar").style.width=clamp(FT.stun/1.6,0,1)*100+"%"; } }
+  ["L","R"].forEach(s2=>{ const t=teamOf(s2), b=v.boost[t]||0, f=v.frozen[t]||0; const txt=(b>0?`⚡ Turbo ${Math.ceil(b)}s `:"")+(f>0?`🧊 eingefroren`:""); if($("fPow"+s2).textContent!==txt) $("fPow"+s2).textContent=txt; });
+  $("fTime").classList.toggle("warn",v.phase==="fight"&&(v.rush||left<=5));
+  $("fTap").classList.toggle("dis",FT.stun>0||fr>0||v.phase!=="fight");
 }
 function fLoop(dt){
   if(!FT.on) return; FT.time+=dt; FT.stun=Math.max(0,FT.stun-dt);
@@ -1874,6 +1887,42 @@ function fLoop(dt){
   const bn=$("fBanner"); if(FT.bannerT>0){ bn.style.opacity=Math.min(1,FT.bannerT*4); bn.querySelector("b").textContent=FT.banner; bn.querySelector("span").textContent=FT.bannerSub; } else bn.style.opacity=0;
 }
 function fEmoji(c,e,x,y,size,flip,rot){ c.save(); c.translate(x,y); if(rot) c.rotate(rot); if(flip) c.scale(-1,1); c.font=`${size}px ${EMOJI_FONT}`; c.textAlign="center"; c.textBaseline="middle"; c.fillText(e,0,0); c.restore(); }
+// Boxbirne zeichnen – wie im Einzelspiel, aber für jede Leinwand
+function paintBag(c,o){
+  const {bw,bh,chain,tool}=o, col=tool.color, ink=lum(col)<.28?"#ffffff":"#140a1f";
+  const body=()=>rr(c,-bw/2,chain,bw,bh,bw*.24);
+  c.strokeStyle="#2a1c3d"; c.lineWidth=4; c.beginPath(); c.moveTo(0,chain-14); c.lineTo(-bw*.34,chain+8); c.moveTo(0,chain-14); c.lineTo(bw*.34,chain+8); c.stroke();
+  c.fillStyle="#d7dbea"; c.beginPath(); c.arc(0,chain-14,5,0,Math.PI*2); c.fill();
+  body(); let g=c.createLinearGradient(-bw/2,0,bw/2,0);
+  if(tool.color2){ g.addColorStop(0,mix(col,"#ffffff",.2)); g.addColorStop(.5,mix(tool.color2,col,.4)); g.addColorStop(1,mix(tool.color2,"#000000",.25)); }
+  else { g.addColorStop(0,mix(col,"#ffffff",.32)); g.addColorStop(.45,col); g.addColorStop(1,mix(col,"#000000",.38)); }
+  c.fillStyle=g; c.fill();
+  c.save(); body(); c.clip();
+  c.fillStyle="rgba(0,0,0,.28)"; c.fillRect(-bw/2,chain,bw,bh*.11); c.fillRect(-bw/2,chain+bh*.89,bw,bh*.11);
+  c.strokeStyle="rgba(255,255,255,.5)"; c.lineWidth=2; c.setLineDash([6,6]); c.beginPath(); c.moveTo(-bw/2,chain+bh*.11+4); c.lineTo(bw/2,chain+bh*.11+4); c.moveTo(-bw/2,chain+bh*.89-4); c.lineTo(bw/2,chain+bh*.89-4); c.stroke(); c.setLineDash([]);
+  c.fillStyle="rgba(255,255,255,.2)"; c.beginPath(); c.ellipse(-bw*.29,chain+bh*.42,bw*.06,bh*.25,0,0,Math.PI*2); c.fill();
+  // Gesicht
+  const ey=chain+bh*.29, ex=bw*.17, er=bw*.085; c.lineCap="round"; c.lineJoin="round";
+  if(o.hurt){ c.strokeStyle=ink; c.lineWidth=Math.max(3,bw*.03); [-1,1].forEach(sd=>{ const x=sd*ex,k=-sd; c.beginPath(); c.moveTo(x-k*er,ey-er*.7); c.lineTo(x+k*er*.8,ey); c.lineTo(x-k*er,ey+er*.7); c.stroke(); }); }
+  else { [-1,1].forEach(sd=>{ const x=sd*ex; c.fillStyle="#fff"; c.beginPath(); c.ellipse(x,ey,er,er*1.1,0,0,Math.PI*2); c.fill(); c.strokeStyle="rgba(0,0,0,.35)"; c.lineWidth=1.5; c.stroke();
+      c.fillStyle="#140a1f"; c.beginPath(); c.arc(x+(o.look||0)*er*.42,ey,er*.48,0,Math.PI*2); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(x+(o.look||0)*er*.42-er*.15,ey-er*.18,er*.14,0,Math.PI*2); c.fill(); });
+    c.strokeStyle=ink; c.lineWidth=Math.max(3,bw*.035); [-1,1].forEach(sd=>{ const x=sd*ex,k=-sd; c.beginPath(); c.moveTo(x-k*er*1.1,ey-er*1.75); c.lineTo(x+k*er,ey-er*1.15); c.stroke(); }); }
+  const my=chain+bh*.45; c.strokeStyle=ink; c.fillStyle="#3a0d1d"; c.lineWidth=Math.max(3,bw*.03);
+  if(o.hurt){ c.beginPath(); c.ellipse(0,my,bw*.09,bw*.11,0,0,Math.PI*2); c.fill(); c.stroke(); }
+  else if(o.low){ c.beginPath(); for(let i=0;i<=6;i++){ const x=-bw*.15+i*bw*.05, y=my+(i%2?-4:4); i?c.lineTo(x,y):c.moveTo(x,y);} c.stroke(); }
+  else { c.beginPath(); c.moveTo(-bw*.13,my); c.quadraticCurveTo(0,my+bw*.08,bw*.15,my-bw*.05); c.stroke(); }
+  // Etikett
+  const y=chain+bh*.58, h=bh*.24; c.save(); c.translate(0,y+h/2); c.rotate(-.05);
+  c.fillStyle="rgba(255,255,255,.95)"; rr(c,-bw*.45,-h/2,bw*.9,h,12); c.fill(); c.strokeStyle="rgba(0,0,0,.25)"; c.lineWidth=2; c.stroke();
+  const ir=h*.36, ix=-bw*.45+ir+7; c.fillStyle=tool.color2?mix(tool.color,tool.color2,.5):tool.color; c.beginPath(); c.arc(ix,0,ir,0,Math.PI*2); c.fill(); c.strokeStyle="rgba(0,0,0,.25)"; c.lineWidth=1.5; c.stroke();
+  fEmoji(c,tool.ic||"🛠️",ix,ir*.05,ir*1.25);
+  c.fillStyle="#140a1f"; c.textAlign="center"; c.textBaseline="middle"; const tx=(ix+ir+bw*.45)/2, maxW=(bw*.45-4)-(ix+ir+4);
+  const nm=tool.name.toUpperCase(); let size=Math.round(h*.5); c.font=`${size}px ${COMIC}`; while(c.measureText(nm).width>maxW&&size>8){ size--; c.font=`${size}px ${COMIC}`; } c.fillText(nm,tx,size*.05);
+  c.restore();
+  if(o.flash>0){ c.fillStyle=`rgba(255,255,255,${Math.min(1,o.flash)*.5})`; c.fillRect(-bw,0,bw*2,chain+bh+10); }
+  c.restore();
+  body(); c.lineWidth=3; c.strokeStyle="rgba(0,0,0,.5)"; c.stroke();
+}
 function fRender(){
   const c=fctx; c.setTransform(FD,0,0,FD,0,0); c.clearRect(0,0,FW,FH);
   const G2=geo(), v=FT.v, tool=v?(NAMES[v.tool]||TOOLS[0]):TOOLS[0];
@@ -1891,20 +1940,16 @@ function fRender(){
   c.fillStyle="#fff"; c.beginPath(); c.arc(G2.cx,railY,7,0,Math.PI*2); c.fill();
   // Pfeile: in welche Richtung du schiebst
   if(!FT.spec){ c.globalAlpha=.25+.15*Math.sin(FT.time*5); c.font=`${Math.round(FH*.1)}px ${COMIC}`; c.fillStyle="#c4b5fd"; c.fillText("→ → →",FW/2,FH*.86); c.globalAlpha=1; }
-  // Boxbirne
+  // Boxbirne (gleiche Optik wie im Einzelspiel)
   c.save(); c.translate(G2.cx,railY); c.rotate(FT.swing);
-  c.strokeStyle="#b8bdd0"; c.lineWidth=3; c.beginPath(); c.moveTo(0,0); c.lineTo(0,G2.cy-railY); c.stroke();
-  c.translate(0,G2.cy-railY);
-  const w=G2.bw, h=G2.bh, gr2=c.createLinearGradient(-w/2,0,w/2,0); gr2.addColorStop(0,mix(tool.color,"#ffffff",.25)); gr2.addColorStop(.55,tool.color2?mix(tool.color,tool.color2,.5):tool.color); gr2.addColorStop(1,mix(tool.color2||tool.color,"#000000",.3));
-  rr(c,-w/2,0,w,h,w*.28); c.fillStyle=gr2; c.fill(); c.lineWidth=3; c.strokeStyle="rgba(0,0,0,.5)"; c.stroke();
-  const fl=Math.max(FT.flash.L,FT.flash.R); if(fl>0){ c.save(); rr(c,-w/2,0,w,h,w*.28); c.clip(); c.fillStyle=`rgba(255,255,255,${fl/.12*.5})`; c.fillRect(-w,0,w*2,h); c.restore(); }
-  const ink=lum(tool.color)>.5?"#1a0830":"#ffffff", ey=h*.27, ex=w*.17, er=w*.085, look=FT.dp>0?1:-1;
-  [-1,1].forEach(k=>{ const x=k*ex; c.fillStyle="#fff"; c.beginPath(); c.ellipse(x,ey,er,er*1.1,0,0,Math.PI*2); c.fill(); c.fillStyle="#140a1f"; c.beginPath(); c.arc(x+look*er*.4,ey,er*.5,0,Math.PI*2); c.fill(); c.strokeStyle=ink; c.lineWidth=3; c.beginPath(); c.moveTo(x-er*1.2,ey-er*1.6); c.lineTo(x+er*1.2,ey-er*1.6+(k<0?er*.6:-er*.6)*-1); c.stroke(); });
-  c.strokeStyle=ink; c.lineWidth=3.5; c.beginPath(); c.ellipse(0,h*.44,w*.08,w*.06,0,0,Math.PI*2); c.stroke();
-  const tw=w*.84, th=h*.2, ty=h*.6; c.fillStyle="rgba(255,255,255,.93)"; rr(c,-tw/2,ty,tw,th,th*.3); c.fill();
-  fEmoji(c,tool.ic,-tw/2+th*.55,ty+th/2+1,th*.62);
-  c.fillStyle="#140a1f"; const nm=tool.name.length>11?tool.name.split(" ").pop():tool.name; let fs=th*.5; c.font=`${fs}px ${COMIC}`; while(c.measureText(nm).width>tw-th*1.25&&fs>8){ fs--; c.font=`${fs}px ${COMIC}`; } c.textAlign="left"; c.fillText(nm,-tw/2+th*1.05,ty+th/2+1);
+  c.strokeStyle="#b8bdd0"; c.lineWidth=3; for(let y=8;y<G2.cy-railY-14;y+=11){ c.beginPath(); c.ellipse(0,y,3.2,6,0,0,Math.PI*2); c.stroke(); }
+  paintBag(c,{bw:G2.bw,bh:G2.bh,chain:G2.cy-railY,tool,hurt:Math.max(FT.flash.L,FT.flash.R)>0,look:FT.dp>0?1:-1,flash:Math.max(FT.flash.L,FT.flash.R)/.12,low:Math.abs(FT.dp)>.6});
   c.restore();
+  // Superkraft im Feld
+  if(v&&v.pu&&v.phase==="fight"){ const P=FIGHT.POWERS[v.pu.kind], px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH, r=Math.max(34,FW*.08), pul=1+.08*Math.sin(FT.time*10);
+    c.save(); c.fillStyle="rgba(253,224,71,.22)"; c.beginPath(); c.arc(px,py,r*1.25*pul,0,Math.PI*2); c.fill();
+    c.strokeStyle="#fde047"; c.lineWidth=4; c.beginPath(); c.arc(px,py,r*1.25,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(v.pu.t/3.5,0,1)); c.stroke();
+    fEmoji(c,P.e,px,py,r*1.3*pul); c.font=`${Math.round(clamp(FW*.035,12,16))}px ${COMIC}`; c.textAlign="center"; c.lineWidth=4; c.strokeStyle="#1a0830"; c.strokeText(P.name,px,py+r*1.55); c.fillStyle="#fde047"; c.fillText(P.name,px,py+r*1.55); c.restore(); }
   // Handschuhe, die zuschlagen
   FT.gloves.forEach(gl=>{ const k=Math.sin(Math.min(1,gl.t/.2)*Math.PI), dir=gl.side==="L"?1:-1, sx=gl.side==="L"?edge*.4:FW-edge*.4, x=sx+(gl.x-sx)*k; fEmoji(c,"🥊",x,gl.y,G2.bw*.4,gl.side==="L"); });
   // fliegende Sachen (Schwer)
@@ -1953,6 +1998,10 @@ function update(dt){
   omega+=(-18*theta-1.5*omega)*dt; theta=clamp(theta+omega*dt,-1.15,1.15);
   dropV+=(-dropY*70-dropV*7.5)*dt; dropY+=dropV*dt;
   squash-=squash*11*dt; hurt-=dt; blush-=dt; stunT-=dt;
+  // Schwachstelle: leuchtet kurz auf, Treffer dort zählen dreifach
+  if(state==="alive"&&!chill&&mode!=="boss"){ if(weak){ weak.t-=dt; if(weak.t<=0){ weak=null; weakT=rand(3,5); } } else { weakT-=dt; if(weakT<=0) weak={lx:rand(-G.bw*.28,G.bw*.28),ly:G.chain+G.bh*rand(.18,.82),t:2.2}; } } else weak=null;
+  // Wutausbruch kurz vor dem K.O.
+  { const r=state==="alive"&&!chill&&mode!=="boss"&&hp>0&&hp<hpMax*.2; if(r&&!raging){ raging=true; say(pick(["JETZT REICHT’S!","ICH RASTE AUS!","NICHT MIT MIR!"])); sfx.roar(); if(lv.thr) bagThrowT=Math.min(bagThrowT,.6); } if(!r) raging=false; }
   { const sb=$("stunBox"); const on=stunT>0&&!anyOpen(); sb.style.display=on?"block":"none"; if(on) $("stunBar").style.width=clamp(stunT/stunMax,0,1)*100+"%"; }
   { const now=performance.now(); document.querySelectorAll("#weapons .weapon").forEach((b,i)=>{ const w=WEAPONS[i]; if(!w) return; const left=Math.max(0,(wCdUntil[w.id]||0)-now)/1000, d=W_CD[w.id]||1; b.style.setProperty("--cd",chill?0:Math.min(1,left/d).toFixed(3)); }); } flash=Math.max(0,flash-dt*4); shake*=Math.exp(-9*dt);
   if(state==="ko"){ koT+=dt; if(koT>(mode==="time"||mode==="duel"?.85:1.9) && !(mode==="duel"&&R.ended)) nextBag(); }
@@ -1964,7 +2013,7 @@ function update(dt){
   // Mittel/Schwer: Boxbirne weicht aus und wirft zurück – je schneller du haust, desto schneller
   if(mode!=="boss" && state==="alive" && Math.abs(dropY)<40 && hits>0){
     if(lv.dodge){ dodgeT-=dt; if(dodgeT<=0){ dodgeT=rand(1.3,2.3)/(1+hitRate()*.15); omega+=(Math.random()<.5?-1:1)*rand(lv.dodge*.8,lv.dodge*1.2); } }
-    if(lv.thr){ bagThrowT-=dt; if(bagThrowT<=0){ const r=hitRate(); bagThrowT=Math.max(lv.thr.min*(mode==="free"?.8:1),rand(lv.thr.base[0],lv.thr.base[1])/(1+r*lv.thr.k*(mode==="free"?1.8:1)));
+    if(lv.thr){ bagThrowT-=dt; if(bagThrowT<=0){ const r=hitRate(); bagThrowT=Math.max(lv.thr.min*(mode==="free"?.8:1),rand(lv.thr.base[0],lv.thr.base[1])/(1+r*lv.thr.k*(mode==="free"?1.8:1)))*(raging?.5:1);
       const [bx,by]=toWorld(0,G.chain+G.bh*.45), dur=Math.max(.7,lv.thr.dur/(1+r*.12)); throwItem(bx,by,dur);
       if(saved.level==="hard"&&r>3.2&&Math.random()<.45) setTimeout(()=>{ if(state==="alive"){ const [x2,y2]=toWorld(0,G.chain+G.bh*.4); throwItem(x2,y2,dur); } },220);
       if(r>3.5&&performance.now()-lastSpeech>1800) { say(pick(["Du willst Tempo? Kriegst du!","OVERLOADED? Ich doch nicht!","Retourkutsche!","DSGVO-Keule!"])); }

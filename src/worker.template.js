@@ -153,6 +153,7 @@ export class Room extends DurableObject {
 
     if (m.t === "act" && st.phase === "live" && this.g && c.role === "player") {
       if (m.a === "hit") { const n = Math.max(1, Math.min(4, Math.floor(Number(m.n) || 1))); for (let i = 0; i < n; i++) FIGHT.act(this.g, c.id, "hit"); }
+      else if (m.a === "grab") FIGHT.act(this.g, c.id, "grab", Math.floor(Number(m.id) || 0));
       return;
     }
     if (m.t === "react" && REACTIONS.includes(m.e) && now - c.lastReact > 350) { c.lastReact = now; this.broadcast({ t: "react", e: m.e }); return; }
