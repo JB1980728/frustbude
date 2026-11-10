@@ -252,6 +252,49 @@ export class Room extends DurableObject {
   }
 }
 
+/* ======================= Treffpunkt: Wer ist online, offene Duelle, Herausforderungen ======================= */
+export class Lobby extends DurableObject {
+  constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; }
+  async fetch(req) {
+    if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
+    if (this.conns.size >= 300) return new Response("Voll", { status: 429 });
+    const pair = new WebSocketPair(); const [client, server] = Object.values(pair); server.accept();
+    const c = { id: crypto.randomUUID().slice(0, 8), ws: server, name: "", sid: "", busy: false, lastCh: 0, msgs: 0, msgWin: Date.now() };
+    this.conns.set(c.id, c);
+    server.addEventListener("message", e => this.onMsg(c, e.data));
+    const bye = () => { if (!this.conns.has(c.id)) return; this.conns.delete(c.id); for (const [k, r] of this.rooms) if (r.by === c.id) this.rooms.delete(k); this.sync(); };
+    server.addEventListener("close", bye); server.addEventListener("error", bye);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+  send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
+  view() {
+    const people = [...this.conns.values()].map(c => ({ name: c.name || null, busy: !!c.busy }));
+    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < 30 * 60000).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap }));
+    return { t: "online", people, rooms };
+  }
+  sync() { if (this.syncT) return; this.syncT = setTimeout(() => { this.syncT = null; const s = JSON.stringify(this.view()); for (const c of this.conns.values()) { try { c.ws.send(s); } catch (e) {} } }, 400); }
+  onMsg(c, raw) {
+    if (typeof raw !== "string" || raw.length > 500) return;
+    const now = Date.now(); if (now - c.msgWin > 5000) { c.msgWin = now; c.msgs = 0; } if (++c.msgs > 40) return;
+    let m; try { m = JSON.parse(raw); } catch (e) { return; }
+    const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") this.send(c, this.view()); this.sync(); return; }
+    if (m.t === "open" && code.length >= 4) {
+      const cap = m.format === "2v2" ? 4 : 2, count = Math.max(1, Math.min(cap, Math.floor(Number(m.count) || 1)));
+      const r = this.rooms.get(code); if (r && r.by !== c.id) return;
+      if (!r && [...this.rooms.values()].filter(x => x.by === c.id).length >= 2) return;
+      this.rooms.set(code, { code, by: c.id, name: c.name || "Jemand", format: m.format === "2v2" ? "2v2" : "1v1", count, cap, ts: r ? r.ts : now }); this.sync(); return;
+    }
+    if (m.t === "close" && code) { const r = this.rooms.get(code); if (r && r.by === c.id) { this.rooms.delete(code); this.sync(); } return; }
+    if (m.t === "challenge" && code && now - c.lastCh > 20000) {
+      const r = this.rooms.get(code); if (!r || r.by !== c.id) return;
+      c.lastCh = now; const s = JSON.stringify({ t: "challenge", code, name: c.name || "Jemand", format: r.format, ts: now });
+      for (const o of this.conns.values()) if (o !== c) { try { o.ws.send(s); } catch (e) {} }
+      this.send(c, { t: "challenged", n: this.conns.size - 1 }); return;
+    }
+  }
+}
+
 /* ======================= Worker ======================= */
 export default {
   async fetch(req, env) {
@@ -260,6 +303,12 @@ export default {
 
     if (req.method === "GET" && (path === "/" || path === "/index.html")) {
       return new Response(HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" } });
+    }
+
+    // Treffpunkt (WebSocket)
+    if (path === "/api/lobby") {
+      if (!env.LOBBY) return json({ error: "no_lobby" }, 503);
+      return env.LOBBY.get(env.LOBBY.idFromName("main")).fetch(req);
     }
 
     // Mehrspieler-Raum (WebSocket)

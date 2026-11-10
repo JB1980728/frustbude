@@ -410,6 +410,19 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .bs-hp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ef4444,#a855f7);transition:width 1.3s linear}
 #bossShow.s3 .bs-hp i{width:100%}
 #bsSkip{position:absolute;right:10px;bottom:10px;font-weight:900;font-size:12px;color:#fca5a5;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 12px}
+
+.online{font-size:12.5px;font-weight:900;color:#bbf7d0;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:5px 10px;margin-bottom:4px;line-height:1.35}
+.oroom{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:7px 9px;margin:0 0 6px;text-align:left;font-weight:900;font-size:13px}
+.oroom .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.oroom small{display:block;font-size:11px;color:var(--muted)}
+.oroom button{background:linear-gradient(180deg,#ffe680,#ffb703);color:#1a0830;border-radius:10px;padding:7px 10px;font-weight:900;font-size:12.5px}
+.oempty{font-size:12px;font-weight:800;color:var(--muted);margin:0 0 10px}
+#chBox{position:fixed;left:50%;top:calc(var(--vt,0px) + 10px + env(safe-area-inset-top));transform:translate(-50%,-140%);z-index:60;display:flex;align-items:center;gap:8px;width:min(94%,440px);background:linear-gradient(180deg,#3b0a5c,#1a0830);border:2px solid #ffd23f;border-radius:16px;padding:8px 8px 8px 12px;box-shadow:0 12px 30px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+#chBox.on{transform:translate(-50%,0)}
+#chTxt{flex:1;font-weight:900;font-size:13.5px;line-height:1.3}
+#chGo{background:linear-gradient(180deg,#fca5a5,#ef4444);color:#fff;border-radius:11px;padding:9px 11px;font-weight:900;font-size:13px;white-space:nowrap}
+#chX{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);font-size:13px}
+#fFlip{position:absolute;left:8px;top:8px;display:none;font-weight:900;font-size:12px;background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:999px;padding:6px 10px}
+#fight.spec #fFlip{display:block}
 </style>
 </head>
 <body>
@@ -468,6 +481,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin-bottom:10px">Tools nerven? Hier darfst du es rauslassen.</div>
   <div class="nametag" id="homeTag" style="align-self:center;display:none"></div>
   <div class="classline" id="homeClass" style="display:none"></div>
+  <div class="online" id="homeOnline">🟢 Verbinde …</div>
   <div class="seglbl">Wähle deinen Modus</div>
   <div class="modes">
     <button class="mode m-tap" id="tapBtn"><span class="me">👊</span><span class="mt"><b>Einfach draufhauen</b><small>Nur tippen. Nichts wehrt sich.</small></span></button>
@@ -608,7 +622,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <button class="x" id="duelX">✕</button>
   <div id="duelEntry">
     <div class="mid">DUELL</div>
-    <div class="sub" style="margin:8px 0 10px">Boxkampf wie bei Tekken: Jedes Team wählt ein Tool als Kämpfer, dann boxt ihr <b>gegeneinander</b>. 1 gegen 1 oder 2 gegen 2.</div>
+    <div class="sub" style="margin:8px 0 10px">Tauziehen mit der Boxbirne: Wer schneller haut, schiebt sie zum Gegner. 1 gegen 1 oder 2 gegen 2.</div>
+    <div class="seglbl mkonly">Offene Duelle – sofort mitmachen</div>
+    <div id="openRooms" class="mkonly"></div>
     <input class="field" id="duelName" maxlength="16" placeholder="Dein Spitzname" autocomplete="off">
     <div class="seglbl mkonly">Jemanden herausfordern</div>
     <div class="seg mkonly" id="fmtSeg"><button data-f="1v1" class="on">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
@@ -625,7 +641,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="mid">WARTERAUM</div>
     <div class="sub" style="margin:6px 0 4px">Teile diesen Code mit deinen Gegnern:</div>
     <div class="codebox" id="roomCode">-----</div>
-    <button class="cta alt sm" id="shareRoom">📤 EINLADUNG TEILEN</button>
+    <div class="row2"><button class="cta alt sm" id="shareRoom">📤 LINK TEILEN</button><button class="cta sm" id="challengeAll">📣 ALLE HERAUSFORDERN</button></div>
     <div class="teams">
       <div class="team A"><h4 id="teamAH">TEAM LILA</h4><div id="teamA"></div></div>
       <div class="vs">VS</div>
@@ -657,10 +673,14 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div>
     <div id="fStun"><b id="fStunT">😵‍💫 OVERLOADED!</b><span id="fStunS">Getroffen – kurz nicht hauen</span><div class="bar"><i id="fStunBar"></i></div></div>
     <button class="iconbtn muteToggle" id="fMute" aria-label="Ton aus">🔊</button>
+    <button id="fFlip">🔄 Andere Seite ansehen</button>
     <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
   <div id="fCtl"><button id="fTap">👊 HAU DRAUF! <small>so schnell du kannst – oder überall aufs Bild tippen</small></button></div>
   <div id="fReacts" class="reacts"></div>
 </div>
+
+<!-- Herausforderung von jemand anderem -->
+<div id="chBox"><span id="chTxt"></span><button id="chGo">⚔️ Mitmachen</button><button id="chX" aria-label="Schließen">✕</button></div>
 
 <!-- Abbrechen? -->
 <div class="overlay hidden" id="quitAsk"><div class="card">
@@ -1764,7 +1784,7 @@ function openDuel(prefill){
   $("joinLbl").textContent=prefill?"Du wurdest zum Duell eingeladen!":"Oder mit Code beitreten";
   if(prefill) $("joinCode").value=prefill; show("duel");
 }
-function connect(code,role){
+function connect(code,role){ hideChallenge();
   if(R.ws){ R.leaving=true; try{ R.ws.close(); }catch(e){} }
   R.code=code; R.role=role; R.leaving=false; R.st=null; R.you=null; R.ended=false; R.round=-1;
   const url=(location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/room/"+code;
@@ -1827,6 +1847,7 @@ function renderLobby(){
   $("botFill").style.display=isHost&&(!full||hasBots)?"block":"none"; $("botFill").textContent=hasBots?"🤖 BOTS ENTFERNEN":"🤖 FREIE PLÄTZE MIT BOTS FÜLLEN";
   $("startDuel").style.display=isHost?"block":"none"; $("startDuel").disabled=!ok; $("startDuel").textContent=ok?"KAMPF STARTEN! 🔔":"WARTE AUF GEGNER …";
   $("waitLine").style.display=!isHost?"block":"none";
+  $("challengeAll").style.display=isHost?"block":"none"; lbAnnounce();
   $("swapRole").textContent=mine&&mine.role==="player"?"👀 Nur zuschauen":"🥊 Mitspielen";
 }
 // alte Duell-Funktionen (Punkte-Rennen) sind ersetzt
@@ -1862,6 +1883,51 @@ function modeIntro(kind,go,okOnly,o){
 $("miGo").onclick=()=>{ hide("modeIntro"); const f=miGo; miGo=null; if(f) f(); };
 $("miBack").onclick=()=>{ hide("modeIntro"); miGo=null; if(R.ws||R.st) leaveRoom(true); openHome(); };
 
+/* ===================== Treffpunkt: wer ist online, offene Duelle, Herausforderungen ===================== */
+const LB={ws:null,people:[],rooms:[],retry:1000,queue:null,lastKey:"",ann:""};
+function lbSend(o){ if(LB.ws&&LB.ws.readyState===1) LB.ws.send(JSON.stringify(o)); }
+function isBusy(){ return FT.on||gameRunning(); }
+function lbConnect(){
+  let ws; try{ ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/lobby"); }catch(e){ return; }
+  LB.ws=ws;
+  ws.onopen=()=>{ LB.retry=1000; LB.lastKey=""; ws.send(JSON.stringify({t:"hello",name:saved.name,sid:saved.sid,busy:isBusy()})); LB.ann=""; if(R.st) renderLobby(); };
+  ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
+    if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; renderOnline(); renderOpenRooms(); }
+    else if(m.t==="challenge"){ if(R.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws) showChallenge(); }
+    else if(m.t==="challenged"){ toast(m.n>0?`📣 ${m.n} ${m.n===1?"Person wurde":"Leute wurden"} eingeladen!`:"Gerade ist sonst niemand online – teil den Link in Slack.",2600); } };
+  ws.onclose=()=>{ if(LB.ws!==ws) return; LB.ws=null; $("homeOnline").textContent="🟢 Verbindung wird gesucht …"; setTimeout(lbConnect,LB.retry); LB.retry=Math.min(LB.retry*2,15000); };
+  ws.onerror=()=>{};
+}
+function renderOnline(){
+  const el=$("homeOnline"), n=LB.people.length; if(!n){ el.textContent="🟢 Verbinde …"; return; }
+  const named=LB.people.filter(p=>p.name).map(p=>p.name+(p.busy?" 🎮":"")), others=n-named.length;
+  el.textContent=n<=1?"🟢 Gerade bist nur du online":`🟢 ${n} online: ${named.slice(0,5).join(", ")}${named.length>5?" …":""}${others>0?(named.length?" + ":"")+others+(others===1?" weitere Person":" weitere"):""}`;
+}
+function renderOpenRooms(){
+  const box=$("openRooms"); if(!box) return; box.innerHTML="";
+  const rooms=LB.rooms.filter(r=>r.code!==R.code&&r.count<r.cap);
+  if(!rooms.length){ box.innerHTML='<div class="oempty">Gerade wartet niemand. Erstell selbst ein Duell und tipp auf „📣 Alle herausfordern“.</div>'; return; }
+  rooms.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>⚔️</span><span class="t"><span class="nm"></span><small>${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} · ${r.count}/${r.cap} dabei</small></span><button>Mitmachen</button>`;
+    d.querySelector(".nm").textContent=`${r.name} sucht Gegner`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
+}
+function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Mitboxen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
+function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; $("chBox").classList.add("on"); sfx.ding(); clearTimeout(LB.chT); LB.chT=setTimeout(hideChallenge,30000); }
+function hideChallenge(){ $("chBox").classList.remove("on"); }
+$("chGo").onclick=()=>joinOpen(LB.chCode);
+$("chX").onclick=hideChallenge;
+// Raum im Treffpunkt anmelden, solange Plätze frei sind
+function lbAnnounce(){
+  const st=R.st; let key="";
+  if(st&&st.phase==="lobby"&&st.hostId===R.you){ const cap=st.format==="2v2"?4:2, count=st.people.filter(p=>p.role==="player"&&!p.isBot).length; if(count<cap&&!st.people.some(p=>p.isBot)) key=`${st.code}|${st.format}|${count}`; }
+  if(key===LB.ann) return;
+  if(LB.ann&&!key) lbSend({t:"close",code:LB.ann.split("|")[0]});
+  if(key){ const [code,format,count]=key.split("|"); lbSend({t:"open",code,format,count:+count}); }
+  LB.ann=key;
+}
+setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
+  if(!b&&!R.ws&&LB.queue) showChallenge(); lbAnnounce(); },1000);
+$("challengeAll").onclick=()=>{ if(!R.st) return; lbAnnounce(); setTimeout(()=>lbSend({t:"challenge",code:R.code}),300); sfx.pop(); };
+
 /* ===================== Duell: Tauziehen mit der Boxbirne ===================== */
 const FT={on:false,local:false,g:null,v:null,myTeam:"A",spec:false,myId:"me",format:"1v1",level:"easy",fx:[],words:[],gloves:[],items:[],banner:"",bannerSub:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,time:0,dp:0,swing:0,swingV:0,stun:0,itemT:3,flash:{L:0,R:0}};
 const fcv=$("fc"), fctx=fcv.getContext("2d"); let FW=0,FH=0,FD=1;
@@ -1875,7 +1941,7 @@ function openFight(o){
   Object.assign(FT,{on:true,local:o.local,myTeam:o.myTeam||"A",spec:!!o.spec,myId:o.myId||"me",format:o.format||"1v1",level:o.level||"easy",fx:[],words:[],gloves:[],items:[],banner:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,dp:0,swing:0,swingV:0,stun:0,itemT:3});
   if(!o.local){ FT.g=null; FT.v=null; }
   ["home","duel","pick","results","help","zen","modeIntro"].forEach(hide);
-  state="idle"; items=[]; $("fight").classList.remove("hidden"); $("fight").classList.toggle("spec",FT.spec);
+  hideChallenge(); state="idle"; items=[]; $("fight").classList.remove("hidden"); $("fight").classList.toggle("spec",FT.spec);
   fResize(); fHudNames(); sfx.ding();
 }
 function closeFight(){ FT.on=false; FT.g=null; FT.v=null; $("fight").classList.add("hidden"); $("fStun").style.display="none"; }
@@ -1923,11 +1989,22 @@ function fItemsTick(dt){
 function fItemPos(it){ const k=clamp(it.t/it.dur,0,1); return {x:it.x0+(it.tx-it.x0)*k, y:it.y0+(it.ty-it.y0)*k-FH*.25*Math.sin(k*Math.PI), s:.6+k*1.6}; }
 function fHitItem(x,y){ for(let i=FT.items.length-1;i>=0;i--){ const p=fItemPos(FT.items[i]); if(Math.hypot(x-p.x,y-p.y)<34*p.s+12){ FT.items.splice(i,1); sfx.block(); fWord("WEG!",p.x,p.y-20,22,"#4ade80",.5); return true; } } return false; }
 function fHudNames(){
-  ["L","R"].forEach(s=>{ const t=teamOf(s); $("fName"+s).textContent=FT.v?teamTitle(t):""; const n=teamNames(t); $("fSub"+s).textContent=(FT.format==="2v2"||n.length>1)?n.join(" & "):""; });
+  ["L","R"].forEach(s=>{ const t=teamOf(s); $("fName"+s).textContent=FT.v?teamTitle(t):""; });
+  fRates(true);
   $("fYouTag").textContent=FT.spec?"👀":"DU";
 }
+// Tipp-Tempo pro Person (Treffer pro Sekunde) – für alle sichtbar, auch für Zuschauer
+function fRates(force){
+  const v=FT.v; if(!v) return; const now=performance.now(); FT.hist=FT.hist||{};
+  Object.values(v.players).forEach(p=>{ const h=FT.hist[p.id]||(FT.hist[p.id]=[]); if(!h.length||h[h.length-1][1]!==p.st.hits||now-h[h.length-1][0]>250) h.push([now,p.st.hits]); while(h.length>2&&now-h[0][0]>1500) h.shift(); });
+  if(!force&&now-(FT.rateT||0)<300) return; FT.rateT=now;
+  ["L","R"].forEach(s=>{ const t=teamOf(s), ps=Object.values(v.players).filter(p=>p.team===t);
+    const txt=ps.map(p=>{ const h=FT.hist[p.id]||[]; let r=0; if(h.length>1){ const a=h[0],b=h[h.length-1]; r=b[0]>a[0]?(b[1]-a[1])/((b[0]-a[0])/1000):0; } if(v.phase!=="fight") r=0;
+      return `${ps.length>1?(p.bot?"🤖 ":"")+p.name+" ":""}👆 ${r.toFixed(1).replace(".",",")}/s`; }).join(" · ");
+    if($("fSub"+s).textContent!==txt) $("fSub"+s).textContent=txt; });
+}
 function fHud(){
-  const v=FT.v; if(!v) return;
+  const v=FT.v; if(!v) return; fRates(false);
   ["L","R"].forEach(s=>{ $("fPips"+s).innerHTML=[0,1].map(i=>`<i class="${i<v.wins[teamOf(s)]?"on":""}"></i>`).join(""); });
   const left=Math.max(0,Math.ceil(v.dur-v.t)); $("fTime").textContent=v.phase==="intro"&&v.round===1?"⏳":left; $("fTime").classList.toggle("warn",v.phase==="fight"&&left<=5);
   $("fRound").textContent=`RUNDE ${v.round}`;
@@ -2050,7 +2127,8 @@ function fResults(){
 }
 // Steuerung: überall tippen (mehrere Finger zählen)
 function fPointer(e){ e.preventDefault(); ensureAudio(); const r=$("fStage").getBoundingClientRect(); fHit(e.clientX-r.left,e.clientY-r.top); }
-$("fStage").addEventListener("pointerdown",e=>{ if(e.target.closest("#fExit,#fMute")) return; fPointer(e); });
+$("fStage").addEventListener("pointerdown",e=>{ if(e.target.closest("#fExit,#fMute,#fFlip")) return; fPointer(e); });
+$("fFlip").addEventListener("click",()=>{ FT.myTeam=otherT(FT.myTeam); FT.dp=-FT.dp; fHudNames(); sfx.pop(); });
 $("fTap").addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); $("fTap").classList.add("press"); fHit(-999,-999); });
 ["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fTap").addEventListener(ev,()=>$("fTap").classList.remove("press")));
 window.addEventListener("keydown",e=>{ if(!FT.on||e.repeat) return; if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")) return; if(e.key===" "||e.key==="Enter"||/^[a-z]$/i.test(e.key)){ e.preventDefault(); fHit(-999,-999); } },true);
@@ -2327,6 +2405,7 @@ if(roomParam){ hide("home"); const code=roomParam.toUpperCase().replace(/[^A-Z0-
 else if(!saved.seenHelp) openHelp();
 if(COURSE_END && !saved.recapSeen && new Date()>=new Date(COURSE_END)){ saved.recapSeen=true; persist(); openRecap(); }
 requestAnimationFrame(loop);
+lbConnect();
 })();
 
 /* Verrutschen in iOS Safari verhindern: Wischen nur dort erlauben, wo wirklich gescrollt werden kann */
