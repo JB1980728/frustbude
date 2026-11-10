@@ -364,6 +364,20 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   #home .tiles{grid-template-columns:repeat(6,1fr);gap:5px;margin-top:8px} #home .tile{padding:6px 2px;font-size:9px;border-radius:12px;white-space:nowrap;overflow:hidden} #home .tile .e{font-size:20px}
   #home .seg button{padding:6px 4px}
 }
+
+#fCtl{display:block!important;padding:8px}
+#fTap{width:100%;padding:16px 8px 12px;border-radius:20px;font-family:var(--comic);font-size:30px;letter-spacing:1.5px;color:#1a0830;background:linear-gradient(180deg,#ffe680,#ffb703);box-shadow:0 6px 0 #b45309;touch-action:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+#fTap small{font-family:Nunito,system-ui;font-size:11.5px;font-weight:800;letter-spacing:0}
+#fTap.press{transform:translateY(4px);box-shadow:0 2px 0 #b45309}
+#fTap.dis{filter:grayscale(.6) brightness(.75)}
+.fside .fn small{background:#ffd23f;color:#1a0830;padding:1px 6px;border-radius:6px;margin:0 6px 0 0}
+.fside.R .pips{justify-content:flex-end}.fside .pips{margin-top:4px}
+#fStun{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:min(80%,300px);background:rgba(40,6,20,.9);border:2px solid #ff6b6b;border-radius:18px;padding:10px 12px;text-align:center;pointer-events:none;display:none}
+#fStun b{display:block;font-family:var(--comic);font-weight:400;font-size:30px;color:#ff6b6b;line-height:1}
+#fStun span{display:block;font-weight:900;font-size:13px;margin-top:4px}
+#fStun .bar{height:7px;border-radius:99px;background:rgba(255,255,255,.15);margin-top:7px;overflow:hidden}#fStun .bar i{display:block;height:100%;background:#ff6b6b}
+#fight.spec #fCtl{display:none!important}
+.midtool{margin:4px 0 10px}
 </style>
 </head>
 <body>
@@ -376,7 +390,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="iconbtn" id="menuBtn" aria-label="Menü">🏠</button>
     <button class="iconbtn" id="muteBtn" aria-label="Ton an/aus">🔊</button>
   </header>
-  <div class="frust">
+  <div class="frust" style="display:none">
     <div class="lbl">FRUST</div>
     <div class="meter"><i id="frustFill"></i></div>
     <div class="val" id="frustVal">100 % · Kochend 🌋</div>
@@ -463,9 +477,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="big">ZEIT UM!</div>
   <div class="sub" id="timeSub">Starke Leistung.</div>
   <div class="stats">
-    <div class="stat"><b id="tScore">0</b><span>Punkte</span></div>
     <div class="stat"><b id="tKO">0</b><span>K.O.s</span></div>
-    <div class="stat"><b id="tBest">0</b><span>Dein Rekord</span></div>
+    <div class="stat"><b id="tScore">0</b><span>Treffer</span></div>
+    <div class="stat"><b id="tBest">0</b><span>Rekord (K.O.s)</span></div>
   </div>
   <div class="fine" id="tRankHint" style="margin:-4px 0 12px"></div>
   <button class="cta" id="tAgain">NOCHMAL! 🔁</button>
@@ -580,13 +594,15 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
       <div class="vs">VS</div>
       <div class="team B"><h4>TEAM GELB</h4><div id="teamB"></div></div>
     </div>
+    <div class="tlab" style="text-align:center">In der Mitte hängt:</div>
+    <div class="midtool" id="midTool"></div>
     <div class="specline" id="specLine"></div>
     <div id="hostCtl">
       <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
       <div class="seg" id="lobbyLv"><button data-lv="easy">🤖 Bots leicht</button><button data-lv="hard">🤖 Bots schwer</button></div>
     </div>
     <div class="fine" id="lobbyInfo" style="margin:0 0 10px"></div>
-    <div class="classline" id="waitLine" style="display:none">⏳ Warte, bis der Host den Kampf startet. Such dir solange oben euer Tool aus!</div>
+    <div class="classline" id="waitLine" style="display:none">⏳ Warte, bis der Host den Kampf startet.</div>
     <button class="cta alt sm" id="botFill" style="margin-bottom:10px">🤖 LEERE PLÄTZE MIT BOTS FÜLLEN</button>
     <div class="row2" id="teamBtns" style="margin-bottom:10px"><button class="cta alt sm" id="toA">→ LILA</button><button class="cta alt sm" id="toB">→ GELB</button></div>
     <button class="cta red" id="startDuel">LOS GEHT'S! 🔔</button>
@@ -594,20 +610,17 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   </div>
 </div></div>
 
-<!-- Duell im Tekken-Stil -->
+<!-- Duell: Tauziehen -->
 <div id="fight" class="hidden">
   <div class="fbar">
-    <div class="fside L"><div class="fn"><span id="fNameL"></span><small id="fYouTag">⬅ DU</small></div><div class="fhp"><i class="gh" id="fGhL"></i><i class="hp" id="fHpL"></i></div><div class="fmeta"><span id="fToolL"></span><span class="pips" id="fPipsL"></span></div><div class="fsub" id="fSubL"></div></div>
-    <div class="fmid"><div class="ftime" id="fTime">45</div><div class="fround" id="fRound">RUNDE 1</div></div>
-    <div class="fside R"><div class="fn"><span id="fNameR"></span></div><div class="fhp"><i class="gh" id="fGhR"></i><i class="hp" id="fHpR"></i></div><div class="fmeta"><span class="pips" id="fPipsR"></span><span id="fToolR"></span></div><div class="fsub" id="fSubR"></div></div>
+    <div class="fside L"><div class="fn"><small id="fYouTag">DU</small><span id="fNameL"></span></div><span class="pips" id="fPipsL"></span><div class="fsub" id="fSubL"></div></div>
+    <div class="fmid"><div class="ftime" id="fTime">30</div><div class="fround" id="fRound">RUNDE 1</div></div>
+    <div class="fside R"><div class="fn"><span id="fNameR"></span></div><span class="pips" id="fPipsR"></span><div class="fsub" id="fSubR"></div></div>
   </div>
-  <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div><div id="fState"></div>
+  <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div>
+    <div id="fStun"><b>😵‍💫 OVERLOADED!</b><span>Getroffen – kurz nicht hauen</span><div class="bar"><i id="fStunBar"></i></div></div>
     <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
-  <div id="fCtl">
-    <button class="fbtn big" data-a="jab"><span class="e">👊</span><b>HAUEN</b><small>schnell tippen</small></button>
-    <button class="fbtn" data-a="block" id="fBlockBtn"><span class="e">🛡️</span><b>BLOCKEN</b><small>gedrückt halten</small></button>
-    <button class="fbtn okb" data-a="ok" id="fOkBtn"><span class="e">💢</span><b>OVERKILL</b><small id="fOk">0 %</small></button>
-  </div>
+  <div id="fCtl"><button id="fTap">👊 HAU DRAUF! <small>so schnell du kannst – oder überall aufs Bild tippen</small></button></div>
   <div id="fReacts" class="reacts"></div>
 </div>
 
@@ -719,7 +732,7 @@ const BADGES = [
   {id:"love",e:"❤️",t:"Herzensbrecher",d:"50 Liebes-Treffer",f:s=>(s.w.love||0)>=50},
   {id:"zen",e:"🧘",t:"Zen-Meister",d:"3 Zen-Momente",f:s=>s.zen>=3},
   {id:"wall",e:"📌",t:"Wand-Poet",d:"Zettel angepinnt",f:s=>s.wall>=1},
-  {id:"speed",e:"⏱️",t:"Blitz-Boxer",d:"5.000 Punkte in 30 Sek.",f:s=>s.timeBest>=5000},
+  {id:"speed",e:"⏱️",t:"Blitz-Boxer",d:"10 K.O.s in 30 Sek.",f:s=>(s.timeKO||0)>=10},
   {id:"team",e:"🤝",t:"Teamplayer",d:"Ein 2-gegen-2 gespielt",f:s=>s.teamGames>=1},
 ];
 const REACTIONS = ["🔥","😂","👏","🍅","😱","💪","❤️"];
@@ -1393,11 +1406,11 @@ function startTime(){
 }
 function endTime(){
   state="over"; items=[]; $("timer").style.display="none";
-  const lvk=saved.level==="hard"?"hard":"easy"; saved.timeBestLv=saved.timeBestLv||{}; const best=saved.timeBestLv[lvk]||0;
-  const rec=score>best; if(rec){ saved.timeBestLv[lvk]=score; saved.timeBest=Math.max(saved.timeBest||0,score); persist(); postScore(lvk==="hard"?"timeHard":"time",score); }
-  $("tScore").textContent=fmt(score); $("tKO").textContent=tKO; $("tBest").textContent=fmt(saved.timeBestLv[lvk]||0)+(lvk==="hard"?" 🔥":" 😌");
-  $("timeSub").textContent=rec&&score>0?"🏆 Neuer Rekord! Der Frust hatte keine Chance.":pick(["Starke Leistung. Die Tools zittern.","Nicht schlecht! Noch eine Runde?","Frust abgebaut, Puls erhöht. Perfekt."]);
-  $("tRankHint").textContent = saved.name ? `Level ${lv.label} · Punkte ×${lv.mult} · Dein Rekord steht in der Rangliste als „${saved.name}“.` : "Tipp: Leg im Profil einen Spitznamen an, dann landet dein Rekord in der Rangliste.";
+  const lvk=saved.level==="hard"?"hard":"easy"; saved.koBestLv=saved.koBestLv||{}; const best=saved.koBestLv[lvk]||0;
+  const rec=tKO>best; if(rec){ saved.koBestLv[lvk]=tKO; saved.timeKO=Math.max(saved.timeKO||0,tKO); persist(); postScore(lvk==="hard"?"koHard":"ko",tKO); }
+  $("tKO").textContent=tKO; $("tScore").textContent=hits; $("tBest").textContent=(saved.koBestLv[lvk]||0)+(lvk==="hard"?" 🔥":" 😌");
+  $("timeSub").textContent=rec&&tKO>0?"🏆 Neuer Rekord! Der Frust hatte keine Chance.":pick(["Starke Leistung. Die Tools zittern.","Nicht schlecht! Noch eine Runde?","Frust abgebaut, Puls erhöht. Perfekt."]);
+  $("tRankHint").textContent = saved.name ? `Level ${lv.label} · Dein K.O.-Rekord steht in der Rangliste als „${saved.name}“.` : "Tipp: Leg im Profil einen Spitznamen an, dann landet dein Rekord in der Rangliste.";
   sfx.ding(); confetti(W/2,H*.6,60); checkBadges(true); setTimeout(()=>show("timeEnd"),500);
 }
 
@@ -1491,13 +1504,6 @@ const HELP=[
    <li><span class="e">🔓</span><span>🙌🏻 🚀 ❤️ schaltest du durch K.O.s und Combos frei.</span></li>
    <li><span class="e">💢</span><span>OVERKILL-Meter voll? ${touchDev?"Unten rechts auf 💢 tippen":"<kbd>Leertaste</kbd> drücken oder 💢 klicken"} – dann regnet es alles auf einmal!</span></li>
    <li><span class="e">🛡️</span><span>Fliegt etwas auf dich zu? Schnell wegtippen! Trifft es dich, bist du kurz <b>Overloaded</b> und kannst nicht schlagen.</span></li></ul>`,
-  ()=>`<h3>🥋 Spezial-Moves</h3><table class="mvtable"><tr><th>Move</th><th>Handy</th><th>Computer</th></tr>
-   <tr><td>Haken</td><td>seitlich wischen</td><td>ziehen oder <kbd>Q</kbd>/<kbd>E</kbd></td></tr>
-   <tr><td>Uppercut</td><td>nach oben wischen</td><td>hochziehen oder <kbd>W</kbd></td></tr>
-   <tr><td>Super-Schlag</td><td>halten & loslassen</td><td>Maus halten oder <kbd>R</kbd> halten</td></tr>
-   <tr><td>Trommelfeuer</td><td>3× schnell tippen</td><td>3× schnell klicken</td></tr>
-   <tr><td>OVERKILL</td><td>💢 tippen</td><td><kbd>Leertaste</kbd></td></tr></table>
-   <p style="font-size:12.5px;color:var(--muted)">Weitere Tasten: <kbd>1</kbd>–<kbd>8</kbd> Waffe · <kbd>M</kbd> Ton · <kbd>Esc</kbd> Menü<br>🔊 Kein Ton? Lautstärke hoch und 🔊 oben rechts prüfen.</p>`,
   ()=>`<h3>⚔️ Modi & Level</h3><ul>
    <li><span class="e">👊</span><span><b>Einfach draufhauen:</b> nur tippen, keine Gegenwehr, keine Regeln.</span></li>
    <li><span class="e">🥊</span><span><b>Freies Spiel:</b> Tool aussuchen, 3 K.O.s, dann der Endgegner. Jedes Tool kämpft anders!</span></li>
@@ -1530,7 +1536,7 @@ function renderStats(){
     sub.querySelectorAll("button").forEach(b=>b.onclick=()=>{ statsSub=b.dataset.s; renderStats(); });
     $("statsSub").textContent = saved.name ? `Du spielst als „${saved.name}“ ${myBadge()}` : "Lege im Profil einen Spitznamen an, um in die Ranglisten zu kommen.";
     if(!LBDATA){ list.innerHTML='<div class="empty">Ranglisten laden … oder gerade nicht erreichbar.</div>'; return; }
-    const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Pkt.",time:"Pkt.",timeHard:"Pkt.",boss:"×"}[statsSub];
+    const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Treffer",time:"K.O.s",timeHard:"K.O.s",boss:"×"}[statsSub];
     if(!rows.length){ list.innerHTML='<div class="empty">Noch niemand hier. Sei die erste Person! 🏆</div>'; return; }
     rows.forEach((r,i)=>{ const d=document.createElement("div"); d.className="lbrow"; d.innerHTML=`<div class="pos">${i+1}</div><div class="nm"></div><div class="v">${fmt(r.v)} <small style="font-family:Nunito;font-size:11px;color:var(--muted)">${unit}</small></div>`;
       d.querySelector(".nm").textContent=`${r.badge||""} ${r.name}`; list.appendChild(d); });
@@ -1669,27 +1675,26 @@ function renderRoom(prev){
     hide("home"); show("duel"); $("duelEntry").style.display="none"; $("duelLobby").style.display="block"; renderLobby();
   } else if(st.phase==="live"){
     hide("duel"); hide("home"); hide("pick");
-    if(R.round!==st.round){ R.round=st.round; hide("results"); const mine=me(); openFight({local:false,myTeam:mine&&mine.role==="player"?mine.team:"A",spec:R.role!=="player",myId:R.you,format:st.format}); }
+    if(R.round!==st.round){ R.round=st.round; hide("results"); const mine=me(); openFight({local:false,myTeam:mine&&mine.role==="player"?mine.team:"A",spec:R.role!=="player",myId:R.you,format:st.format,level:st.level}); }
   }
 }
-function teamToolBtn(team){ const st=R.st, t=NAMES[st.tools&&st.tools[team]]||null, mine=me(), botTeam=!st.people.some(p=>p.role==="player"&&p.team===team&&!p.isBot);
-  const can=mine&&mine.role==="player"&&(mine.team===team||(botTeam&&st.hostId===R.you));
+function midToolBtn(){ const st=R.st, t=NAMES[st.tool]||null, can=st.hostId===R.you;
   const b=document.createElement("button"); b.className="tpick"+(can?"":" ro"); b.innerHTML=`<span class="dot"></span><span class="tn"></span>${can?'<span class="ch">ändern</span>':""}`;
-  b.querySelector(".dot").style.background=t?toolBg(t):"rgba(255,255,255,.15)"; b.querySelector(".tn").textContent=t?`${t.ic} ${t.name}`:"Noch kein Tool";
-  if(can) b.onclick=()=>openPick(id=>{ rsend({t:"tool",team,tool:id}); show("duel"); },"WER BOXT FÜR EUCH?","Such euer Tool aus. Es steht im Ring und kämpft für euer Team.");
+  b.querySelector(".dot").style.background=t?toolBg(t):"rgba(255,255,255,.15)"; b.querySelector(".tn").textContent=t?`${t.ic} ${t.name}`:(can?"Tool aussuchen (sonst Zufall)":"Der Host sucht das Tool aus");
+  if(can) b.onclick=()=>openPick(id=>{ rsend({t:"tool",tool:id}); show("duel"); },"WELCHES TOOL HÄNGT IN DER MITTE?","Diese Boxbirne hängt zwischen euch. Wer sie schneller wegschiebt, gewinnt.");
   return b; }
 function renderLobby(){
   const st=R.st, isHost=st.hostId===R.you, mine=me(); $("roomCode").textContent=st.code;
-  if(R.rulesFor!==st.code){ R.rulesFor=st.code; modeIntro("fight",()=>show("duel"),true); }
+  if(R.rulesFor!==st.code){ R.rulesFor=st.code; modeIntro("fight",()=>show("duel"),true,{level:st.level}); }
   ["A","B"].forEach(t=>{ const box=$("team"+t); box.innerHTML=""; const ps=st.people.filter(p=>p.role==="player"&&p.team===t); const cap=st.format==="2v2"?2:1;
     ps.forEach(p=>{ const d=document.createElement("div"); d.className="p"; d.textContent=`${p.isBot?"🤖":(p.badge||"🥊")} ${p.name}${p.id===R.you?" (du)":""}`; if(p.id===st.hostId){ const h=document.createElement("span"); h.className="host"; h.textContent="👑"; d.appendChild(h); } box.appendChild(d); });
-    for(let i=ps.length;i<cap;i++){ const s=document.createElement("div"); s.className="slot"; s.textContent="Wartet …"; box.appendChild(s); }
-    const lab=document.createElement("div"); lab.className="tlab"; lab.textContent="Kämpft mit:"; box.appendChild(lab); box.appendChild(teamToolBtn(t)); });
+    for(let i=ps.length;i<cap;i++){ const s=document.createElement("div"); s.className="slot"; s.textContent="Wartet …"; box.appendChild(s); } });
+  const mt=$("midTool"); mt.innerHTML=""; mt.appendChild(midToolBtn());
   const specs=st.people.filter(p=>p.role==="spectator"); $("specLine").textContent=specs.length?`👀 Zuschauer: ${specs.map(p=>p.name).join(", ")}`:"";
   $("hostCtl").style.display=isHost?"block":"none";
   document.querySelectorAll("#lobbyFmt button").forEach(b=>b.classList.toggle("on",b.dataset.f===st.format));
   document.querySelectorAll("#lobbyLv button").forEach(b=>b.classList.toggle("on",b.dataset.lv===st.level));
-  $("lobbyInfo").textContent=(st.format==="2v2"?"2 gegen 2: Ihr steuert zu zweit einen Kämpfer.":"1 gegen 1")+" · Wer zuerst 2 Runden gewinnt, hat gewonnen."+(isHost?"":" Der Host startet.");
+  $("lobbyInfo").textContent=(st.format==="2v2"?"2 gegen 2: Eure Treffer zählen zusammen.":"1 gegen 1")+" · Wer zuerst 2 Runden gewinnt, hat gewonnen."+(isHost?"":" Der Host startet.");
   $("teamBtns").style.display=(st.format==="2v2"&&mine&&mine.role==="player")?"grid":"none";
   const ps=st.people.filter(p=>p.role==="player"), ok=ps.some(p=>p.team==="A")&&ps.some(p=>p.team==="B");
   const cap=st.format==="2v2"?4:2, hasBots=st.people.some(p=>p.isBot), full=ps.length>=cap;
@@ -1702,7 +1707,7 @@ function renderLobby(){
 function duelPush(){} function duelTick(){} function botTick(){} function renderArena(){} function renderDuelBar(){} function sendAttack(){} function receiveAttack(){}
 
 /* ===================== Erklär-Popup vor jedem Modus ===================== */
-function modeInfo(kind){
+function modeInfo(kind,o){
   const L=LV[saved.level], tap=touchDev?"Tippe":"Klicke";
   const M={
     tap:{e:"👊",t:"EINFACH DRAUFHAUEN",g:`${tap} so oft und so schnell du kannst – egal wohin. Niemand wehrt sich. Einfach Frust raus!`,
@@ -1710,19 +1715,20 @@ function modeInfo(kind){
     free:{e:"🥊",t:"FREIES SPIEL",g:"Such dir ein Tool aus und hau es K.O. Nach 3 K.O.s wartet der Endgegner.",
       l:(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Wenig“: Es wirft nichts zurück"]]
         :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: kurz roter Kasten, du kannst nicht schlagen"]])
-        .concat([["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen"]])},
+        .concat([["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen"]])},
     time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
-      l:[["👆",`${tap} auf die Boxbirne – jeder Treffer gibt Punkte`],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
+      l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
-    fight:{e:"⚔️",t:"DUELL",g:"Dein Tool (links, mit „DU“) boxt gegen das Tool rechts. Wessen Balken oben zuerst leer ist, verliert die Runde. Wer 2 Runden gewinnt, gewinnt das Duell.",
-      l:[["👊",`HAUEN: ${tap} so schnell du kannst`],["🛡️","BLOCKEN gedrückt halten: Schläge machen dann kaum Schaden"],["✋","Hat der Gegner das 🛡️ oben, prallst du ab – kurz warten, dann wieder hauen"],["😵‍💫","Getroffen? Dann kannst du einen Moment nichts tun"],["💢","OVERKILL leuchtet rot? Antippen = Riesenschlag"]].concat(touchDev?[]:[["⌨️","Tasten: J hauen · L blocken (halten) · Leertaste OVERKILL"]])},
+    fight:{e:"⚔️",t:"DUELL: TAUZIEHEN",g:"Eine Boxbirne hängt zwischen euch. Hau drauf, so schnell du kannst – jeder Treffer schiebt sie zum Gegner. Erreicht sie deine Seite, verlierst du die Runde.",
+      l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
+        .concat((o&&o.level||saved.level)==="hard"?[["🛡️","Schwer: Die Boxbirne wirft Sachen nach dir – antippen, sonst bist du kurz „Overloaded“"]]:[]).concat(touchDev?[]:[["⌨️","Am Computer: Leertaste oder jede Buchstabentaste"]])},
   };
   return M[kind];
 }
 let miGo=null;
-function modeIntro(kind,go,okOnly){
-  const m=modeInfo(kind); miGo=go; $("miE").textContent=m.e; $("miT").textContent=m.t; $("miG").textContent=m.g;
+function modeIntro(kind,go,okOnly,o){
+  const m=modeInfo(kind,o); miGo=go; $("miE").textContent=m.e; $("miT").textContent=m.t; $("miG").textContent=m.g;
   $("miL").innerHTML=m.l.map(([e,t])=>`<li><span class="e">${e}</span><span>${esc(t)}</span></li>`).join("");
   $("miGo").textContent=okOnly?"VERSTANDEN 👍":"LOS GEHT'S!"; $("miBack").style.display=okOnly?"none":"block";
   hide("home"); hide("duel"); show("modeIntro");
@@ -1730,8 +1736,8 @@ function modeIntro(kind,go,okOnly){
 $("miGo").onclick=()=>{ hide("modeIntro"); const f=miGo; miGo=null; if(f) f(); };
 $("miBack").onclick=()=>{ hide("modeIntro"); miGo=null; if(R.ws||R.st) leaveRoom(true); openHome(); };
 
-/* ===================== Duell im Tekken-Stil ===================== */
-const FT={on:false,local:false,g:null,v:null,myTeam:"A",spec:false,myId:"me",format:"1v1",an:{L:{},R:{}},fx:[],words:[],banner:"",bannerSub:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,ghost:{L:1,R:1},time:0,blocking:false};
+/* ===================== Duell: Tauziehen mit der Boxbirne ===================== */
+const FT={on:false,local:false,g:null,v:null,myTeam:"A",spec:false,myId:"me",format:"1v1",level:"easy",fx:[],words:[],gloves:[],items:[],banner:"",bannerSub:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,time:0,dp:0,swing:0,swingV:0,stun:0,itemT:3,flash:{L:0,R:0}};
 const fcv=$("fc"), fctx=fcv.getContext("2d"); let FW=0,FH=0,FD=1;
 function fResize(){ const r=$("fStage").getBoundingClientRect(); FW=r.width; FH=r.height; FD=Math.min(window.devicePixelRatio||1,2.5); fcv.width=Math.round(FW*FD); fcv.height=Math.round(FH*FD); }
 const otherT=t=>t==="A"?"B":"A";
@@ -1740,159 +1746,126 @@ const sideOf=t=>t===FT.myTeam?"L":"R";
 function teamNames(team){ const pl=FT.v?Object.values(FT.v.players).filter(p=>p.team===team):[]; return pl.map(p=>(p.bot?"🤖 ":"")+p.name); }
 function teamTitle(team){ const n=teamNames(team); if(FT.format==="2v2"||n.length>1) return (team==="A"?"TEAM LILA":"TEAM GELB"); return n[0]||(team==="A"?"Lila":"Gelb"); }
 function openFight(o){
-  Object.assign(FT,{on:true,local:o.local,myTeam:o.myTeam||"A",spec:!!o.spec,myId:o.myId||"me",format:o.format||"1v1",an:{L:{},R:{}},fx:[],words:[],banner:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,ghost:{L:1,R:1},blocking:false});
+  Object.assign(FT,{on:true,local:o.local,myTeam:o.myTeam||"A",spec:!!o.spec,myId:o.myId||"me",format:o.format||"1v1",level:o.level||"easy",fx:[],words:[],gloves:[],items:[],banner:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,dp:0,swing:0,swingV:0,stun:0,itemT:3});
   if(!o.local){ FT.g=null; FT.v=null; }
-  ["home","duel","pick","results","help","zen"].forEach(hide);
-  state="idle"; items=[]; document.body.classList.add("fighting"); $("fight").classList.remove("hidden"); $("fight").classList.toggle("spec",FT.spec);
+  ["home","duel","pick","results","help","zen","modeIntro"].forEach(hide);
+  state="idle"; items=[]; $("fight").classList.remove("hidden"); $("fight").classList.toggle("spec",FT.spec);
   fResize(); fHudNames(); sfx.ding();
 }
-function closeFight(){ FT.on=false; FT.g=null; FT.v=null; $("fight").classList.add("hidden"); document.body.classList.remove("fighting"); }
+function closeFight(){ FT.on=false; FT.g=null; FT.v=null; $("fight").classList.add("hidden"); $("fStun").style.display="none"; }
 const BOT_NAMES=["Bot Bernd","Bot Lotte","Bot Kalle","Bot Frieda","Bot Ronny","Bot Uschi"];
-function startBotFight(myTool){
+function startBotFight(tool){
   if(R.ws){ R.leaving=true; try{ R.ws.close(); }catch(e){} R.ws=null; } R.local=true; R.st=null;
-  const pool=TOOLS.map(t=>t.id).filter(id=>id!==myTool), botTool=pool[(Math.random()*pool.length)|0];
-  FT.lastTools=[myTool]; FT.g=FIGHT.newFight({tools:{A:myTool,B:botTool},players:[{id:"me",team:"A",name:saved.name||"Du"},{id:"bot",team:"B",name:pick(BOT_NAMES),bot:true,level:saved.level}]});
+  FT.lastTool=tool; FT.g=FIGHT.newFight({tool,players:[{id:"me",team:"A",name:saved.name||"Du"},{id:"bot",team:"B",name:pick(BOT_NAMES),bot:true,level:saved.level}]});
   FT.v=FIGHT.view(FIGHT.snap(FT.g)); FT.g.ev=[];
-  openFight({local:true,myTeam:"A",myId:"me",format:"1v1"});
+  openFight({local:true,myTeam:"A",myId:"me",format:"1v1",level:saved.level});
 }
-function fAct(a){
-  if(!FT.on||FT.spec||!FT.v) return;
-  if(FT.local){ FIGHT.act(FT.g,"me",a); } else rsend({t:"act",a});
-  if(a==="block1") FT.blocking=true; if(a==="block0") FT.blocking=false;
+// Ein Tipp = ein Treffer
+function fHit(x,y){
+  if(!FT.on||FT.spec||!FT.v||FT.v.phase!=="fight") return;
+  if(fHitItem(x,y)) return;
+  if(FT.stun>0){ sfx.thud(); return; }
+  if(FT.local) FIGHT.act(FT.g,"me","hit"); else { rsend({t:"act",a:"hit"}); fHitFx("L"); }
 }
-function fWord(txt,x,y,size,col,life){ FT.words.push({txt,x,y,size,c:col,age:0,max:life||.8}); }
+function fWord(txt,x,y,size,col,life){ FT.words.push({txt,x,y,size,c:col,age:0,max:life||.6}); if(FT.words.length>14) FT.words.shift(); }
 function fBanner(txt,sub,t){ FT.banner=txt; FT.bannerSub=sub||""; FT.bannerT=t||1.2; }
 function fFloat(e){ const d=document.createElement("div"); d.className="floatE"; d.textContent=e; d.style.left=rand(8,88)+"%"; $("fReact").appendChild(d); setTimeout(()=>d.remove(),2300); }
-function geo(){ const floorY=FH*.86, bw=Math.min(FW*.3,FH*.33,210), bh=bw*1.32, off=Math.max(bw*.78,FW*.23); return {floorY,bw,bh,xL:FW/2-off,xR:FW/2+off}; }
+function geo(){ const top=FH*.14, range=FW*.34, bw=Math.min(FW*.26,FH*.3,180), bh=bw*1.3; return {top,range,bw,bh,cx:FW/2+FT.dp*range,cy:top+FH*.18}; }
+function fHitFx(side){
+  const G2=geo(), dir=side==="L"?1:-1, x=G2.cx-dir*G2.bw*.45, y=G2.cy+G2.bh*rand(.35,.7);
+  FT.gloves.push({side,x,y,t:0}); if(FT.gloves.length>12) FT.gloves.shift();
+  FT.swingV+=dir*rand(1.4,2.2); FT.flash[side]=.12;
+  if(side==="L"||FT.spec){ sfx.punch(); if(Math.random()<.35) fWord(pick(["POW!","BAM!","ZACK!","WUMMS!"]),x+dir*10,y-30,clamp(FW*.06,20,30),"#ffd23f",.5); for(let i=0;i<5;i++){ const a=rand(0,Math.PI*2),v=rand(80,260); FT.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,r:rand(2,4),c:pick(["#ffd23f","#fff"]),life:.4,max:.4}); } }
+  else if(Math.random()<.5) sfx.thud();
+}
 function fEvents(evs){
-  const G2=geo();
   for(const e of evs){
-    if(e.k==="hit"){
-      const s=sideOf(e.team), d=s==="L"?"R":"L"; FT.an[s].punch={move:e.move,t:0};
-      const ix=d==="R"?G2.xR-G2.bw*.45:G2.xL+G2.bw*.45, iy=G2.floorY-G2.bh*(e.move==="heavy"?.72:.6);
-      const sz=clamp(FW*.06,20,34);
-      if(e.blocked){ sfx.block(); fWord("GEBLOCKT",ix,iy-20,sz*.8,"#7dd3fc",.7); fSpark(ix,iy,["#7dd3fc","#ffffff"],8); }
-      else {
-        if(e.move==="ok"){ sfx.boom(); fWord("OVERKILL!",FW/2,FH*.32,sz*1.6,"#ff4d4d",1.2); fSpark(ix,iy,["#ff7b00","#ffd23f","#ff3d00"],40); FT.shake=22; }
-        else if(e.move==="heavy"){ sfx.heavy(); fWord(e.broke?"DECKUNG WEG!":e.counter?"KONTER!":pick(["WUMMS!","KAWUMM!","BÄM!"]),ix,iy-24,sz*1.1,e.broke?"#ff8fab":"#ffd23f",.9); fSpark(ix,iy,["#ffd23f","#ffffff"],18); FT.shake=12; }
-        else { sfx.punch(); fWord(e.counter?"KONTER!":pick(["POW!","ZACK!","BAM!"]),ix,iy-18,e.counter?sz*1.1:sz*.8,e.counter?"#4ade80":"#ffd23f",.6); fSpark(ix,iy,["#ffd23f","#ffffff"],8); }
-        fWord("-"+e.dmg,ix+(d==="R"?24:-24),iy+18,sz*.7,"#ff6b6b",.7);
-      }
-      if(!FT.spec&&teamOf(s)===FT.myTeam&&!e.blocked){ addHate(FT.v.tools[otherT(FT.myTeam)]); }
-      if(!FT.spec&&teamOf(d)===FT.myTeam&&!e.blocked) buzz(e.move==="jab"?15:[40,20,40]);
-    } else if(e.k==="start"){ if(e.move==="heavy") sfx.whoosh(); if(e.move==="ok") sfx.roar(); }
-    else if(e.k==="round"){
-      const wn=e.winner==="draw"?"Unentschieden":`${teamTitle(e.winner)} holt die Runde`;
-      fBanner(e.ko?"K.O.!":"ZEIT!",wn,2.4); if(e.ko){ sfx.boom(); if(!FT.spec&&e.winner===FT.myTeam) addHate("_ko"); } else sfx.ding();
-    }
+    if(e.k==="hit"){ const s=sideOf(e.team); if(FT.local||!(s==="L"&&e.pid===FT.myId)) fHitFx(s); if(!FT.spec&&e.pid===FT.myId) addHate(FT.v.tool); }
+    else if(e.k==="round"){ const lose=!FT.spec&&e.winner!=="draw"&&e.winner!==FT.myTeam; fBanner(e.ko?(FT.spec?"K.O.!":lose?"AUTSCH!":"K.O.!"):"ZEIT!",e.winner==="draw"?"Unentschieden":`${teamTitle(e.winner)} holt die Runde`,2.4); e.ko?sfx.boom():sfx.ding(); if(e.ko) FT.swingV+=(sideOf(e.winner)==="L"?1:-1)*6; }
   }
 }
-function fSpark(x,y,cols,n){ for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2),v=rand(120,420); FT.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-80,r:rand(2,5),c:pick(cols),life:rand(.3,.6),max:.6}); } }
+// Schwer: Die Boxbirne wirft zurück
+function fItemsTick(dt){
+  if(FT.level!=="hard"||FT.spec||!FT.v||FT.v.phase!=="fight"){ FT.items=[]; return; }
+  FT.itemT-=dt; if(FT.itemT<=0){ FT.itemT=rand(2.2,3.6); const G2=geo(); FT.items.push({e:pick(["🍅","📎","🍪","📧","🔔","⚖️"]),x0:G2.cx,y0:G2.cy+G2.bh*.4,tx:rand(FW*.12,FW*.88),ty:rand(FH*.5,FH*.88),t:0,dur:1.25}); sfx.whoosh(); }
+  for(let i=FT.items.length-1;i>=0;i--){ const it=FT.items[i]; it.t+=dt; if(it.t>=it.dur){ FT.items.splice(i,1); FT.stun=1.6; sfx.hurtMe(); buzz([60,30,60]); } }
+}
+function fItemPos(it){ const k=clamp(it.t/it.dur,0,1); return {x:it.x0+(it.tx-it.x0)*k, y:it.y0+(it.ty-it.y0)*k-FH*.25*Math.sin(k*Math.PI), s:.6+k*1.6}; }
+function fHitItem(x,y){ for(let i=FT.items.length-1;i>=0;i--){ const p=fItemPos(FT.items[i]); if(Math.hypot(x-p.x,y-p.y)<34*p.s+12){ FT.items.splice(i,1); sfx.block(); fWord("WEG!",p.x,p.y-20,22,"#4ade80",.5); return true; } } return false; }
 function fHudNames(){
-  ["L","R"].forEach(s=>{ const t=teamOf(s), tool=FT.v?NAMES[FT.v.tools[t]]:null;
-    $("fName"+s).textContent=FT.v?teamTitle(t):""; $("fTool"+s).textContent=tool?`${tool.ic} ${tool.name}`:"";
-    const n=teamNames(t); $("fSub"+s).textContent=(FT.format==="2v2"||n.length>1)?n.join(" & "):""; });
-  $("fYouTag").textContent=FT.spec?"👀 Du schaust zu":"⬅ DU";
+  ["L","R"].forEach(s=>{ const t=teamOf(s); $("fName"+s).textContent=FT.v?teamTitle(t):""; const n=teamNames(t); $("fSub"+s).textContent=(FT.format==="2v2"||n.length>1)?n.join(" & "):""; });
+  $("fYouTag").textContent=FT.spec?"👀":"DU";
 }
 function fHud(){
   const v=FT.v; if(!v) return;
-  ["L","R"].forEach(s=>{ const f=v.f[teamOf(s)], p=f.hp/f.max; $("fHp"+s).style.width=(p*100)+"%"; FT.ghost[s]=Math.max(p,FT.ghost[s]-.004); if(FT.ghost[s]<p) FT.ghost[s]=p; $("fGh"+s).style.width=(FT.ghost[s]*100)+"%";
-    $("fPips"+s).innerHTML=[0,1].map(i=>`<i class="${i<v.wins[teamOf(s)]?"on":""}"></i>`).join(""); });
-  const left=Math.max(0,Math.ceil(v.dur-v.t)); $("fTime").textContent=v.phase==="fight"||v.phase==="roundEnd"?left:v.round===1&&v.phase==="intro"?"⏳":left; $("fTime").classList.toggle("warn",v.phase==="fight"&&left<=10);
+  ["L","R"].forEach(s=>{ $("fPips"+s).innerHTML=[0,1].map(i=>`<i class="${i<v.wins[teamOf(s)]?"on":""}"></i>`).join(""); });
+  const left=Math.max(0,Math.ceil(v.dur-v.t)); $("fTime").textContent=v.phase==="intro"&&v.round===1?"⏳":left; $("fTime").classList.toggle("warn",v.phase==="fight"&&left<=5);
   $("fRound").textContent=`RUNDE ${v.round}`;
-  if(!FT.spec){ const f=v.f[FT.myTeam], pl=v.players[FT.myId]||{cd:0}, busy=v.phase!=="fight"||f.stun>0||!!f.act;
-    document.querySelectorAll("#fCtl .fbtn").forEach(b=>{ const a=b.dataset.a; let dis=v.phase!=="fight"||f.stun>0; if(a==="ok") dis=dis||f.ok<100; b.classList.toggle("dis",dis); });
-    $("fOkBtn").style.setProperty("--p",f.ok+"%"); $("fOk").textContent=f.ok>=100?"BEREIT!":`${Math.round(f.ok)} %`; $("fOkBtn").classList.toggle("ready",f.ok>=100);
-    $("fBlockBtn").classList.toggle("held",FT.blocking);
-
-  }
+  const st=$("fStun"); const on=FT.stun>0&&!FT.spec; st.style.display=on?"block":"none"; if(on) $("fStunBar").style.width=clamp(FT.stun/1.6,0,1)*100+"%";
+  $("fTap").classList.toggle("dis",FT.stun>0||v.phase!=="fight");
 }
 function fLoop(dt){
-  if(!FT.on) return; FT.time+=dt;
-  if(FT.local&&FT.g){ let r=dt; while(r>1e-4){ const h=Math.min(1/60,r); r-=h; FIGHT.bot(FT.g,"bot",h); FIGHT.step(FT.g,h); } const s=FIGHT.snap(FT.g); FT.v=FIGHT.view(s); const ev=FT.g.ev; FT.g.ev=[]; fEvents(ev); }
+  if(!FT.on) return; FT.time+=dt; FT.stun=Math.max(0,FT.stun-dt);
+  if(FT.local&&FT.g){ let r=dt; while(r>1e-4){ const h=Math.min(1/60,r); r-=h; FIGHT.bot(FT.g,"bot",h); FIGHT.step(FT.g,h); } FT.v=FIGHT.view(FIGHT.snap(FT.g)); const ev=FT.g.ev; FT.g.ev=[]; fEvents(ev); }
   const v=FT.v;
   if(v){
     if(v.phase!==FT.lastPhase||v.round!==FT.lastRound){
-      if(v.phase==="intro") fBanner(`RUNDE ${v.round}`,v.round===1?`${teamTitle("A")}  vs  ${teamTitle("B")}`:"",1.5);
-      if(v.phase==="fight"&&FT.lastPhase==="intro") { fBanner("LOS!","",.7); sfx.ding(); }
+      if(v.phase==="intro") fBanner(`RUNDE ${v.round}`,v.round===1?`${teamTitle(FT.myTeam)}  vs  ${teamTitle(otherT(FT.myTeam))}`:"",1.5);
+      if(v.phase==="fight"&&FT.lastPhase==="intro"){ fBanner("LOS!","",.7); sfx.ding(); }
       if(FT.lastPhase===""||v.round!==FT.lastRound) fHudNames();
       FT.lastPhase=v.phase; FT.lastRound=v.round;
     }
     if(v.phase==="over"&&!FT.ended){ FT.ended=true; setTimeout(fResults,2300); }
-    ["L","R"].forEach(s=>{ const a=FT.an[s], f=v.f[teamOf(s)]; if(a.punch){ a.punch.t+=dt; if(a.punch.t>.24) a.punch=null; } a.koT=f.ko?(a.koT||0)+dt:0; });
+    const target=(FT.myTeam==="A"?1:-1)*v.pos; FT.dp+=(target-FT.dp)*(1-Math.exp(-dt*12));
   }
+  FT.swingV+=(-FT.swing*30-FT.swingV*4)*dt; FT.swing+=FT.swingV*dt; FT.swing=clamp(FT.swing,-.6,.6);
+  fItemsTick(dt);
   for(let i=FT.fx.length-1;i>=0;i--){ const p=FT.fx[i]; p.life-=dt; if(p.life<=0){ FT.fx.splice(i,1); continue; } p.vy+=600*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; }
   for(let i=FT.words.length-1;i>=0;i--){ const w=FT.words[i]; w.age+=dt; w.y-=30*dt; if(w.age>w.max) FT.words.splice(i,1); }
-  FT.bannerT=Math.max(0,FT.bannerT-dt); FT.shake=(FT.shake||0)*Math.exp(-10*dt);
+  for(let i=FT.gloves.length-1;i>=0;i--){ FT.gloves[i].t+=dt; if(FT.gloves[i].t>.22) FT.gloves.splice(i,1); }
+  FT.flash.L=Math.max(0,FT.flash.L-dt); FT.flash.R=Math.max(0,FT.flash.R-dt);
+  FT.bannerT=Math.max(0,FT.bannerT-dt);
   fRender(); fHud();
   const bn=$("fBanner"); if(FT.bannerT>0){ bn.style.opacity=Math.min(1,FT.bannerT*4); bn.querySelector("b").textContent=FT.banner; bn.querySelector("span").textContent=FT.bannerSub; } else bn.style.opacity=0;
 }
+function fEmoji(c,e,x,y,size,flip,rot){ c.save(); c.translate(x,y); if(rot) c.rotate(rot); if(flip) c.scale(-1,1); c.font=`${size}px ${EMOJI_FONT}`; c.textAlign="center"; c.textBaseline="middle"; c.fillText(e,0,0); c.restore(); }
 function fRender(){
   const c=fctx; c.setTransform(FD,0,0,FD,0,0); c.clearRect(0,0,FW,FH);
-  const G2=geo();
-  c.save(); if(FT.shake>.5&&!reduced) c.translate(rand(-FT.shake,FT.shake)*.5,rand(-FT.shake,FT.shake)*.5);
-  // Hintergrund: Ring mit Scheinwerfern
-  let g=c.createLinearGradient(0,0,0,FH); g.addColorStop(0,"#1a0b33"); g.addColorStop(.6,"#2d1258"); g.addColorStop(1,"#12061f"); c.fillStyle=g; c.fillRect(-20,-20,FW+40,FH+40);
-  [FW*.25,FW*.75].forEach((x,i)=>{ const sg=c.createRadialGradient(x,0,10,x,FH*.6,FH*.8); sg.addColorStop(0,i?"rgba(255,210,63,.18)":"rgba(168,85,247,.22)"); sg.addColorStop(1,"rgba(0,0,0,0)"); c.fillStyle=sg; c.beginPath(); c.moveTo(x-30,0); c.lineTo(x+30,0); c.lineTo(x+FW*.35,G2.floorY); c.lineTo(x-FW*.35,G2.floorY); c.fill(); });
-  c.strokeStyle="rgba(255,255,255,.18)"; c.lineWidth=3; for(let k=0;k<3;k++){ const y=G2.floorY-G2.bh*(.35+k*.28); c.beginPath(); c.moveTo(0,y); c.lineTo(FW,y); c.stroke(); }
-  c.fillStyle="#3b1d6b"; c.fillRect(0,G2.floorY,FW,FH-G2.floorY); c.fillStyle="rgba(255,255,255,.08)"; c.fillRect(0,G2.floorY,FW,4);
-  c.font=`${Math.round(FH*.12)}px ${COMIC}`; c.textAlign="center"; c.fillStyle="rgba(255,255,255,.05)"; c.fillText("FRUST·BUDE",FW/2,G2.floorY-G2.bh*1.15);
-  if(FT.v){ drawFighter("L",G2); drawFighter("R",G2); }
-  FT.fx.forEach(p=>{ c.globalAlpha=clamp(p.life/p.max*1.5,0,1); c.fillStyle=p.c; c.beginPath(); c.arc(p.x,p.y,p.r,0,Math.PI*2); c.fill(); }); c.globalAlpha=1;
-  FT.words.forEach(w=>{ const a=clamp((w.max-w.age)/.25,0,1), pop=w.age<.1?.5+w.age*5:1; c.save(); c.translate(w.x,w.y); c.scale(pop,pop); c.globalAlpha=a; c.font=`${Math.round(w.size)}px ${COMIC}`; c.textAlign="center"; c.textBaseline="middle"; c.lineJoin="round"; c.lineWidth=Math.max(3,w.size*.16); c.strokeStyle="#1a0830"; c.strokeText(w.txt,0,0); c.fillStyle=w.c; c.fillText(w.txt,0,0); c.restore(); });
-  c.restore();
-}
-function fEmoji(c,e,x,y,size,flip,rot){ c.save(); c.translate(x,y); if(rot) c.rotate(rot); if(flip) c.scale(-1,1); c.font=`${size}px ${EMOJI_FONT}`; c.textAlign="center"; c.textBaseline="middle"; c.fillText(e,0,0); c.restore(); }
-function drawFighter(s,G2){
-  const c=fctx, team=teamOf(s), f=FT.v.f[team], tool=NAMES[FT.v.tools[team]]||TOOLS[0], a=FT.an[s], dir=s==="L"?1:-1;
-  const {bw,bh,floorY}=G2, x0=s==="L"?G2.xL:G2.xR, t=FT.time;
-  let dx=0, lean=0, fall=0;
-  if(f.hitT>0){ dx-=dir*f.hitT*90; }
-  if(f.act==="heavy"){ const k=clamp(1-f.actT/FIGHT.MOVES.heavy.start,0,1); lean=-dir*k*.16; }
-  if(f.stun>0) lean+=Math.sin(t*14)*.05;
-  if(a.koT) fall=Math.min(1,a.koT/.45);
-  const bob=(f.ko?0:Math.sin(t*4+(s==="L"?0:1.7))*bh*.012);
-  // Schatten
-  c.fillStyle="rgba(0,0,0,.35)"; c.beginPath(); c.ellipse(x0+dx,floorY+4,bw*.62,bw*.13,0,0,Math.PI*2); c.fill();
-  c.save(); c.translate(x0+dx,floorY); c.rotate(lean-dir*fall*1.35); c.translate(0,bob);
-  const top=-bh, w=bw;
-  // Aura bei OVERKILL
-  if(f.act==="ok"||f.ok>=100&&!f.ko){ const pulse=.5+.5*Math.sin(t*10); c.save(); c.shadowColor="#ff3b3b"; c.shadowBlur=(f.act==="ok"?40:16)*pulse+6; c.fillStyle="rgba(255,60,60,.0)"; rr(c,-w/2,top,w,bh,w*.26); c.strokeStyle=`rgba(255,80,80,${.35+.4*pulse})`; c.lineWidth=4; c.stroke(); c.restore(); }
-  // Körper
-  const gr=c.createLinearGradient(-w/2,0,w/2,0); gr.addColorStop(0,mix(tool.color,"#ffffff",.25)); gr.addColorStop(.55,tool.color2?mix(tool.color,tool.color2,.5):tool.color); gr.addColorStop(1,mix(tool.color2||tool.color,"#000000",.3));
-  rr(c,-w/2,top,w,bh,w*.26); c.fillStyle=gr; c.fill(); c.lineWidth=3; c.strokeStyle="rgba(0,0,0,.5)"; c.stroke();
-  c.save(); rr(c,-w/2,top,w,bh,w*.26); c.clip(); c.fillStyle="rgba(255,255,255,.18)"; c.fillRect(-w/2+w*.12,top+bh*.08,w*.1,bh*.7);
-  if(f.hitT>0){ c.fillStyle=`rgba(255,255,255,${f.hitT/.18*.7})`; c.fillRect(-w,top,w*2,bh); } c.restore();
-  // Gesicht
-  const ink=lum(tool.color)>.5?"#1a0830":"#ffffff", ey=top+bh*.27, ex=w*.17, er=w*.085;
-  if(f.ko||fall>0){ c.strokeStyle=ink; c.lineWidth=3; [-1,1].forEach(k=>{ const cx=k*ex; c.beginPath(); c.moveTo(cx-er,ey-er); c.lineTo(cx+er,ey+er); c.moveTo(cx+er,ey-er); c.lineTo(cx-er,ey+er); c.stroke(); }); }
-  else { [-1,1].forEach(k=>{ const cx=k*ex; c.fillStyle="#fff"; c.beginPath(); c.ellipse(cx,ey,er,er*1.1,0,0,Math.PI*2); c.fill(); c.strokeStyle="rgba(0,0,0,.4)"; c.lineWidth=1.5; c.stroke(); c.fillStyle="#140a1f"; c.beginPath(); c.arc(cx+dir*er*.4,ey+er*.1,er*.5,0,Math.PI*2); c.fill();
-      c.strokeStyle=ink; c.lineWidth=3.5; c.beginPath(); c.moveTo(cx-er*1.2,ey-er*1.5-(k===dir?-er*.5:0)); c.lineTo(cx+er*1.2,ey-er*1.5-(k===dir?0:-er*.5)); c.stroke(); }); }
-  c.strokeStyle=ink; c.lineWidth=3.5; c.beginPath(); const my=top+bh*.43; if(f.hitT>0||f.stun>0){ c.ellipse(0,my,w*.07,w*.06,0,0,Math.PI*2); } else if(f.hp/f.max<.35){ c.arc(0,my+w*.08,w*.12,Math.PI*1.15,Math.PI*1.85); } else { c.moveTo(-w*.13,my); c.quadraticCurveTo(0,my+w*.08,w*.13,my-w*.02); } c.stroke();
-  // Namensschild
-  const tw=w*.8, th=bh*.2, ty=top+bh*.58; c.fillStyle="rgba(255,255,255,.93)"; rr(c,-tw/2,ty,tw,th,th*.3); c.fill(); c.strokeStyle="rgba(0,0,0,.2)"; c.lineWidth=1.5; c.stroke();
+  const G2=geo(), v=FT.v, tool=v?(NAMES[v.tool]||TOOLS[0]):TOOLS[0];
+  let g=c.createLinearGradient(0,0,0,FH); g.addColorStop(0,"#1a0b33"); g.addColorStop(1,"#2d1258"); c.fillStyle=g; c.fillRect(0,0,FW,FH);
+  // Seiten: links DU (lila), rechts Gegner (gelb) – Gefahr blinkt rot
+  const edge=FW*.12, danger=FT.dp<-.55, pulse=.5+.5*Math.sin(FT.time*12);
+  [["L",0,"168,85,247"],["R",FW-edge,"255,210,63"]].forEach(([s,x,col])=>{ const gr=c.createLinearGradient(s==="L"?0:FW,0,s==="L"?edge:FW-edge,0); const red=s==="L"&&danger&&!FT.spec;
+    gr.addColorStop(0,red?`rgba(239,68,68,${.55+.3*pulse})`:`rgba(${col},.45)`); gr.addColorStop(1,`rgba(${col},0)`); c.fillStyle=gr; c.fillRect(x,0,edge,FH); });
+  c.font=`${Math.round(clamp(FW*.04,13,20))}px ${COMIC}`; c.textAlign="center"; c.textBaseline="middle";
+  c.save(); c.translate(edge*.42,FH*.62); c.rotate(-Math.PI/2); c.fillStyle="#e9d5ff"; c.fillText(FT.spec?teamTitle(teamOf("L")):"DEINE SEITE",0,0); c.restore();
+  c.save(); c.translate(FW-edge*.42,FH*.62); c.rotate(Math.PI/2); c.fillStyle="#fde68a"; c.fillText(FT.spec?teamTitle(teamOf("R")):"GEGNER-SEITE",0,0); c.restore();
+  // Schiene und Fortschritt
+  const railY=G2.top*.55; c.strokeStyle="#b8bdd0"; c.lineWidth=5; c.beginPath(); c.moveTo(edge,railY); c.lineTo(FW-edge,railY); c.stroke();
+  c.fillStyle="rgba(255,255,255,.25)"; c.fillRect(FW/2-1.5,railY-12,3,24);
+  c.fillStyle="#fff"; c.beginPath(); c.arc(G2.cx,railY,7,0,Math.PI*2); c.fill();
+  // Pfeile: in welche Richtung du schiebst
+  if(!FT.spec){ c.globalAlpha=.25+.15*Math.sin(FT.time*5); c.font=`${Math.round(FH*.1)}px ${COMIC}`; c.fillStyle="#c4b5fd"; c.fillText("→ → →",FW/2,FH*.86); c.globalAlpha=1; }
+  // Boxbirne
+  c.save(); c.translate(G2.cx,railY); c.rotate(FT.swing);
+  c.strokeStyle="#b8bdd0"; c.lineWidth=3; c.beginPath(); c.moveTo(0,0); c.lineTo(0,G2.cy-railY); c.stroke();
+  c.translate(0,G2.cy-railY);
+  const w=G2.bw, h=G2.bh, gr2=c.createLinearGradient(-w/2,0,w/2,0); gr2.addColorStop(0,mix(tool.color,"#ffffff",.25)); gr2.addColorStop(.55,tool.color2?mix(tool.color,tool.color2,.5):tool.color); gr2.addColorStop(1,mix(tool.color2||tool.color,"#000000",.3));
+  rr(c,-w/2,0,w,h,w*.28); c.fillStyle=gr2; c.fill(); c.lineWidth=3; c.strokeStyle="rgba(0,0,0,.5)"; c.stroke();
+  const fl=Math.max(FT.flash.L,FT.flash.R); if(fl>0){ c.save(); rr(c,-w/2,0,w,h,w*.28); c.clip(); c.fillStyle=`rgba(255,255,255,${fl/.12*.5})`; c.fillRect(-w,0,w*2,h); c.restore(); }
+  const ink=lum(tool.color)>.5?"#1a0830":"#ffffff", ey=h*.27, ex=w*.17, er=w*.085, look=FT.dp>0?1:-1;
+  [-1,1].forEach(k=>{ const x=k*ex; c.fillStyle="#fff"; c.beginPath(); c.ellipse(x,ey,er,er*1.1,0,0,Math.PI*2); c.fill(); c.fillStyle="#140a1f"; c.beginPath(); c.arc(x+look*er*.4,ey,er*.5,0,Math.PI*2); c.fill(); c.strokeStyle=ink; c.lineWidth=3; c.beginPath(); c.moveTo(x-er*1.2,ey-er*1.6); c.lineTo(x+er*1.2,ey-er*1.6+(k<0?er*.6:-er*.6)*-1); c.stroke(); });
+  c.strokeStyle=ink; c.lineWidth=3.5; c.beginPath(); c.ellipse(0,h*.44,w*.08,w*.06,0,0,Math.PI*2); c.stroke();
+  const tw=w*.84, th=h*.2, ty=h*.6; c.fillStyle="rgba(255,255,255,.93)"; rr(c,-tw/2,ty,tw,th,th*.3); c.fill();
   fEmoji(c,tool.ic,-tw/2+th*.55,ty+th/2+1,th*.62);
-  c.fillStyle="#140a1f"; const nm=tool.name.length>11?tool.name.split(" ").pop():tool.name; let fs=th*.5; c.font=`${fs}px ${COMIC}`; while(c.measureText(nm).width>tw-th*1.25&&fs>8){ fs--; c.font=`${fs}px ${COMIC}`; } c.textAlign="left"; c.textBaseline="middle"; c.fillText(nm,-tw/2+th*1.05,ty+th/2+1);
-  // Handschuhe
-  const gs=w*.42, reach=Math.max(10,(G2.xR-G2.xL)-bw*1.15);
-  let fx=w*.62, fy=top+bh*.42, bx=w*.42, by=top+bh*.56;
-  if(f.guard){ fx=w*.42; fy=top+bh*.22; bx=w*.3; by=top+bh*.42; }
-  if(f.act==="heavy"){ const k=clamp(1-f.actT/FIGHT.MOVES.heavy.start,0,1); fx=w*(.48-.6*k); fy=top+bh*(.5-.12*k); }
-  if(f.act==="ok"){ fx=w*.1; fy=top+bh*.2; }
-  if(a.punch){ const e=Math.sin(Math.min(1,a.punch.t/.2)*Math.PI); const r=a.punch.move==="jab"?reach*.92:reach; fx=w*.62+e*r; fy=top+bh*(a.punch.move==="heavy"?.32:.45); }
-  const flip=dir===1;
-  c.save(); c.scale(dir,1);
-  fEmoji(c,"🥊",bx,by,gs*.92,flip?false:false,0);
-  if(a.punch&&a.punch.move==="ok"){ fEmoji(c,"💥",fx,fy,gs*2.2); }
-  fEmoji(c,"🥊",fx,fy,gs*(a.punch&&a.punch.move!=="jab"?1.35:1.05),false,a.punch&&a.punch.move==="heavy"?-.5:0);
+  c.fillStyle="#140a1f"; const nm=tool.name.length>11?tool.name.split(" ").pop():tool.name; let fs=th*.5; c.font=`${fs}px ${COMIC}`; while(c.measureText(nm).width>tw-th*1.25&&fs>8){ fs--; c.font=`${fs}px ${COMIC}`; } c.textAlign="left"; c.fillText(nm,-tw/2+th*1.05,ty+th/2+1);
   c.restore();
-  if(f.guard){ c.save(); c.strokeStyle="rgba(125,211,252,.85)"; c.lineWidth=4; c.beginPath(); c.arc(dir*w*.35,top+bh*.4,bh*.45,-Math.PI/2.6,Math.PI/2.6); if(dir<0){ c.beginPath(); c.arc(-w*.35,top+bh*.4,bh*.45,Math.PI-Math.PI/2.6,Math.PI+Math.PI/2.6); } c.stroke(); c.restore(); }
-  if(f.guard) fEmoji(c,"🛡️",dir*w*.55,top+bh*.3,w*.55);
-  { const me=!FT.spec&&team===FT.myTeam, lab=me?"DU":(FT.spec?teamTitle(team):"GEGNER"); c.font=`${Math.round(Math.max(13,w*.16))}px ${COMIC}`; c.textAlign="center"; c.textBaseline="middle"; const yy=top-w*.42-(f.stun>0?w*.18:0); const tw2=c.measureText(lab).width+16;
-    c.fillStyle=me?"#ffd23f":"rgba(255,255,255,.18)"; rr(c,-tw2/2,yy-w*.11,tw2,w*.22,w*.11); c.fill(); c.fillStyle=me?"#1a0830":"#fff"; c.fillText(lab,0,yy+1); }
-  if(f.act==="heavy"){ c.font=`${Math.round(w*.35)}px ${COMIC}`; c.textAlign="center"; c.fillStyle="#ff4d4d"; c.strokeStyle="#1a0830"; c.lineWidth=4; c.strokeText("!",0,top-w*.18); c.fillText("!",0,top-w*.18); }
-  if(f.stun>0&&!f.ko){ for(let i=0;i<3;i++){ const ang=t*5+i*2.1; fEmoji(c,"💫",Math.cos(ang)*w*.35,top-w*.12+Math.sin(ang)*w*.08,w*.22); } }
-  c.restore();
+  // Handschuhe, die zuschlagen
+  FT.gloves.forEach(gl=>{ const k=Math.sin(Math.min(1,gl.t/.2)*Math.PI), dir=gl.side==="L"?1:-1, sx=gl.side==="L"?edge*.4:FW-edge*.4, x=sx+(gl.x-sx)*k; fEmoji(c,"🥊",x,gl.y,G2.bw*.4,gl.side==="L"); });
+  // fliegende Sachen (Schwer)
+  FT.items.forEach(it=>{ const p=fItemPos(it); c.fillStyle="rgba(239,68,68,.35)"; c.beginPath(); c.arc(p.x,p.y,30*p.s,0,Math.PI*2); c.fill(); fEmoji(c,it.e,p.x,p.y,30*p.s); });
+  FT.fx.forEach(p=>{ c.globalAlpha=clamp(p.life/p.max*1.5,0,1); c.fillStyle=p.c; c.beginPath(); c.arc(p.x,p.y,p.r,0,Math.PI*2); c.fill(); }); c.globalAlpha=1;
+  FT.words.forEach(w2=>{ const a=clamp((w2.max-w2.age)/.2,0,1); c.save(); c.globalAlpha=a; c.font=`${Math.round(w2.size)}px ${COMIC}`; c.textAlign="center"; c.lineWidth=4; c.strokeStyle="#1a0830"; c.strokeText(w2.txt,w2.x,w2.y); c.fillStyle=w2.c; c.fillText(w2.txt,w2.x,w2.y); c.restore(); });
 }
 function fResults(){
   if(!FT.on||!FT.v) return; const v=FT.v, w=v.winner, el=$("resWinner");
@@ -1902,29 +1875,24 @@ function fResults(){
   else { el.textContent=`${teamTitle(w)} GEWINNT!`; el.style.color="#ff6b6b"; }
   $("resSub").textContent=`Runden ${v.wins[FT.myTeam]} : ${v.wins[otherT(FT.myTeam)]}`+(!FT.spec&&w===FT.myTeam?" · Stark!":!FT.spec&&w!=="draw"?" · Revanche?":"");
   const list=$("resList"); list.innerHTML="";
-  Object.values(v.players).sort((a,b)=>b.st.dmg-a.st.dmg).forEach(p=>{ const d=document.createElement("div"); d.className="resrow "+p.team+(p.id===FT.myId&&!FT.spec?" me":"");
-    d.innerHTML=`<div>${p.team===w?"🏆":"🥊"}</div><div class="nm"></div><div class="v">${fmt(p.st.dmg)} 💥</div>`; d.querySelector(".nm").textContent=`${p.bot?"🤖 ":""}${p.name} · ${p.st.hits} Treffer · ${p.st.blocks} geblockt`; list.appendChild(d); });
+  Object.values(v.players).sort((a,b)=>b.st.hits-a.st.hits).forEach(p=>{ const d=document.createElement("div"); d.className="resrow "+p.team+(p.id===FT.myId&&!FT.spec?" me":"");
+    d.innerHTML=`<div>${p.team===w?"🏆":"🥊"}</div><div class="nm"></div><div class="v">${fmt(p.st.hits)} 👊</div>`; d.querySelector(".nm").textContent=`${p.bot?"🤖 ":""}${p.name} · Treffer`; list.appendChild(d); });
   if(!FT.spec&&w===FT.myTeam){ if(!FT.local){ saved.duelWins=(saved.duelWins||0)+1; } persist(); checkBadges(true); confetti(W/2,H*.5,80); sfx.ding(); } else sfx.thud();
   if(FT.format==="2v2"&&!FT.spec){ saved.teamGames=(saved.teamGames||0)+1; persist(); }
   $("rematchBtn").textContent=FT.local?"NOCHMAL! ⚔️":"REVANCHE! ⚔️"; $("resMenu").textContent=FT.local?"🏠 Hauptmenü":"🏠 Raum verlassen & Hauptmenü";
   $("rematchBtn").style.display=FT.spec?"none":"block";
   show("results");
 }
-// Steuerung
-document.querySelectorAll("#fCtl .fbtn").forEach(b=>{
-  const a=b.dataset.a;
-  b.addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); b.classList.add("press"); if(a==="block") fAct("block1"); else fAct(a); try{ b.setPointerCapture(e.pointerId); }catch(err){} });
-  const up=()=>{ b.classList.remove("press"); if(a==="block") fAct("block0"); };
-  b.addEventListener("pointerup",up); b.addEventListener("pointercancel",up); b.addEventListener("lostpointercapture",up);
-});
-window.addEventListener("keydown",e=>{ if(!FT.on||e.repeat) return; if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")) return; const k=e.key.toLowerCase();
-  if(k==="j"||k==="a"||k==="enter"){ fAct("jab"); e.preventDefault(); } else if(k==="l"||k==="d"||k==="shift"){ fAct("block1"); e.preventDefault(); } else if(k===" "){ fAct("ok"); e.preventDefault(); } },true);
-window.addEventListener("keyup",e=>{ if(!FT.on) return; const k=e.key.toLowerCase(); if(k==="l"||k==="d"||k==="shift") fAct("block0"); },true);
+// Steuerung: überall tippen (mehrere Finger zählen)
+function fPointer(e){ e.preventDefault(); ensureAudio(); const r=$("fStage").getBoundingClientRect(); fHit(e.clientX-r.left,e.clientY-r.top); }
+$("fStage").addEventListener("pointerdown",e=>{ if(e.target.closest("#fExit")) return; fPointer(e); });
+$("fTap").addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); $("fTap").classList.add("press"); fHit(-999,-999); });
+["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fTap").addEventListener(ev,()=>$("fTap").classList.remove("press")));
+window.addEventListener("keydown",e=>{ if(!FT.on||e.repeat) return; if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")) return; if(e.key===" "||e.key==="Enter"||/^[a-z]$/i.test(e.key)){ e.preventDefault(); fHit(-999,-999); } },true);
 $("fExit").onclick=()=>{ if(FT.local){ closeFight(); openHome(); } else if(confirmLeave()) leaveRoom(); };
-function confirmLeave(){ if(FT.spec||!FT.v||FT.v.phase==="over") return true; if(FT.exitArmed&&performance.now()-FT.exitArmed<2500) return true; FT.exitArmed=performance.now(); toast("Nochmal tippen zum Verlassen – dein Tool kämpft dann als Bot weiter.",2400); return false; }
+function confirmLeave(){ if(FT.spec||!FT.v||FT.v.phase==="over") return true; if(FT.exitArmed&&performance.now()-FT.exitArmed<2500) return true; FT.exitArmed=performance.now(); toast("Nochmal tippen zum Verlassen – ein Bot übernimmt dann für dich.",2400); return false; }
 $("fReacts").innerHTML=REACTIONS.map(e=>`<button>${e}</button>`).join(""); $("fReacts").querySelectorAll("button").forEach(b=>b.onclick=()=>{ rsend({t:"react",e:b.textContent}); sfx.pop(); });
 new ResizeObserver(()=>{ if(FT.on) fResize(); }).observe($("fStage"));
-
 
 /* ===================== Tipps für Ratlose ===================== */
 const tipsShown=new Set(); let lastTipT=0, lastInputT=performance.now(), handT=0;
@@ -2057,7 +2025,7 @@ canvas.addEventListener("pointerdown",e=>{
   if(!(state==="alive"||state==="boss")) return;
   if(stunT>0) return;
   if(hitItem(x,y)) return;
-  if(chill&&state==="alive"){ fire(x,y); return; }
+  fire(x,y); return;
   if(hitPop(x,y)) return;
   try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
   G_={id:e.pointerId,x,y,cx:x,cy:y,t:performance.now(),down:true,moved:false,lastStep:-1};
@@ -2085,13 +2053,10 @@ window.addEventListener("keydown",e=>{
   const n=parseInt(e.key,10); if(n>=1&&n<=WEAPONS.length){ const w=WEAPONS[n-1]; if(isUnlocked(w)){ weapon=w; renderWeapons(); } else toast(`🔒 ${w.emoji} ${w.name} ist noch gesperrt.`); return; }
   if(!playable()) return;
   const [cx,cy]=targetCenter();
-  if(k==="q"&&!e.repeat) moveHaken(cx+G.bw*.2,cy,-1);
-  if(k==="e"&&!e.repeat) moveHaken(cx-G.bw*.2,cy,1);
-  if(k==="w"&&!e.repeat) moveUpper(cx,cy+G.bh*.15);
-  if(k==="r"&&!e.repeat){ rHeld=performance.now(); G_={id:"key",x:cx,y:cy,cx,cy,t:rHeld,down:true,moved:false,lastStep:-1}; }
+  if((k==="j"||k==="enter")&&!e.repeat) fire(cx+rand(-G.bw*.2,G.bw*.2),cy+rand(-G.bh*.2,G.bh*.2));
 });
 window.addEventListener("keyup",e=>{
-  if(e.key.toLowerCase()==="r"&&G_&&G_.id==="key"){ const g=G_; G_=null; if(!playable()) return; const ch=chargeOf(g); if(ch>0) moveSuper(g.x,g.y,ch); else fire(g.x,g.y); }
+
 });
 // Schütteln
 let lastShake=0, motionOn=false;
@@ -2153,7 +2118,7 @@ $("duelX").onclick=()=>{ if(R.ws) leaveRoom(); else { hide("duel"); openHome(); 
 $("createRoom").onclick=()=>{ if(!needName()) return; const code=genCode(); connect(code,"player"); const once=setInterval(()=>{ if(R.st&&R.st.hostId===R.you){ clearInterval(once); rsend({t:"settings",format:newFmt,level:saved.level}); } },200); setTimeout(()=>clearInterval(once),5000); };
 function joinWith(role){ if(!needName()) return; const code=$("joinCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(code.length<4){ toast("Bitte den Raum-Code eingeben."); return; } connect(code,role); }
 $("joinPlay").onclick=()=>joinWith("player");
-$("botDuel").onclick=()=>{ ensureAudio(); hide("duel"); openPick(id=>modeIntro("fight",()=>startBotFight(id)),"DEIN KÄMPFER","Welches Tool soll für dich in den Ring steigen?"); };
+$("botDuel").onclick=()=>{ ensureAudio(); hide("duel"); openPick(id=>modeIntro("fight",()=>startBotFight(id)),"WELCHES TOOL HÄNGT IN DER MITTE?","Diese Boxbirne hängt zwischen dir und dem Bot. Wer sie schneller wegschiebt, gewinnt."); };
 $("botFill").onclick=()=>{ const hasBots=R.st&&R.st.people.some(p=>p.isBot); rsend({t:hasBots?"nobots":"bots"}); sfx.pop(); }; $("joinWatch").onclick=()=>joinWith("spectator");
 document.querySelectorAll("#lobbyFmt button").forEach(b=>b.onclick=()=>rsend({t:"settings",format:b.dataset.f}));
 document.querySelectorAll("#lobbyLv button").forEach(b=>b.onclick=()=>rsend({t:"settings",level:b.dataset.lv}));
@@ -2162,7 +2127,7 @@ $("startDuel").onclick=()=>{ ensureAudio(); enableMotion(); rsend({t:"start"}); 
 $("swapRole").onclick=()=>{ const m=me(); rsend({t:m&&m.role==="player"?"watch":"play"}); };
 $("leaveRoom").onclick=()=>leaveRoom(); $("resMenu").onclick=()=>{ if(FT.on&&FT.local){ hide("results"); closeFight(); openHome(); } else leaveRoom(); };
 
-$("rematchBtn").onclick=()=>{ hide("results"); if(FT.on&&FT.local){ startBotFight(FT.lastTools[0]); return; } rsend({t:"rematch"}); sfx.ding(); };
+$("rematchBtn").onclick=()=>{ hide("results"); if(FT.on&&FT.local){ startBotFight(FT.lastTool); return; } rsend({t:"rematch"}); sfx.ding(); };
 $("shareRoom").onclick=async()=>{ const url=`${location.origin}${location.pathname}?room=${R.code}`, text=`⚔️ Duell in der Frustbude! Raum-Code: ${R.code}`;
   try{ if(navigator.share){ await navigator.share({title:"Frustbude – Duell",text,url}); return; } }catch(e){ if(e&&e.name==="AbortError") return; }
   try{ await navigator.clipboard.writeText(`${text}\n${url}`); toast("📋 Einladung kopiert – ab damit in Slack!"); }catch(e){ toast(`Code: ${R.code}`,4000); } };

@@ -67,7 +67,7 @@ async function ensureSchema(db) {
     db.prepare("CREATE INDEX IF NOT EXISTS wall_vis ON wall(reports, id)"),
     db.prepare("CREATE TABLE IF NOT EXISTS lb (sid TEXT PRIMARY KEY, name TEXT NOT NULL, badge TEXT, wins INTEGER NOT NULL DEFAULT 0, duels INTEGER NOT NULL DEFAULT 0, best_duel INTEGER NOT NULL DEFAULT 0, best_time INTEGER NOT NULL DEFAULT 0, boss INTEGER NOT NULL DEFAULT 0, ts INTEGER)"),
   ]);
-  try { await db.prepare("ALTER TABLE lb ADD COLUMN best_time_hard INTEGER NOT NULL DEFAULT 0").run(); } catch (e) {}
+  for (const col of ["best_time_hard", "best_ko", "best_ko_hard"]) { try { await db.prepare(`ALTER TABLE lb ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {} }
   schemaReady = true;
 }
 
@@ -87,7 +87,7 @@ export class Room extends DurableObject {
     super(ctx, env);
     this.env = env;
     this.conns = new Map();
-    this.st = { code: "", phase: "lobby", format: "1v1", level: "easy", hostId: null, round: 0, tools: { A: null, B: null } };
+    this.st = { code: "", phase: "lobby", format: "1v1", level: "easy", hostId: null, round: 0, tool: null };
     this.bots = [];
     this.g = null;
     this.tick = null;
@@ -117,7 +117,7 @@ export class Room extends DurableObject {
   dropBot() { if (!this.bots.length) return; const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length; const team = a >= b ? "A" : "B"; let i = this.bots.findIndex(x => x.team === team); if (i < 0) i = 0; this.bots.splice(i, 1); }
   pub(c) { return { id: c.id, isBot: !!c.isBot, name: c.name, badge: c.badge, role: c.role, team: c.team }; }
   state() {
-    return { t: "state", now: Date.now(), code: this.st.code, phase: this.st.phase, format: this.st.format, level: this.st.level, hostId: this.st.hostId, round: this.st.round, tools: this.st.tools,
+    return { t: "state", now: Date.now(), code: this.st.code, phase: this.st.phase, format: this.st.format, level: this.st.level, hostId: this.st.hostId, round: this.st.round, tool: this.st.tool,
       people: [...[...this.conns.values()].filter(c => c.joined), ...this.bots].map(c => this.pub(c)) };
   }
   sync() { this.broadcast(this.state()); }
@@ -152,7 +152,7 @@ export class Room extends DurableObject {
     if (!c.joined) return;
 
     if (m.t === "act" && st.phase === "live" && this.g && c.role === "player") {
-      if (["jab", "heavy", "ok", "block1", "block0"].includes(m.a)) FIGHT.act(this.g, c.id, m.a);
+      if (m.a === "hit") { const n = Math.max(1, Math.min(4, Math.floor(Number(m.n) || 1))); for (let i = 0; i < n; i++) FIGHT.act(this.g, c.id, "hit"); }
       return;
     }
     if (m.t === "react" && REACTIONS.includes(m.e) && now - c.lastReact > 350) { c.lastReact = now; this.broadcast({ t: "react", e: m.e }); return; }
@@ -163,11 +163,7 @@ export class Room extends DurableObject {
     }
     if (st.phase !== "lobby") return;
 
-    if (m.t === "tool" && (m.team === "A" || m.team === "B") && TOOL_IDS.includes(m.tool)) {
-      const humansInTeam = this.humans().some(p => p.team === m.team);
-      if ((c.role === "player" && c.team === m.team) || (!humansInTeam && st.hostId === c.id)) { st.tools[m.team] = m.tool; this.sync(); }
-      return;
-    }
+    if (m.t === "tool" && TOOL_IDS.includes(m.tool) && st.hostId === c.id) { st.tool = m.tool; this.sync(); return; }
     if (m.t === "team" && c.role === "player" && st.format === "2v2" && (m.team === "A" || m.team === "B")) {
       if (this.players().filter(p => p.team === m.team).length < 2) { c.team = m.team; this.sync(); }
       return;
@@ -201,10 +197,8 @@ export class Room extends DurableObject {
     if (m.t === "start") {
       const ps = this.players();
       if (!ps.some(p => p.team === "A") || !ps.some(p => p.team === "B")) { this.send(c, { t: "error", msg: "Im anderen Team fehlt noch jemand." }); return; }
-      const pool = TOOL_IDS.filter(id => id !== st.tools.A && id !== st.tools.B).sort(() => Math.random() - .5);
-      if (!st.tools.A) st.tools.A = pool.pop();
-      if (!st.tools.B) st.tools.B = pool.pop();
-      this.g = FIGHT.newFight({ tools: { ...st.tools }, players: ps.map(p => ({ id: p.id, team: p.team, name: p.name, bot: !!p.isBot, level: st.level })) });
+      if (!st.tool) st.tool = TOOL_IDS[(Math.random() * TOOL_IDS.length) | 0];
+      this.g = FIGHT.newFight({ tool: st.tool, players: ps.map(p => ({ id: p.id, team: p.team, name: p.name, bot: !!p.isBot, level: st.level })) });
       st.phase = "live"; st.round++;
       this.sync();
       this.run();
@@ -238,7 +232,7 @@ export class Room extends DurableObject {
       await ensureSchema(db);
       const stmts = [...this.conns.values()].filter(c => c.joined && g.players[c.id] && !g.players[c.id].bot && c.sid && c.name && c.name !== "Anonym").map(c =>
         db.prepare("INSERT INTO lb (sid, name, badge, wins, duels, best_duel, ts) VALUES (?, ?, ?, ?, 1, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, wins = wins + excluded.wins, duels = duels + 1, best_duel = MAX(best_duel, excluded.best_duel), ts = excluded.ts")
-          .bind(c.sid, c.name, c.badge, g.winner === g.players[c.id].team ? 1 : 0, Math.round(g.players[c.id].st.dmg), Date.now()));
+          .bind(c.sid, c.name, c.badge, g.winner === g.players[c.id].team ? 1 : 0, Math.round(g.players[c.id].st.hits), Date.now()));
       if (stmts.length) await db.batch(stmts);
     } catch (e) {}
   }
@@ -249,7 +243,7 @@ export class Room extends DurableObject {
     const st = this.st;
     if (st.hostId === c.id) { const p = this.humans()[0]; st.hostId = p ? p.id : null; }
     // Wer mitten im Kampf geht, wird von einem Bot ersetzt
-    if (this.g && st.phase === "live" && this.g.players[c.id]) { const p = this.g.players[c.id]; p.bot = true; p.level = st.level; p.block = false; p.name = p.name + " (Bot)"; }
+    if (this.g && st.phase === "live" && this.g.players[c.id]) { const p = this.g.players[c.id]; p.bot = true; p.level = st.level; p.name = p.name + " (Bot)"; }
     if (c.joined) { this.broadcast({ t: "feed", txt: `${c.name} hat den Raum verlassen.` }); this.sync(); }
     if (![...this.conns.values()].some(x => x.joined)) { clearInterval(this.tick); this.g = null; this.bots = []; st.phase = "lobby"; }
   }
@@ -323,6 +317,10 @@ export default {
           const score = Math.max(0, Math.min(60000, Math.floor(Number(b.score) || 0)));
           await db.prepare("INSERT INTO lb (sid, name, badge, best_time_hard, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, best_time_hard = MAX(best_time_hard, excluded.best_time_hard), ts = excluded.ts")
             .bind(sid, name, badge, score, Date.now()).run();
+        } else if (b.kind === "ko" || b.kind === "koHard") {
+          const col = b.kind === "koHard" ? "best_ko_hard" : "best_ko", score = Math.max(0, Math.min(200, Math.floor(Number(b.score) || 0)));
+          await db.prepare(`INSERT INTO lb (sid, name, badge, ${col}, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, ${col} = MAX(${col}, excluded.${col}), ts = excluded.ts`)
+            .bind(sid, name, badge, score, Date.now()).run();
         } else if (b.kind === "boss") {
           await db.prepare("INSERT INTO lb (sid, name, badge, boss, ts) VALUES (?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, boss = boss + 1, ts = excluded.ts")
             .bind(sid, name, badge, Date.now()).run();
@@ -334,7 +332,7 @@ export default {
 
       if (path === "/api/leaderboard" && req.method === "GET") {
         const q = (col, extra) => db.prepare(`SELECT name, badge, ${col} AS v FROM lb WHERE ${col} > 0 ${extra || ""} ORDER BY ${col} DESC, ts ASC LIMIT 15`).all().then(r => r.results || []);
-        const [wins, duel, time, timeHard, boss] = await Promise.all([q("wins"), q("best_duel"), q("best_time"), q("best_time_hard"), q("boss")]);
+        const [wins, duel, time, timeHard, boss] = await Promise.all([q("wins"), q("best_duel"), q("best_ko"), q("best_ko_hard"), q("boss")]);
         return json({ wins, duel, time, timeHard, boss });
       }
 
