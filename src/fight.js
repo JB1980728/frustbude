@@ -2,7 +2,7 @@
    Eine Boxbirne hängt in der Mitte. Jeder Treffer schiebt sie zur Gegenseite.
    Erreicht sie deine Seite, verlierst du die Runde. Wer zuerst 2 Runden gewinnt, gewinnt das Duell. */
 const FIGHT = (() => {
-  const ROUND = 30, WIN_ROUNDS = 2, MAX_ROUNDS = 5, PUSH = .034, MAX_RATE = 12;
+  const ROUND = 30, WIN_ROUNDS = 2, MAX_ROUNDS = 5, PUSH = .034, MAX_RATE = 10;
   const BOT = { easy: { rate: [3.2, 4.6] }, hard: { rate: [5.2, 7.2] } };
   const rnd = (a, b) => a + Math.random() * (b - a);
 

@@ -286,6 +286,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #fState{position:absolute;left:50%;top:8px;transform:translateX(-50%);font-weight:900;font-size:12.5px;background:rgba(20,8,40,.85);border:1px solid var(--line);padding:4px 10px;border-radius:999px;pointer-events:none;white-space:nowrap}
 #fState:empty{display:none}
 #fRules{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);font-weight:800;font-size:11.5px;color:#e9e1ff;background:rgba(0,0,0,.4);padding:3px 10px;border-radius:999px;white-space:nowrap;pointer-events:none}
+#fMute{position:absolute;right:46px;top:8px;width:32px;height:32px;flex-basis:32px;font-size:14px}
 #fExit{position:absolute;right:8px;top:8px;width:32px;height:32px;flex-basis:32px;font-size:14px}
 #fReact{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 #fCtl{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:7px;padding:8px}
@@ -414,7 +415,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div id="toast"></div>
     <div id="countdown">3</div>
     <div id="hint"></div>
-    <div id="stunBox"><b>😵‍💫 OVERLOADED!</b><span>Getroffen – kurz nicht schlagen</span><div class="bar"><i id="stunBar"></i></div></div>
+    <div id="stunBox"><b>😵‍💫 OVERLOADED!</b><span>Getroffen – kurz nicht schlagen · OVERKILL −30 %</span><div class="bar"><i id="stunBar"></i></div></div>
     <div id="reactLayer"></div>
     <div id="globalPill" class="glass">🌍 <b id="globalNum">0</b> Klassen-Treffer</div>
     <button id="rageBtn" aria-label="Overkill"><span>💢</span><small id="rageLbl">OVERKILL 0 %</small></button>
@@ -427,6 +428,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Hauptmenü -->
 <div class="overlay" id="home"><div class="card">
+  <button class="x muteToggle" aria-label="Ton aus">🔊</button>
   <div class="big">FRUST·BUDE</div>
   <div class="sub" style="margin-bottom:10px">Tools nerven? Hier darfst du es rauslassen.</div>
   <div class="nametag" id="homeTag" style="align-self:center;display:none"></div>
@@ -619,6 +621,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   </div>
   <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div>
     <div id="fStun"><b>😵‍💫 OVERLOADED!</b><span>Getroffen – kurz nicht hauen</span><div class="bar"><i id="fStunBar"></i></div></div>
+    <button class="iconbtn muteToggle" id="fMute" aria-label="Ton aus">🔊</button>
     <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
   <div id="fCtl"><button id="fTap">👊 HAU DRAUF! <small>so schnell du kannst – oder überall aufs Bild tippen</small></button></div>
   <div id="fReacts" class="reacts"></div>
@@ -1043,7 +1046,7 @@ function note(){} function noteOld(msg){ const now=performance.now(); if(now-not
 function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),ms||2300); }
 
 /* ===================== Freischalten & Abzeichen ===================== */
-function isUnlocked(w){ return !w.unlock || saved.unlocked.includes(w.id); }
+function isUnlocked(w){ return !w.unlock || mode==="time" || saved.unlocked.includes(w.id); }
 function checkUnlocks(){
   WEAPONS.forEach(w=>{ if(!w.unlock||saved.unlocked.includes(w.id)) return;
     const ok = w.unlock.type==="ko" ? saved.allKO>=w.unlock.n : saved.best>=w.unlock.n;
@@ -1122,15 +1125,18 @@ function miss(x,y,w){
   if(w.love) hearts(x,y,5); else burst(x,y,w.colors.slice(0,2),10,420);
   if(!w.rocket) sfx.splat(false);
 }
+// OVERKILL macht zusammen höchstens 40 % der Nerv-Power (beim Endgegner 15 %) – kein Sofort-K.O.
+function rageDmg(){ if(mode==="boss"&&B) return B.max*.15/16; return hpMax*.4/16; }
 function registerHit(w,fromRage,mult){
   const now=performance.now();
   combo=(now-lastHit<1300)?combo+1:1; lastHit=now;
   if(combo>bestCombo) bestCombo=combo;
   if(combo>saved.best){ saved.best=combo; checkUnlocks(); }
   hits++; recentHits.push(now); wUse[w.id]=(wUse[w.id]||0)+1; saved.hitsAll++; saved.w[w.id]=(saved.w[w.id]||0)+1; addHate("w_"+w.id);
-  if(!fromRage){ rage=Math.min(100,rage+(w.rocket?5:7)); updateRage(); }
+  if(!fromRage){ rage=Math.min(100,rage+(w.rocket?4:2.5)); updateRage(); }
   const cb=$("combo"); if(combo>=3){ cb.textContent=`COMBO ×${combo}`; cb.classList.add("on"); cb.classList.remove("pop"); void cb.offsetWidth; cb.classList.add("pop"); }
   checkBadges();
+  if(fromRage) return rageDmg();
   return w.dmg*(1+Math.min(combo-1,10)*.07)*(mult||1);
 }
 function addScore(dmg){ if(mode==="time"||mode==="duel") score+=Math.round(dmg*10*lv.mult); }
@@ -1232,7 +1238,7 @@ function hitPop(x,y){
       if(mode==="time"||mode==="duel") score+=p.kind==="figma"?40:25; rage=Math.min(100,rage+3); updateRage(); return true; } }
   return false;
 }
-function quirkTick(dt){ if(chill) return;
+function quirkTick(dt){ if(chill||mode==="time") return;
   if(mode==="boss"||state!=="alive"||cur.custom) { if(state!=="alive"){ freezeT=0; } return; }
   const q=cur.id; freezeT-=dt;
   bagOffV+=((bagOffTarget-bagOffX)*60-bagOffV*9)*dt; bagOffX+=bagOffV*dt;
@@ -1271,7 +1277,7 @@ function itemLanded(it){
   if(mode==="boss"){ word(pick(["AUTSCH!","ERWISCHT!",it.l]),p.x,p.y-40,clamp(W*.09,30,56),"#ff6b6b"); B.hearts--; updateHUD();
     if(B.hearts<=0){ state="bossLost"; items=[]; say("HAHA! Ich bleibe!"); setTimeout(()=>show("bossLost"),1100); } }
   else if(performance.now()<immuneUntil){ /* gerade erst getroffen: nur Fleck, keine neue Sperre */ }
-  else { stunT=stunMax=Math.max(2,lv.stun||1.3); immuneUntil=performance.now()+stunT*1000+2500; stunCount++; }
+  else { stunT=stunMax=Math.max(2,lv.stun||1.3); immuneUntil=performance.now()+stunT*1000+2500; stunCount++; rage=Math.max(0,rage-30); updateRage(); }
 }
 
 /* ===================== OVERKILL ===================== */
@@ -1282,7 +1288,7 @@ function triggerRage(src){
   if(stunT>0) return;
   if(!(state==="alive"||state==="boss")) return;
   if(rage<100){ if(performance.now()-lastRageToast>2500){ lastRageToast=performance.now(); toast("OVERKILL-Meter noch nicht voll – weiter draufhauen!"); } return; }
-  rage=0; updateRage(); barrage={n:16,t:0};
+  rage=0; updateRage(); barrage={n:16,t:0,total:0};
   word("OVERKILL!",W/2,H*.25,clamp(W*.11,34,70),"#ff6b6b",1.3); sfx.roar(); buzz([60,40,60,40,90]); if(!reduced) shake=26;
   if(mode==="duel") sendAttack("fusion");
 }
@@ -1491,7 +1497,7 @@ function renderHome(){
   renderLevelUI();
 }
 function openHome(){ if(mode==="duel") return; renderHome(); show("home"); }
-function startFrom(fn){ ensureAudio(); enableMotion(); hide("home"); hide("modeIntro"); setDuelUI(false); $("timer").style.display="none"; items=[]; screenSplats=[]; stunT=0; immuneUntil=0; chill=false; lv=LV[saved.level]; fn(); renderChips(); updateHUD(); }
+function startFrom(fn){ ensureAudio(); enableMotion(); hide("home"); hide("modeIntro"); setDuelUI(false); $("timer").style.display="none"; items=[]; screenSplats=[]; stunT=0; immuneUntil=0; chill=false; lv=LV[saved.level]; fn(); if(!isUnlocked(weapon)) weapon=WEAPONS[0]; renderWeapons(); renderChips(); updateHUD(); }
 
 /* ===================== Anleitung ===================== */
 const HELP=[
@@ -1714,10 +1720,10 @@ function modeInfo(kind,o){
       l:[["👆",`Jeder ${touchDev?"Tipp":"Klick"} trifft die Boxbirne`],["🔄","Ist ein Tool K.O., kommt das nächste"],["🏠","Aufhören kannst du jederzeit oben rechts"]]},
     free:{e:"🥊",t:"FREIES SPIEL",g:"Such dir ein Tool aus und hau es K.O. Nach 3 K.O.s wartet der Endgegner.",
       l:(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Wenig“: Es wirft nichts zurück"]]
-        :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: kurz roter Kasten, du kannst nicht schlagen"]])
-        .concat([["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen"]])},
+        :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: Du kannst kurz nicht schlagen und dein OVERKILL verliert 30 %"]])
+        .concat([["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
     time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
-      l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
+      l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
     fight:{e:"⚔️",t:"DUELL: TAUZIEHEN",g:"Eine Boxbirne hängt zwischen euch. Hau drauf, so schnell du kannst – jeder Treffer schiebt sie zum Gegner. Erreicht sie deine Seite, verlierst du die Runde.",
@@ -1885,7 +1891,7 @@ function fResults(){
 }
 // Steuerung: überall tippen (mehrere Finger zählen)
 function fPointer(e){ e.preventDefault(); ensureAudio(); const r=$("fStage").getBoundingClientRect(); fHit(e.clientX-r.left,e.clientY-r.top); }
-$("fStage").addEventListener("pointerdown",e=>{ if(e.target.closest("#fExit")) return; fPointer(e); });
+$("fStage").addEventListener("pointerdown",e=>{ if(e.target.closest("#fExit,#fMute")) return; fPointer(e); });
 $("fTap").addEventListener("pointerdown",e=>{ e.preventDefault(); ensureAudio(); $("fTap").classList.add("press"); fHit(-999,-999); });
 ["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fTap").addEventListener(ev,()=>$("fTap").classList.remove("press")));
 window.addEventListener("keydown",e=>{ if(!FT.on||e.repeat) return; if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")) return; if(e.key===" "||e.key==="Enter"||/^[a-z]$/i.test(e.key)){ e.preventDefault(); fHit(-999,-999); } },true);
@@ -2067,7 +2073,10 @@ function enableMotion(){ /* Schütteln entfernt – OVERKILL per Knopf für alle
 
 /* ===================== Buttons ===================== */
 $("rageBtn").onclick=()=>{ ensureAudio(); triggerRage("btn"); };
-$("muteBtn").onclick=()=>{ muted=!muted; $("muteBtn").textContent=muted?"🔇":"🔊"; ensureAudio(); };
+function setMuted(m){ muted=!!m; saved.muted=muted; persist(); document.querySelectorAll("#muteBtn,.muteToggle").forEach(b=>{ b.textContent=muted?"🔇":"🔊"; b.setAttribute("aria-label",muted?"Ton an":"Ton aus"); }); try{ if(master) master.gain.value=muted?0:.5; }catch(e){} }
+$("muteBtn").onclick=()=>{ ensureAudio(); setMuted(!muted); };
+document.querySelectorAll(".muteToggle").forEach(b=>b.onclick=e=>{ e.stopPropagation(); ensureAudio(); setMuted(!muted); });
+setMuted(!!saved.muted);
 $("menuBtn").onclick=()=>{ if(mode==="duel"){ toast("Mitten im Duell? Erst zu Ende hauen! 😤"); return; } openHome(); };
 $("wallBtn").onclick=()=>{ show("wall"); loadWall(); };
 document.querySelectorAll("#levelSeg button").forEach(b=>b.onclick=()=>{ setLevel(b.dataset.lv); sfx.pop(); });
