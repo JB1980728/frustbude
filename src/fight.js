@@ -31,7 +31,9 @@ const FIGHT = (() => {
     if (a === "block0") { p.block = false; return true; }
     if (g.phase !== "fight") return false;
     const f = g.f[p.team];
-    if (f.stun > 0 || f.act || p.cd > 0 || p.block) return false;
+    // Gedrückt, aber gerade beschäftigt? Kurz merken und sobald wie möglich ausführen
+    if (f.stun > 0 || f.act || p.cd > 0 || p.block) { if (!p.bot && a !== "ok") p.buf = { a, t: g.t }; return false; }
+    p.buf = null;
     if (a === "ok") { if (f.ok < 100) return false; f.ok = 0; p.st.ok++; }
     else if (a !== "jab" && a !== "heavy") return false;
     const m = MOVES[a];
@@ -52,8 +54,8 @@ const FIGHT = (() => {
     dmg = Math.round(dmg);
     def.hp = Math.max(0, def.hp - dmg); def.hitT = .18;
     if (p) { p.st.dmg += dmg; if (!blocked) p.st.hits++; }
-    f.ok = Math.min(100, f.ok + dmg * .22 * m.ok);
-    def.ok = Math.min(100, def.ok + dmg * .3);
+    f.ok = Math.min(100, f.ok + dmg * .2 * m.ok);
+    def.ok = Math.min(100, def.ok + dmg * .12);
     if (counter) { def.act = null; }
     let broke = false;
     if (!blocked) def.stun = Math.max(def.stun, m.stun * (counter ? 1.4 : 1));
@@ -92,6 +94,7 @@ const FIGHT = (() => {
       return;
     }
     g.t += dt;
+    for (const p of Object.values(g.players)) if (p.buf) { const b = p.buf; if (g.t - b.t > .45) p.buf = null; else { p.buf = null; if (!act(g, p.id, b.a) && p.buf) p.buf.t = b.t; } }
     for (const t of ["A", "B"]) {
       const f = g.f[t];
       f.hitT = Math.max(0, f.hitT - dt);
