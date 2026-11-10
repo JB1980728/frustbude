@@ -563,6 +563,14 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 </div></div>
 
 <!-- Boss verloren / Spiel verloren -->
+<div class="overlay hidden" id="gameOver"><div class="card">
+  <div class="big" style="color:#ff6b6b">GAME OVER</div>
+  <div class="sub" id="goSub">Die Tools haben gewonnen … diesmal.</div>
+  <div class="stats"><div class="stat"><b id="goKO">0</b><span>K.O.s</span></div><div class="stat"><b id="goBest">0</b><span>Rekord</span></div><div class="stat"><b>❤️ 3</b><span>neue Leben</span></div></div>
+  <button class="cta red" id="goAgain">NOCHMAL! ⚔️</button>
+  <button class="ghost" id="goMenu">🏠 Hauptmenü</button>
+</div></div>
+
 <div class="overlay hidden" id="bossLost"><div class="card">
   <div class="big" style="color:#ff6b6b">AUTSCH!</div>
   <div class="sub">Der Mega-Bug hat gewonnen … diesmal.<br>Tipp: Tippe seine Würfe weg, bevor sie dich treffen!</div>
@@ -1007,6 +1015,9 @@ let lookX=0, lookY=0;
 let bagSplats=[], plasters=[], wallSplats=[], screenSplats=[], projectiles=[], fists=[], parts=[], texts=[], items=[], speech=null;
 let shake=0, combo=0, lastHit=0, lastSpeech=0, hits=0, bestCombo=0, rage=0, barrage=null;
 let timeLeft=0, score=0, tKO=0, lastTick=0, bagThrowT=3, dodgeT=2;
+// Freies Spiel: 3 Leben, pro Tool läuft eine Uhr
+let lives=3, toolT=0, toolMax=30, runKO=0, freeTick=99;
+const freeTimed=()=>mode==="free"&&!chill;
 let toolOrder=[], orderPos=0, recentHits=[], stunCount=0, koRound=0, bagHits=0;
 function hitRate(){ const now=performance.now(); recentHits=recentHits.filter(t=>now-t<3000); return recentHits.length/3; }
 const defeated=new Set(); const wUse={};
@@ -1189,7 +1200,7 @@ function checkBadges(force){
 /* ===================== Spiel: Boxbirne ===================== */
 function setLevel(l){ if(!LV[l]) return; saved.level=l; lv=LV[l]; persist(); renderLevelUI(); }
 function select(i){
-  curIdx=i; cur=tools[i]; hpMax=Math.round(lv.hp*(mode==="free"?(chill?3:saved.level==="hard"?1.4:2):1)); slipT=0; stickT=0; blindT=0; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
+  curIdx=i; cur=tools[i]; if(freeTimed()){ toolMax=saved.level==="hard"?25:30; toolT=toolMax; freeTick=99; $("timer").style.display="block"; $("timer").classList.remove("warn"); $("timer").textContent=toolMax; } hpMax=Math.round(lv.hp*(mode==="free"?(chill?3:saved.level==="hard"?1.4:2):1)); slipT=0; stickT=0; blindT=0; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
   theta=rand(-.15,.15); omega=0; dropY=-(G.chain+G.bh+80); dropV=0; squash=0; hurt=0; flash=0; blush=0; state="alive";
   bagThrowT=lv.thr?rand(lv.thr.base[0]*.6,lv.thr.base[1]*.6)+1:99; dodgeT=rand(1.5,2.5);
   pops=[]; heat=[]; ghost=null; freezeT=0; bagOffX=0; bagOffV=0; bagOffTarget=0; quirkT=1.2; bagHits=0; deadline=0; deadlineDone=false;
@@ -1324,7 +1335,7 @@ function applyBagDmg(dmg,lx,ly,x,y,w,mv,delayed){
   updateHUD(); duelPush();
 }
 function ko(){
-  state="ko"; koT=0; items=[]; pops=[]; if(mode==="free"){ defeated.add(cur.id); koRound++; } saved.allKO++; addHate("_ko"); persist();
+  state="ko"; koT=0; items=[]; pops=[]; if(mode==="free"){ defeated.add(cur.id); koRound++; if(!chill) runKO++; } saved.allKO++; addHate("_ko"); persist();
   if(mode==="time"||mode==="duel") tKO++;
   const [cx,cy]=toWorld(0,G.chain+G.bh/2), col=cur.color, col2=cur.color2||mix(col,"#000000",.3);
   for(let i=0;i<34;i++){ const a=rand(0,Math.PI*2), v=rand(250,950); parts.push({t:"rect",x:cx+rand(-G.bw*.3,G.bw*.3),y:cy+rand(-G.bh*.3,G.bh*.3),vx:Math.cos(a)*v,vy:Math.sin(a)*v-300,r:rand(8,20),c:pick([col,col2,mix(col,"#ffffff",.3)]),life:rand(1,1.6),max:1.6,rot:rand(0,6),vr:rand(-12,12)}); }
@@ -1438,7 +1449,7 @@ function itemLanded(it){
   if(mode==="boss"){ word(pick(["AUTSCH!","ERWISCHT!",it.l]),p.x,p.y-40,clamp(W*.09,30,56),"#ff6b6b"); B.hearts--; updateHUD();
     if(B.hearts<=0){ state="bossLost"; items=[]; say("HAHA! Ich bleibe!"); setTimeout(()=>show("bossLost"),1100); } }
   else if(performance.now()<immuneUntil){ /* gerade erst getroffen: nur Fleck, keine neue Sperre */ }
-  else { stunT=stunMax=Math.max(2,lv.stun||1.3); immuneUntil=performance.now()+stunT*1000+2500; stunCount++; rage=Math.max(0,rage-30); updateRage(); }
+  else { stunT=stunMax=Math.max(2,lv.stun||1.3); immuneUntil=performance.now()+stunT*1000+2500; stunCount++; rage=Math.max(0,rage-30); updateRage(); if(freeTimed()) toolT=Math.max(1,toolT-2); }
 }
 
 /* ===================== OVERKILL ===================== */
@@ -1470,7 +1481,7 @@ function bossHitTest(x,y){ const [cx,cy]=bossCenter(); const dx=(x-cx)/(B.s*.56)
 // Kleine Show vor dem Endgegner – wie im Videospiel
 let bsTimers=[];
 function bossShowThen(){
-  mode="boss"; state="bossShow"; B=null; items=[]; projectiles=[]; fists=[]; updateHUD(); renderChips();
+  mode="boss"; state="bossShow"; B=null; items=[]; projectiles=[]; fists=[]; $("timer").style.display="none"; updateHUD(); renderChips();
   const el=$("bossShow"), T=(ms,f)=>bsTimers.push(setTimeout(f,ms)); bsTimers.forEach(clearTimeout); bsTimers=[];
   el.className="on flicker"; $("bsLine").textContent=""; sfx.rumble(); if(!reduced) shake=10; buzz([200]);
   T(1300,()=>{ el.className="on s2"; sfx.siren(); });
@@ -1671,7 +1682,7 @@ function renderLevelUI(){ if($("lvHint")) $("lvHint").textContent=saved.level===
 }
 
 /* ===================== Overlays ===================== */
-const OVERLAYS=["pick","home","help","timeEnd","bossLost","zen","stats","wall","profile","recap","custom","duel","results","modeIntro","quitAsk","gchat","wInfo"];
+const OVERLAYS=["pick","home","help","timeEnd","bossLost","zen","stats","wall","profile","recap","custom","duel","results","modeIntro","quitAsk","gchat","wInfo","gameOver"];
 function show(id){ $(id).classList.remove("hidden"); }
 function hide(id){ $(id).classList.add("hidden"); }
 function anyOpen(){ return OVERLAYS.some(id=>!$(id).classList.contains("hidden")); }
@@ -1910,8 +1921,8 @@ function modeInfo(kind,o){
     tap:{e:"👊",t:"EINFACH DRAUFHAUEN",g:`${tap} so oft und so schnell du kannst – egal wohin. Niemand wehrt sich. Einfach Frust raus!`,
       l:[["👆",`Jeder ${touchDev?"Tipp":"Klick"} trifft die Boxbirne`],["🔄","Ist ein Tool K.O., kommt das nächste"],["🏠","Aufhören kannst du jederzeit oben rechts"]]},
     free:{e:"🥊",t:"FREIES SPIEL",g:"Such dir ein Tool aus und hau es K.O. Nach 3 K.O.s wartet der Endgegner.",
-      l:(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Wenig“: Es wirft nichts zurück"]]
-        :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: Du kannst kurz nicht schlagen und dein OVERKILL verliert 30 %"]])
+      l:[["❤️",`Du hast 3 Leben. Pro Tool läuft eine Uhr (${saved.level==="hard"?"25":"30"} Sek.). Ist sie abgelaufen, kostet das ein Leben – bei 0: Game Over`]].concat(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Leicht“: Es wirft nichts zurück"]]
+        :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: kurz nicht schlagen, OVERKILL −30 %, Uhr −2 Sek."]])
         .concat([["🎯","Grüne Zielscheibe auf der Boxbirne? Triff sie – dreifacher Schaden!"],["😡","Kurz vor dem K.O. rastet das Tool aus: Es glüht rot und wehrt sich stärker"],["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Waffe je nach Lage: 🥊 schnell · 🍅 Zielscheibe leichter · 🍌 stoppt Würfe · 🥚 stoppt Wackeln · 🥧 stoppt Macken · 🚀 viel Schaden · ❤️ lädt OVERKILL. Starke Waffen laden nach."],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
     time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
       l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🎯","Grüne Zielscheibe? Triff sie – dreifacher Schaden!"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
@@ -2239,7 +2250,7 @@ function update(dt){
   squash-=squash*11*dt; hurt-=dt; blush-=dt; stunT-=dt;
   slipT=Math.max(0,slipT-dt); blindT=Math.max(0,blindT-dt); stickT=Math.max(0,stickT-dt);
   if(stickT>0){ omega-=omega*7*dt; theta-=theta*3*dt; bagOffTarget=0; }
-  { const st=(slipT>0?`🍌${Math.ceil(slipT)} `:"")+(stickT>0?`🥚${Math.ceil(stickT)} `:"")+(blindT>0?`🥧${Math.ceil(blindT)}`:""); const he=$("hearts"); if(mode!=="boss"&&he.textContent!==st) he.textContent=st; }
+  { const st=(freeTimed()?"❤️".repeat(Math.max(0,lives))+"🖤".repeat(Math.max(0,3-lives))+" ":"")+(slipT>0?`🍌${Math.ceil(slipT)} `:"")+(stickT>0?`🥚${Math.ceil(stickT)} `:"")+(blindT>0?`🥧${Math.ceil(blindT)}`:""); const he=$("hearts"); if(mode!=="boss"&&he.textContent!==st) he.textContent=st; }
   // Schwachstelle: leuchtet kurz auf, Treffer dort zählen dreifach
   if(state==="alive"&&!chill&&mode!=="boss"){ if(weak){ weak.t-=dt; if(weak.t<=0){ weak=null; weakT=rand(3,5); } } else { weakT-=dt; if(weakT<=0) weak={lx:rand(-G.bw*.28,G.bw*.28),ly:G.chain+G.bh*rand(.18,.82),t:2.2}; } } else weak=null;
   // Wutausbruch kurz vor dem K.O.
@@ -2247,6 +2258,11 @@ function update(dt){
   { const sb=$("stunBox"); const on=stunT>0&&!anyOpen(); sb.style.display=on?"block":"none"; if(on) $("stunBar").style.width=clamp(stunT/stunMax,0,1)*100+"%"; }
   { const now=performance.now(); document.querySelectorAll("#weapons .weapon").forEach((b,i)=>{ const w=WEAPONS[i]; if(!w) return; const left=Math.max(0,(wCdUntil[w.id]||0)-now)/1000, d=W_CD[w.id]||1; b.style.setProperty("--cd",chill?0:Math.min(1,left/d).toFixed(3)); }); } flash=Math.max(0,flash-dt*4); shake*=Math.exp(-9*dt);
   if(state==="ko"){ koT+=dt; if(koT>(mode==="time"||mode==="duel"?.85:1.9) && !(mode==="duel"&&R.ended)) nextBag(); }
+  if(freeTimed()&&state==="alive"){ toolT-=dt; const s=Math.ceil(toolT); $("timer").textContent=Math.max(0,s);
+    if(s<=5&&s<freeTick){ freeTick=s; sfx.tick(); $("timer").classList.add("warn"); }
+    if(toolT<=0){ lives--; sfx.hurtMe(); buzz([90,50,90]); if(!reduced) shake=18;
+      if(lives<=0){ freeGameOver(); }
+      else { word(`ZEIT UM! −1 ❤️`,W/2,H*.3,clamp(W*.09,28,48),"#ff6b6b",1.3); say(pick(["Zu langsam!","Haha, Zeit um!","Versuch’s nochmal!"])); toolT=toolMax; freeTick=99; $("timer").classList.remove("warn"); } } }
   if(mode==="time"&&(state==="alive"||state==="ko")){ timeLeft-=dt; const s=Math.ceil(timeLeft); $("timer").textContent=Math.max(0,s);
     if(s<=5&&s<lastTick){ lastTick=s; sfx.tick(); $("timer").classList.add("warn"); } if(timeLeft<=0) endTime(); }
   if(mode==="duel"){ duelTick(); botTick(dt); }
@@ -2431,7 +2447,16 @@ function openPick(cb,title,sub){
 let cdNagT=0;
 function cdNag(w){ return; }
 function cdNagOld(w){ const seen=saved.hintsSeen||(saved.hintsSeen={}); if(seen.cd) return; seen.cd=1; persist(); hintCur="cd"; hintT=0; const h=$("hint"); h.textContent=`${w.emoji} ${w.name} lädt nach … nimm solange eine andere Waffe!`; h.style.opacity=1; }
-function startTool(i){ hide("pick"); startFrom(()=>{ mode="free"; B=null; sfx.ding(); select(i); }); }
+function startTool(i){ hide("pick"); startFrom(()=>{ mode="free"; B=null; lives=3; runKO=0; koRound=0; defeated.clear(); sfx.ding(); select(i); }); }
+function freeGameOver(){
+  state="over"; items=[]; pops=[]; $("timer").style.display="none";
+  const lk=saved.level==="hard"?"hard":"easy"; saved.freeBest=saved.freeBest||{}; const rec=runKO>(saved.freeBest[lk]||0); if(rec){ saved.freeBest[lk]=runKO; persist(); }
+  $("goKO").textContent=runKO; $("goBest").textContent=saved.freeBest[lk]||0;
+  $("goSub").textContent=rec&&runKO>0?"🏆 Neuer Rekord! Trotzdem: Die Tools haben diesmal gewonnen.":runKO?`Du hast ${runKO} ${runKO===1?"Tool":"Tools"} geschafft. Gleich nochmal?`:"Die Tools haben gewonnen … diesmal. Tipp: Starke Waffen zwischendurch, Fäuste dazwischen.";
+  if(sfx.sad) sfx.sad(); else sfx.thud(); setTimeout(()=>show("gameOver"),700);
+}
+$("goAgain").onclick=()=>{ hide("gameOver"); openPick(); };
+$("goMenu").onclick=()=>{ hide("gameOver"); mode="free"; state="idle"; openHome(); };
 function startChill(){ startFrom(()=>{ mode="free"; chill=true; lv=Object.assign({},LV.easy,{thr:null,stun:0,dodge:0,lock:true}); B=null; sfx.ding(); select((Math.random()*BASE)|0); }); }
 $("freeBtn").onclick=()=>{ ensureAudio(); modeIntro("free",()=>openPick()); };
 $("tapBtn").onclick=()=>{ ensureAudio(); modeIntro("tap",startChill); };
