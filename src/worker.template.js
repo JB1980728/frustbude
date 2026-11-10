@@ -78,6 +78,8 @@ async function readBody(req) {
 
 /* ======================= Mehrspieler-Raum ======================= */
 const DUEL_MS = 45000;
+const BOT_NAMES = ["Bot Bernd","Bot Lotte","Bot Kalle","Bot Frieda","Bot Ronny","Bot Uschi"];
+const LVL = { easy: { hp: 70, mult: .8, dps: 20 }, mid: { hp: 110, mult: 1.15, dps: 30 }, hard: { hp: 150, mult: 1.5, dps: 42 } };
 const COUNTDOWN_MS = 3800;
 
 export class Room extends DurableObject {
@@ -87,6 +89,8 @@ export class Room extends DurableObject {
     this.conns = new Map();
     this.st = { code: "", phase: "lobby", format: "1v1", level: "mid", hostId: null, seed: 0, startAt: 0, endsAt: 0, results: null, round: 0 };
     this.finishTimer = null;
+    this.bots = [];
+    this.botTimer = null;
   }
 
   async fetch(req) {
@@ -108,13 +112,15 @@ export class Room extends DurableObject {
 
   send(c, obj) { try { c.ws.send(JSON.stringify(obj)); } catch (e) {} }
   broadcast(obj, except) { const s = JSON.stringify(obj); for (const c of this.conns.values()) if (c.joined && c !== except) { try { c.ws.send(s); } catch (e) {} } }
-  players() { return [...this.conns.values()].filter(c => c.joined && c.role === "player"); }
+  humans() { return [...this.conns.values()].filter(c => c.joined && c.role === "player"); }
+  players() { return [...this.humans(), ...this.bots]; }
+  dropBot() { if (!this.bots.length) return; const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length; const team = a >= b ? "A" : "B"; let i = this.bots.findIndex(x => x.team === team); if (i < 0) i = 0; this.bots.splice(i, 1); }
   cap() { return this.st.format === "2v2" ? 4 : 2; }
-  pub(c) { return { id: c.id, name: c.name, badge: c.badge, role: c.role, team: c.team, score: c.score, hits: c.hits, ko: c.ko, combo: c.combo, hp: c.hp, tool: c.tool }; }
+  pub(c) { return { id: c.id, isBot: !!c.isBot, name: c.name, badge: c.badge, role: c.role, team: c.team, score: c.score, hits: c.hits, ko: c.ko, combo: c.combo, hp: c.hp, tool: c.tool }; }
   state() {
     return { t: "state", now: Date.now(), code: this.st.code, phase: this.st.phase, format: this.st.format, level: this.st.level, hostId: this.st.hostId,
       seed: this.st.seed, startAt: this.st.startAt, endsAt: this.st.endsAt, results: this.st.results, round: this.st.round,
-      people: [...this.conns.values()].filter(c => c.joined).map(c => this.pub(c)) };
+      people: [...[...this.conns.values()].filter(c => c.joined), ...this.bots].map(c => this.pub(c)) };
   }
   sync() { this.broadcast(this.state()); }
 
@@ -124,6 +130,7 @@ export class Room extends DurableObject {
     const count = t => ps.filter(p => p.team === t).length;
     ps.forEach(p => { if (count(p.team) > 2) p.team = p.team === "A" ? "B" : "A"; });
     ps.slice(4).forEach(p => p.role = "spectator");
+    this.bots = this.bots.filter(b => b.role === "player");
   }
 
   onMsg(c, raw) {
@@ -140,6 +147,7 @@ export class Room extends DurableObject {
       c.sid = cleanSid(m.sid);
       c.joined = true;
       const wantPlay = m.role === "player";
+      if (wantPlay && st.phase === "lobby" && this.players().length >= this.cap() && this.bots.length) this.dropBot();
       if (wantPlay && st.phase === "lobby" && this.players().length < this.cap()) {
         c.role = "player";
         const a = this.players().filter(p => p.team === "A" && p !== c).length, b = this.players().filter(p => p.team === "B" && p !== c).length;
@@ -156,6 +164,7 @@ export class Room extends DurableObject {
       if (this.players().filter(p => p.team === m.team).length < 2) { c.team = m.team; this.sync(); }
       return;
     }
+    if (m.t === "play" && st.phase === "lobby" && c.role === "spectator" && this.players().length >= this.cap() && this.bots.length) this.dropBot();
     if (m.t === "play" && st.phase === "lobby" && c.role === "spectator" && this.players().length < this.cap()) {
       c.role = "player";
       const a = this.players().filter(p => p.team === "A" && p !== c).length, b = this.players().filter(p => p.team === "B" && p !== c).length;
@@ -165,7 +174,7 @@ export class Room extends DurableObject {
     }
     if (m.t === "watch" && st.phase === "lobby" && c.role === "player") {
       c.role = "spectator";
-      if (st.hostId === c.id) { const p = this.players()[0]; st.hostId = p ? p.id : null; }
+      if (st.hostId === c.id) { const p = this.humans()[0]; st.hostId = p ? p.id : null; }
       this.sync(); return;
     }
     if (m.t === "settings" && st.phase === "lobby" && st.hostId === c.id) {
@@ -173,6 +182,16 @@ export class Room extends DurableObject {
       if (["easy", "mid", "hard"].includes(m.level)) st.level = m.level;
       this.balanceTeams(); this.sync(); return;
     }
+    if (m.t === "bots" && st.phase === "lobby" && st.hostId === c.id) {
+      const used = new Set(this.bots.map(b => b.name));
+      while (this.players().length < this.cap()) {
+        const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length;
+        const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name);
+        this.bots.push({ id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player", team: a <= b ? "A" : "B", score: 0, hits: 0, ko: 0, combo: 0, hp: 100, tool: "" });
+      }
+      this.sync(); return;
+    }
+    if (m.t === "nobots" && st.phase === "lobby" && st.hostId === c.id) { this.bots = []; this.sync(); return; }
     if (m.t === "start" && st.phase === "lobby" && st.hostId === c.id) {
       const ps = this.players(), a = ps.filter(p => p.team === "A").length, b = ps.filter(p => p.team === "B").length;
       if (a < 1 || b < 1) { this.send(c, { t: "error", msg: "Es fehlen noch Mitspieler im anderen Team." }); return; }
@@ -181,6 +200,7 @@ export class Room extends DurableObject {
       ps.forEach(p => { p.score = 0; p.hits = 0; p.ko = 0; p.combo = 0; p.hp = 100; p.tool = ""; });
       clearTimeout(this.finishTimer);
       this.finishTimer = setTimeout(() => this.finish(), st.endsAt - now + 1800);
+      this.startBots();
       this.sync(); return;
     }
     if ((m.t === "score" || m.t === "final") && st.phase === "live" && c.role === "player") {
@@ -203,7 +223,7 @@ export class Room extends DurableObject {
     }
     if (m.t === "rematch" && st.phase === "results") {
       st.phase = "lobby"; st.results = null;
-      this.players().forEach(p => { p.score = 0; p.hits = 0; p.ko = 0; p.combo = 0; });
+      this.players().forEach(p => { p.score = 0; p.hits = 0; p.ko = 0; p.combo = 0; p.hp = 100; });
       this.broadcast({ t: "feed", txt: `${c.name} will eine Revanche! ⚔️` });
       this.sync(); return;
     }
@@ -212,13 +232,38 @@ export class Room extends DurableObject {
   onClose(c) {
     if (!this.conns.has(c.id)) return;
     this.conns.delete(c.id);
-    if (this.st.hostId === c.id) { const p = this.players()[0]; this.st.hostId = p ? p.id : null; }
+    if (this.st.hostId === c.id) { const p = this.humans()[0]; this.st.hostId = p ? p.id : null; }
     if (c.joined) { this.broadcast({ t: "feed", txt: `${c.name} hat den Raum verlassen.` }); this.sync(); }
-    if (this.st.phase === "live" && this.players().length === 0) { clearTimeout(this.finishTimer); this.st.phase = "lobby"; }
+    if (this.humans().length === 0) { clearTimeout(this.finishTimer); clearInterval(this.botTimer); this.bots = []; this.st.phase = "lobby"; }
+  }
+
+  startBots() {
+    clearInterval(this.botTimer);
+    if (!this.bots.length) return;
+    const L = LVL[this.st.level] || LVL.mid;
+    this.bots.forEach(b => { b.sim = { hp: L.hp, order: [...TOOL_IDS].sort(() => Math.random() - .5), pos: 0, atk: 5 + Math.random() * 5 }; b.tool = b.sim.order[0]; });
+    let last = Date.now();
+    this.botTimer = setInterval(() => {
+      const now = Date.now(), dt = (now - last) / 1000; last = now;
+      if (now < this.st.startAt) return;
+      if (now > this.st.endsAt || this.st.phase !== "live") { clearInterval(this.botTimer); return; }
+      for (const b of this.bots) {
+        const dmg = L.dps * dt * (0.3 + Math.random() * 1.4);
+        b.sim.hp -= dmg; b.score += dmg * 10 * L.mult; b.hits += Math.round(dmg / 8);
+        b.combo = Math.max(0, Math.min(15, b.combo + (Math.random() < .6 ? 1 : -3)));
+        if (b.sim.hp <= 0) { b.ko++; b.sim.hp = L.hp; b.sim.pos++; b.tool = b.sim.order[b.sim.pos % b.sim.order.length]; }
+        b.hp = Math.round(b.sim.hp / L.hp * 100); b.score = Math.round(b.score);
+        this.broadcast({ t: "live", p: this.pub(b) });
+        if (this.st.level !== "easy") { b.sim.atk -= dt; if (b.sim.atk <= 0) { b.sim.atk = 6 + Math.random() * 6;
+          const kind = Math.random() < .5 ? "tomato" : "shake", s = JSON.stringify({ t: "attack", from: b.name, team: b.team, kind });
+          for (const o of this.conns.values()) if (o.joined && o.role === "player" && o.team !== b.team) { try { o.ws.send(s); } catch (e) {} } } }
+      }
+    }, 350);
   }
 
   async finish() {
     const st = this.st;
+    clearInterval(this.botTimer);
     if (st.phase !== "live") return;
     const ps = this.players();
     const teamScore = t => {
@@ -239,7 +284,7 @@ export class Room extends DurableObject {
     try {
       const db = this.env.DB; if (!db) return;
       await ensureSchema(db);
-      const stmts = ps.filter(p => p.sid && p.name && p.name !== "Anonym").map(p =>
+      const stmts = ps.filter(p => !p.isBot && p.sid && p.name && p.name !== "Anonym").map(p =>
         db.prepare("INSERT INTO lb (sid, name, badge, wins, duels, best_duel, ts) VALUES (?, ?, ?, ?, 1, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, wins = wins + excluded.wins, duels = duels + 1, best_duel = MAX(best_duel, excluded.best_duel), ts = excluded.ts")
           .bind(p.sid, p.name, p.badge, winner === p.team ? 1 : 0, p.score, Date.now()));
       if (stmts.length) await db.batch(stmts);
@@ -337,7 +382,10 @@ export default {
       }
 
       if (path === "/api/wall" && req.method === "GET") {
-        const rows = await db.prepare("SELECT id, text, ts, same FROM wall WHERE reports < 3 ORDER BY id DESC LIMIT 80").all();
+        const before = Math.floor(Number(url.searchParams.get("before")) || 0);
+        const rows = before > 0
+          ? await db.prepare("SELECT id, text, ts, same FROM wall WHERE reports < 3 AND id < ? ORDER BY id DESC LIMIT 80").bind(before).all()
+          : await db.prepare("SELECT id, text, ts, same FROM wall WHERE reports < 3 ORDER BY id DESC LIMIT 80").all();
         return json({ notes: rows.results || [] });
       }
 
