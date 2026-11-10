@@ -443,6 +443,11 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 .cnote{font-size:12px;font-weight:900;color:#fca5a5;min-height:0;margin-top:4px;text-align:left}
 .cnote:empty{display:none}
+
+#wInfoBtn{margin-left:auto;font-size:10.5px;font-weight:900;letter-spacing:0;text-transform:none;color:#fde047;background:rgba(253,224,71,.12);border:1px solid rgba(253,224,71,.4);border-radius:999px;padding:2px 9px}
+.wi{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:start;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:8px 10px;margin:0 0 7px;text-align:left}
+.wi .e{font-size:30px;text-align:center;line-height:1.1}.wi b{font-size:14px}.wi .st{display:block;font-size:11px;font-weight:900;color:#fde047;margin:1px 0 3px}.wi p{margin:0;font-size:12.5px;font-weight:800;line-height:1.35;color:#e9e1ff}
+.wi.locked{opacity:.6}
 </style>
 </head>
 <body>
@@ -490,7 +495,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   </div>
   <div class="sectionlbl">Wen willst du verhauen?<span id="toolsHint"></span></div>
   <div class="strip" id="tools"></div>
-  <div class="sectionlbl">Waffe</div>
+  <div class="sectionlbl">Waffe<button id="wInfoBtn">❓ Was kann was?</button></div>
   <div class="strip" id="weapons"></div>
 </div>
 
@@ -714,6 +719,15 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="cnote" id="gNote"></div>
   <div class="cin" id="gNameRow" style="display:none"><input class="field" id="gName" maxlength="16" placeholder="Erst Spitznamen wählen …" autocomplete="off"><button id="gNameOk">OK</button></div>
   <div class="cin" id="gMsgRow"><input class="field" id="gIn" maxlength="140" placeholder="Schreib was …" autocomplete="off"><button id="gSend">➤</button></div>
+</div></div>
+
+<!-- Waffen-Erklärung -->
+<div class="overlay hidden" id="wInfo"><div class="card">
+  <button class="x" data-close="wInfo">✕</button>
+  <div class="mid">DEINE WAFFEN</div>
+  <div class="sub" style="margin:6px 0 8px">Starke Waffen müssen nachladen. Am besten: einen starken Treffer setzen, dann mit den Fäusten weiter, bis sie wieder bereit ist. <b>Das Spiel ist pausiert.</b></div>
+  <div class="scroll" id="wInfoList"></div>
+  <button class="cta sm" data-close="wInfo" style="margin-top:10px">WEITER HAUEN 👊</button>
 </div></div>
 
 <!-- Abbrechen? -->
@@ -1175,7 +1189,7 @@ function checkBadges(force){
 /* ===================== Spiel: Boxbirne ===================== */
 function setLevel(l){ if(!LV[l]) return; saved.level=l; lv=LV[l]; persist(); renderLevelUI(); }
 function select(i){
-  curIdx=i; cur=tools[i]; hpMax=Math.round(lv.hp*(mode==="free"?(chill?3:2.2):1)); slipT=0; stickT=0; blindT=0; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
+  curIdx=i; cur=tools[i]; hpMax=Math.round(lv.hp*(mode==="free"?(chill?3:saved.level==="hard"?1.4:2):1)); slipT=0; stickT=0; blindT=0; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
   theta=rand(-.15,.15); omega=0; dropY=-(G.chain+G.bh+80); dropV=0; squash=0; hurt=0; flash=0; blush=0; state="alive";
   bagThrowT=lv.thr?rand(lv.thr.base[0]*.6,lv.thr.base[1]*.6)+1:99; dodgeT=rand(1.5,2.5);
   pops=[]; heat=[]; ghost=null; freezeT=0; bagOffX=0; bagOffV=0; bagOffTarget=0; quirkT=1.2; bagHits=0; deadline=0; deadlineDone=false;
@@ -1657,7 +1671,7 @@ function renderLevelUI(){ if($("lvHint")) $("lvHint").textContent=saved.level===
 }
 
 /* ===================== Overlays ===================== */
-const OVERLAYS=["pick","home","help","timeEnd","bossLost","zen","stats","wall","profile","recap","custom","duel","results","modeIntro","quitAsk","gchat"];
+const OVERLAYS=["pick","home","help","timeEnd","bossLost","zen","stats","wall","profile","recap","custom","duel","results","modeIntro","quitAsk","gchat","wInfo"];
 function show(id){ $(id).classList.remove("hidden"); }
 function hide(id){ $(id).classList.add("hidden"); }
 function anyOpen(){ return OVERLAYS.some(id=>!$(id).classList.contains("hidden")); }
@@ -2340,7 +2354,7 @@ function drawSpeech(){
   ctx.beginPath(); ctx.moveTo(tailX-8,by+bh); ctx.lineTo(tailX+tip,by+bh+16); ctx.lineTo(tailX+8,by+bh); ctx.stroke();
   ctx.fillStyle="#140a1f"; ctx.textAlign="left"; ctx.textBaseline="top"; lines.forEach((l,i)=>ctx.fillText(l,bx+12,by+9+i*fs*1.25)); ctx.restore();
 }
-function loop(ts){ const dt=Math.min(.033,((ts-last)/1000)||0); last=ts; if(FT.on) fLoop(dt); else if(W>0){ update(dt); render(); } requestAnimationFrame(loop); }
+function loop(ts){ const dt=Math.min(.033,((ts-last)/1000)||0); last=ts; if(FT.on) fLoop(dt); else if(W>0){ if($("wInfo").classList.contains("hidden")) update(dt); render(); } requestAnimationFrame(loop); }
 
 /* ===================== Eingabe: Gesten ===================== */
 function localXY(e){ const r=canvas.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; }
@@ -2427,6 +2441,20 @@ $("bossBtn").onclick=()=>{ if(!saved.bossOpen){ toast("Erst 3 Tools im freien Sp
 $("duelBtn").onclick=()=>{ ensureAudio(); hide("home"); openDuel(); };
 $("resumeBtn").onclick=()=>hide("home");
 $("tRank").onclick=()=>openStats("rank"); $("tWall").onclick=()=>{ show("wall"); loadWall(); }; $("homeTag").onclick=()=>$("tProfile").click();
+const W_INFO={fist:"Die schnellste Waffe. Einfach drauflos – damit überbrückst du, während andere Waffen nachladen.",
+  tomato:"Großer Spritzer: Die grüne Zielscheibe triffst du damit viel leichter (dort ×3 Schaden).",
+  banana:"Das Tool rutscht aus und wirft 4 Sekunden lang nichts zurück. Nur auf „Schwer“ wichtig.",
+  egg:"Klebt: Das Tool wackelt und verrutscht 4 Sekunden nicht mehr und ist leichter zu treffen. Gut gegen Wix, Stitch, ChatGPT, Gemini.",
+  pie:"Viel Schaden und das Tool ist blind: 4 Sekunden keine Macke. Gut gegen Meet, Mixpanel, Amplitude, Slack, Miro.",
+  highfive:"Trifft zweimal auf einmal.",
+  rocket:"Der größte Treffer im Spiel – aber lange Nachladezeit. Zwischendurch zünden, dann mit den Fäusten weiter.",
+  love:"Guter Schaden und füllt deinen OVERKILL-Kreis um 12 % – nimm sie, wenn der OVERKILL fast voll ist."};
+function openWInfo(){ const box=$("wInfoList"); box.innerHTML="";
+  WEAPONS.forEach(w=>{ const un=isUnlocked(w), d=document.createElement("div"); d.className="wi"+(un?"":" locked");
+    d.innerHTML=`<div class="e">${w.emoji}</div><div><b></b><span class="st">${w.double?"2× ":""}${w.dmg} Schaden · lädt ${String(W_CD[w.id]||0).replace(".",",")} s nach${un?"":" · 🔒 "+w.unlock.label}</span><p></p></div>`;
+    d.querySelector("b").textContent=w.name; d.querySelector("p").textContent=W_INFO[w.id]||""; box.appendChild(d); });
+  show("wInfo"); }
+$("wInfoBtn").onclick=e=>{ e.stopPropagation(); openWInfo(); };
 $("tProfile").onclick=openProfile; $("tHelp").onclick=openHelp; $("tRecap").onclick=openRecap;
 $("tZen").onclick=()=>{ hide("home"); openZen(false); };
 document.querySelectorAll("#statsMain button").forEach(b=>b.onclick=()=>openStats(b.dataset.m));
@@ -2493,6 +2521,8 @@ lbConnect();
   }
   document.addEventListener("touchmove",e=>{ if(e.touches.length>1||!canScroll(e.target)) e.preventDefault(); },{passive:false});
   document.addEventListener("gesturestart",e=>e.preventDefault());
+  document.addEventListener("gesturechange",e=>e.preventDefault());
+  let lastTouchEnd=0; document.addEventListener("touchend",e=>{ const now=Date.now(); if(now-lastTouchEnd<350&&!(e.target.closest&&e.target.closest("input,textarea"))) e.preventDefault(); lastTouchEnd=now; },{passive:false});
 })();
 </script>
 </body>
