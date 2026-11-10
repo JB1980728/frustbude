@@ -425,10 +425,11 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="mode m-boss" id="bossBtn"><span class="me" id="bossE">👑</span><span class="mt"><b>Endgegner</b><small id="bossSub">Mega-Bug rennt weg und wirft.</small></span></button>
     <button class="mode m-duel" id="duelBtn"><span class="me">⚔️</span><span class="mt"><b>Duell</b><small>Zwei Tools boxen gegeneinander.</small></span></button>
   </div>
-  <div class="seglbl">Gegenwehr (nicht bei „Draufhauen“)</div>
+  <div class="seglbl">Level (nicht bei „Draufhauen“)</div>
   <div class="seg" id="levelSeg">
-    <button data-lv="easy">😌 Wenig</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button>
+    <button data-lv="easy">😌 Leicht</button><button data-lv="hard">🔥 Schwer</button>
   </div>
+  <div class="modehint" id="lvHint" style="margin-top:-6px"></div>
   <div class="tiles">
     <button class="tile" id="tRank"><span class="e">🏆</span>Ranglisten</button>
     <button class="tile" id="tWall"><span class="e">📝</span>Frust-Wand</button>
@@ -582,7 +583,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="specline" id="specLine"></div>
     <div id="hostCtl">
       <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
-      <div class="seg" id="lobbyLv"><button data-lv="easy">😌 Frust ablassen</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button></div>
+      <div class="seg" id="lobbyLv"><button data-lv="easy">🤖 Bots leicht</button><button data-lv="hard">🤖 Bots schwer</button></div>
     </div>
     <div class="fine" id="lobbyInfo" style="margin:0 0 10px"></div>
     <div class="classline" id="waitLine" style="display:none">⏳ Warte, bis der Host den Kampf startet. Such dir solange oben euer Tool aus!</div>
@@ -700,7 +701,7 @@ const W_CD = {fist:.2, tomato:.28, banana:.3, egg:.25, highfive:.3, pie:.9, love
 const wCdUntil = {};
 const W_BY = {}; WEAPONS.forEach(w=>W_BY[w.id]=w);
 const LV = {
-  easy:{label:"Frust ablassen",emoji:"😌",hp:70, swing:.7, lock:true, thr:null, dodge:0, stun:0, bossHP:300,hearts:5,bossThrow:1.35,bossSpeed:.8, mult:.8},
+  easy:{label:"Leicht",emoji:"😌",hp:70, swing:.7, lock:true, thr:null, dodge:0, stun:0, bossHP:300,hearts:5,bossThrow:1.35,bossSpeed:.8, mult:.8},
   mid: {label:"Mittel",emoji:"😤",hp:110,swing:1.05,lock:false,thr:{base:[4.2,6],k:.45,min:1.3,dur:1.45},dodge:1.3,stun:1.3, bossHP:430,hearts:3,bossThrow:.95,bossSpeed:1.05,mult:1.15},
   hard:{label:"Schwer",emoji:"🔥",hp:150,swing:1.25,lock:false,thr:{base:[2.6,3.6],k:1,min:.45,dur:1.15},dodge:2.5,stun:1.7, bossHP:580,hearts:2,bossThrow:.72,bossSpeed:1.3,mult:1.5},
 };
@@ -748,7 +749,7 @@ try{ const old=JSON.parse(localStorage.getItem("frustbude3")||localStorage.getIt
 if(!saved.sid) saved.sid=Math.random().toString(36).slice(2,12)+Date.now().toString(36);
 ["w","mv","hate"].forEach(k=>{ if(!saved[k]||typeof saved[k]!=="object") saved[k]={}; });
 ["unlocked","reported","samed","badges"].forEach(k=>{ if(!Array.isArray(saved[k])) saved[k]=[]; });
-if(!LV[saved.level]) saved.level="easy";
+if(saved.level==="mid") saved.level="hard"; if(!LV[saved.level]) saved.level="easy";
 function persist(){ try{ localStorage.setItem("frustbude3",JSON.stringify(saved)); }catch(e){} }
 persist();
 function nextQuote(){
@@ -1392,8 +1393,9 @@ function startTime(){
 }
 function endTime(){
   state="over"; items=[]; $("timer").style.display="none";
-  const rec=score>saved.timeBest; if(rec){ saved.timeBest=score; persist(); postScore("time",score); }
-  $("tScore").textContent=fmt(score); $("tKO").textContent=tKO; $("tBest").textContent=fmt(saved.timeBest);
+  const lvk=saved.level==="hard"?"hard":"easy"; saved.timeBestLv=saved.timeBestLv||{}; const best=saved.timeBestLv[lvk]||0;
+  const rec=score>best; if(rec){ saved.timeBestLv[lvk]=score; saved.timeBest=Math.max(saved.timeBest||0,score); persist(); postScore(lvk==="hard"?"timeHard":"time",score); }
+  $("tScore").textContent=fmt(score); $("tKO").textContent=tKO; $("tBest").textContent=fmt(saved.timeBestLv[lvk]||0)+(lvk==="hard"?" 🔥":" 😌");
   $("timeSub").textContent=rec&&score>0?"🏆 Neuer Rekord! Der Frust hatte keine Chance.":pick(["Starke Leistung. Die Tools zittern.","Nicht schlecht! Noch eine Runde?","Frust abgebaut, Puls erhöht. Perfekt."]);
   $("tRankHint").textContent = saved.name ? `Level ${lv.label} · Punkte ×${lv.mult} · Dein Rekord steht in der Rangliste als „${saved.name}“.` : "Tipp: Leg im Profil einen Spitznamen an, dann landet dein Rekord in der Rangliste.";
   sfx.ding(); confetti(W/2,H*.6,60); checkBadges(true); setTimeout(()=>show("timeEnd"),500);
@@ -1458,7 +1460,7 @@ function renderWeapons(fresh){
     box.appendChild(b); });
   if(fresh){ const el=box.children[WEAPONS.findIndex(w=>w.id===fresh)]; if(el&&el.scrollIntoView) el.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}); }
 }
-function renderLevelUI(){
+function renderLevelUI(){ if($("lvHint")) $("lvHint").textContent=saved.level==="hard"?"Schwer: Die Tools werfen zurück – wegtippen!":"Leicht: Nichts fliegt zurück.";
   document.querySelectorAll("#levelSeg button").forEach(b=>b.classList.toggle("on",b.dataset.lv===saved.level)); $("lvEmoji").textContent=lv.emoji;
 }
 
@@ -1510,7 +1512,7 @@ function openHelp(){ helpIdx=0; renderHelp(); show("help"); }
 function closeHelp(){ hide("help"); saved.seenHelp=true; persist(); }
 
 /* ===================== Ranglisten & Meistgehasst ===================== */
-let statsMain="rank", statsSub="wins", LBDATA=null;
+let statsMain="rank", statsSub="time", LBDATA=null;
 async function openStats(main){
   statsMain=main||"rank"; show("stats"); renderStats();
   if(statsMain==="rank"){ try{ LBDATA=await api("leaderboard"); }catch(e){ LBDATA=null; } }
@@ -1522,13 +1524,13 @@ function renderStats(){
   $("statsTitle").textContent=statsMain==="rank"?"RANGLISTEN":"MEISTGEHASST";
   const sub=$("statsSubTabs"), list=$("rankList"); list.innerHTML="";
   if(statsMain==="rank"){
-    const tabs=[["wins","⚔️ Siege"],["duel","💥 Duell-Rekord"],["time","⏱️ 30 Sek."],["boss","👑 Boss"]];
-    if(!tabs.some(t=>t[0]===statsSub)) statsSub="wins";
+    const tabs=[["time","⏱️ 30 Sek. leicht"],["timeHard","⏱️ 30 Sek. schwer"],["wins","⚔️ Duell-Siege"],["boss","👑 Boss"]];
+    if(!tabs.some(t=>t[0]===statsSub)) statsSub="time";
     sub.innerHTML=tabs.map(([k,l])=>`<button data-s="${k}" class="${k===statsSub?"on":""}">${l}</button>`).join("");
     sub.querySelectorAll("button").forEach(b=>b.onclick=()=>{ statsSub=b.dataset.s; renderStats(); });
     $("statsSub").textContent = saved.name ? `Du spielst als „${saved.name}“ ${myBadge()}` : "Lege im Profil einen Spitznamen an, um in die Ranglisten zu kommen.";
     if(!LBDATA){ list.innerHTML='<div class="empty">Ranglisten laden … oder gerade nicht erreichbar.</div>'; return; }
-    const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Pkt.",time:"Pkt.",boss:"×"}[statsSub];
+    const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Pkt.",time:"Pkt.",timeHard:"Pkt.",boss:"×"}[statsSub];
     if(!rows.length){ list.innerHTML='<div class="empty">Noch niemand hier. Sei die erste Person! 🏆</div>'; return; }
     rows.forEach((r,i)=>{ const d=document.createElement("div"); d.className="lbrow"; d.innerHTML=`<div class="pos">${i+1}</div><div class="nm"></div><div class="v">${fmt(r.v)} <small style="font-family:Nunito;font-size:11px;color:var(--muted)">${unit}</small></div>`;
       d.querySelector(".nm").textContent=`${r.badge||""} ${r.name}`; list.appendChild(d); });
@@ -1709,8 +1711,8 @@ function modeInfo(kind){
       l:(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Wenig“: Es wirft nichts zurück"]]
         :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: kurz roter Kasten, du kannst nicht schlagen"]])
         .concat([["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen"]])},
-    time:{e:"⏱️",t:"30 SEKUNDEN",g:"So viele K.O.s wie möglich in 30 Sekunden! Sei schnell.",
-      l:[["👆",`${tap} auf die Boxbirne – jeder Treffer gibt Punkte`],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“"]]).concat([["🏆","Dein bestes Ergebnis kommt in die Rangliste"]])},
+    time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
+      l:[["👆",`${tap} auf die Boxbirne – jeder Treffer gibt Punkte`],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
     fight:{e:"⚔️",t:"DUELL",g:"Dein Tool (links, mit „DU“) boxt gegen das Tool rechts. Wessen Balken oben zuerst leer ist, verliert die Runde. Wer 2 Runden gewinnt, gewinnt das Duell.",

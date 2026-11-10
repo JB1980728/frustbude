@@ -67,6 +67,7 @@ async function ensureSchema(db) {
     db.prepare("CREATE INDEX IF NOT EXISTS wall_vis ON wall(reports, id)"),
     db.prepare("CREATE TABLE IF NOT EXISTS lb (sid TEXT PRIMARY KEY, name TEXT NOT NULL, badge TEXT, wins INTEGER NOT NULL DEFAULT 0, duels INTEGER NOT NULL DEFAULT 0, best_duel INTEGER NOT NULL DEFAULT 0, best_time INTEGER NOT NULL DEFAULT 0, boss INTEGER NOT NULL DEFAULT 0, ts INTEGER)"),
   ]);
+  try { await db.prepare("ALTER TABLE lb ADD COLUMN best_time_hard INTEGER NOT NULL DEFAULT 0").run(); } catch (e) {}
   schemaReady = true;
 }
 
@@ -86,7 +87,7 @@ export class Room extends DurableObject {
     super(ctx, env);
     this.env = env;
     this.conns = new Map();
-    this.st = { code: "", phase: "lobby", format: "1v1", level: "mid", hostId: null, round: 0, tools: { A: null, B: null } };
+    this.st = { code: "", phase: "lobby", format: "1v1", level: "easy", hostId: null, round: 0, tools: { A: null, B: null } };
     this.bots = [];
     this.g = null;
     this.tick = null;
@@ -184,7 +185,7 @@ export class Room extends DurableObject {
     if (st.hostId !== c.id) return;
     if (m.t === "settings") {
       if (m.format === "1v1" || m.format === "2v2") st.format = m.format;
-      if (["easy", "mid", "hard"].includes(m.level)) st.level = m.level;
+      if (["easy", "hard"].includes(m.level)) st.level = m.level;
       this.balanceTeams(); this.sync(); return;
     }
     if (m.t === "bots") {
@@ -318,6 +319,10 @@ export default {
           const score = Math.max(0, Math.min(60000, Math.floor(Number(b.score) || 0)));
           await db.prepare("INSERT INTO lb (sid, name, badge, best_time, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, best_time = MAX(best_time, excluded.best_time), ts = excluded.ts")
             .bind(sid, name, badge, score, Date.now()).run();
+        } else if (b.kind === "timeHard") {
+          const score = Math.max(0, Math.min(60000, Math.floor(Number(b.score) || 0)));
+          await db.prepare("INSERT INTO lb (sid, name, badge, best_time_hard, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, best_time_hard = MAX(best_time_hard, excluded.best_time_hard), ts = excluded.ts")
+            .bind(sid, name, badge, score, Date.now()).run();
         } else if (b.kind === "boss") {
           await db.prepare("INSERT INTO lb (sid, name, badge, boss, ts) VALUES (?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, boss = boss + 1, ts = excluded.ts")
             .bind(sid, name, badge, Date.now()).run();
@@ -329,8 +334,8 @@ export default {
 
       if (path === "/api/leaderboard" && req.method === "GET") {
         const q = (col, extra) => db.prepare(`SELECT name, badge, ${col} AS v FROM lb WHERE ${col} > 0 ${extra || ""} ORDER BY ${col} DESC, ts ASC LIMIT 15`).all().then(r => r.results || []);
-        const [wins, duel, time, boss] = await Promise.all([q("wins"), q("best_duel"), q("best_time"), q("boss")]);
-        return json({ wins, duel, time, boss });
+        const [wins, duel, time, timeHard, boss] = await Promise.all([q("wins"), q("best_duel"), q("best_time"), q("best_time_hard"), q("boss")]);
+        return json({ wins, duel, time, timeHard, boss });
       }
 
       if (path === "/api/recap" && req.method === "GET") {

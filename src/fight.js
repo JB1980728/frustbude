@@ -7,7 +7,7 @@ const FIGHT = (() => {
     ok:    { start: .3,  dmg: 230, block: 1,  cd: .6,  stun: .9, ok: 0 },
   };
   // Stein-Schere-Papier: Schlag unterbricht Haken · Block hält Schläge auf · Haken bricht den Block
-  const BOT = { easy: { think: [.55, .9], read: .15, heavyP: 0 }, mid: { think: [.32, .55], read: .4, heavyP: 0 }, hard: { think: [.16, .28], read: .8, heavyP: 0 } };
+  const BOT = { easy: { think: [.55, .9], read: .15, heavyP: 0 }, mid: { think: [.32, .55], read: .4, heavyP: 0 }, hard: { think: [.24, .4], read: .55, heavyP: 0 } };
   const rnd = (a, b) => a + Math.random() * (b - a);
   const other = t => t === "A" ? "B" : "A";
 
