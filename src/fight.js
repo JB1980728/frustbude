@@ -7,7 +7,7 @@ const FIGHT = (() => {
     ok:    { start: .3,  dmg: 230, block: 1,  cd: .6,  stun: .9, ok: 0 },
   };
   // Stein-Schere-Papier: Schlag unterbricht Haken · Block hält Schläge auf · Haken bricht den Block
-  const BOT = { easy: { think: [.5, .85], read: .15, heavyP: .15 }, mid: { think: [.25, .45], read: .5, heavyP: .22 }, hard: { think: [.13, .24], read: .85, heavyP: .25 } };
+  const BOT = { easy: { think: [.55, .9], read: .15, heavyP: 0 }, mid: { think: [.32, .55], read: .4, heavyP: 0 }, hard: { think: [.16, .28], read: .8, heavyP: 0 } };
   const rnd = (a, b) => a + Math.random() * (b - a);
   const other = t => t === "A" ? "B" : "A";
 
@@ -134,9 +134,7 @@ const FIGHT = (() => {
     if (p.block) return;
     if (me.ok >= 100) { act(g, pid, "ok"); return; }
     // Gegner blockt -> Haken bricht die Deckung
-    if (guardOf(g, foeTeam) && Math.random() < L.read) { act(g, pid, "heavy"); return; }
-    // Gegner taumelt -> voll drauf
-    if (foe.stun > .3) { act(g, pid, "heavy"); return; }
+    if (guardOf(g, foeTeam)) return; // Gegner blockt -> abwarten
     act(g, pid, Math.random() < L.heavyP ? "heavy" : "jab");
   }
 
