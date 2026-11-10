@@ -308,9 +308,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Rückblick -->
 <div class="overlay hidden" id="recap"><div class="card">
-  <button class="x" data-close="recap">✕</button>
+  <button class="x" data-close="recap" id="recapX">✕</button>
   <div class="mid">KLASSEN-RÜCKBLICK</div>
-  <div class="sub" style="margin:8px 0 10px">So viel Frust hat die Klasse schon abgebaut:</div>
+  <div class="sub" id="recapSub" style="margin:8px 0 10px">So viel Frust hat die Klasse schon abgebaut:</div>
   <div class="scroll" id="recapBody"><div class="empty">Lädt …</div></div>
 </div></div>
 
@@ -383,6 +383,7 @@ const TBY={}; TOOLS.forEach(t=>TBY[t.id]=t);
 const NAMES={...TBY};
 const LAST=["Ich … geh … offline …","Wartungsarbeiten …","Fehler 500!","Session beendet.","Bitte … 5 Sterne …"];
 const QUOTES=["Frust heißt nur: Dir ist wichtig, dass es gut wird. Das ist schon die halbe Miete.","Kein Mensch beherrscht ein Tool am ersten Tag. Auch die nicht, die so tun.","Du musst nicht jedes Tool lieben. Du musst nur wissen, welches deine Frage beantwortet.","Jeder Profi hat schon vor Google Analytics gesessen und gedacht: Was willst du von mir?","Fehler sind keine Niederlagen. Sie sind Daten. Und mit Daten kennst du dich inzwischen aus.","Was dich heute nervt, erklärst du in drei Monaten jemand anderem.","Funktional schlägt perfekt. Erst live, dann schön.","Du bist nicht langsam. Du lernst gerade zehn Dinge gleichzeitig.","Die Conversion von „verwirrt“ zu „kann ich“ liegt bei 100 %. Sie braucht nur Zeit.","Atme durch. Das Tool läuft dir nicht weg. Leider.","Heute ein Formular, morgen ein Produkt. Jeder gute PM hat mal mit einer Landingpage angefangen.","Neu fühlt sich am Anfang immer holprig an. Genau daran merkst du, dass du wächst.","Wer fragt, wirkt nicht dumm. Wer fragt, wird schneller fertig.","Ihr seid ein Team. Der Frust ist geteilt, also auch die Lösungen.","Vor ein paar Wochen wusstest du noch nicht, was AARRR ist. Jetzt schon. Merkst du was?","Pausen sind keine verlorene Zeit. Sie sind der Moment, in dem das Gelernte sich setzt.","Overloaded ist kein Dauerzustand. Es ist ein Signal für eine Pause.","Ein Tool, das heute nervt, ist morgen eine Zeile in deinem Lebenslauf.","Du musst nicht alles heute können. Nur ein bisschen mehr als gestern.","Perfektion ist der natürliche Feind von „Abgegeben“.","Das Gefühl, nichts zu verstehen, ist der Anfang vom Verstehen.","Du bist nicht allein verwirrt. Ihr seid gemeinsam verwirrt. Das nennt man Teamwork.","Erst die Frage, dann das Tool. Und zwischendurch ein Kaffee.","Ein MVP ist auch nicht fertig – und trotzdem wertvoll. Genau wie du gerade.","Rückschläge sind Iterationen mit schlechtem Timing.","Du hast Personas, Empathy Maps und Usability-Tests überlebt. Das hier schaffst du auch.","Mach eine Sache fertig. Dann die nächste. So entstehen große Dinge.","Deine Lernkurve ist steil. Das fühlt sich anstrengend an, weil es nach oben geht.","Auch die beste Heatmap zeigt: Manchmal klickt jeder daneben.","Zehn Minuten Pause sind keine Schwäche. Sie sind Wartung.","Die Deadline ist fix. Dein Wert als Mensch hängt nicht davon ab.","Frag dich nicht, ob du gut genug bist. Frag dich, was du heute gelernt hast.","Feedback tut kurz weh und hilft lange.","Sei stolz auf das, was vor drei Monaten noch unmöglich klang.","Ein schlechter Tag im Kurs ist immer noch ein Tag näher am Ziel.","Kleine Schritte zählen. Vor allem die, die keiner sieht.","Wenn nichts mehr geht: speichern, aufstehen, Fenster auf.","Der Frust von heute ist die lustige Anekdote im Vorstellungsgespräch von morgen.","Kein Produkt war beim ersten Release perfekt. Auch keine Karriere.","Du bist hier, um zu lernen – nicht, um schon alles zu können.","Manchmal ist der beste Overkill eine Tasse Tee und fünf Minuten Ruhe.","Ein Bug ist nur ein Hinweis, wo es noch spannend wird.","Du vergleichst deinen Anfang mit dem Mittelteil anderer. Lass das.","Gestern Overloaded, heute weiter. Das ist Durchhaltevermögen.","Gute PMs haben nicht auf alles eine Antwort. Sie finden heraus, wen sie fragen müssen.","Je öfter du etwas falsch klickst, desto schneller klickst du es richtig.","Die DSGVO ist kompliziert. Du bist trotzdem schlauer als jedes Cookie-Banner.","Langsam ist auch eine Geschwindigkeit. Hauptsache, die Richtung stimmt.","Heute schon gelacht? Dann hat sich der Tag schon gelohnt.","Niemand erinnert sich, wie oft Wix verrutscht ist – aber daran, dass du fertig geworden bist."];
+const COURSE_END=new Date(2027,5,23).getTime(); // Kursende: 23.06.2027 (ab 0 Uhr Ortszeit)
 const RANKS=[[0,"🧑‍🎓 Praktikum"],[100,"🌱 Junior PM"],[300,"📋 PM"],[600,"🎯 Senior PM"],[1000,"👑 Head of Frust"]];
 const BADGES=[
   {id:"win1",e:"🏆",t:"Erster Sieg",d:"Ein Spiel gewonnen",f:s=>s.wins>=1},
@@ -858,7 +859,7 @@ $("pickRandom").onclick=()=>{ hide("pick"); startBot(pick(TOOLS).id); };
 $("againBtn").onclick=()=>{ hide("results"); if(mode==="net"){ rsend({t:"rematch"}); } else openPick(); };
 $("resMenu").onclick=()=>{ hide("results"); if(mode==="net") leaveNet(); else { mode="idle"; openHome(); } };
 $("resZen").onclick=()=>{ hide("results"); openZen(); };
-document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ hide(b.dataset.close); if(b.dataset.close==="pick") openHome(); });
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ hide(b.dataset.close); if(!anyOpen()&&!(V&&V.phase==="play"&&!ended)) openHome(); });
 $("tRank").onclick=()=>openStats("rank"); $("tWall").onclick=()=>{ show("wall"); loadWall(); }; $("tProfile").onclick=openProfile; $("tHelp").onclick=openHelp; $("tRecap").onclick=openRecap; $("tZen").onclick=()=>{ hide("home"); openZen(); };
 
 /* ===================== Anleitung ===================== */
@@ -922,7 +923,7 @@ function renderStats(){
 document.querySelectorAll("#statsMain button").forEach(b=>b.onclick=()=>openStats(b.dataset.m));
 
 /* ===================== Rückblick ===================== */
-async function openRecap(){ show("recap"); const body=$("recapBody"); body.innerHTML='<div class="empty">Lädt …</div>'; let j; try{ j=await api("recap"); }catch(e){ body.innerHTML='<div class="empty">Gerade nicht erreichbar.</div>'; return; }
+async function openRecap(){ show("recap"); $("recapSub").innerHTML=Date.now()>=COURSE_END?"🎓 <b>Geschafft – der Kurs ist vorbei!</b> So viel Frust habt ihr gemeinsam abgebaut:":"So viel Frust hat die Klasse schon abgebaut:"; const body=$("recapBody"); body.innerHTML='<div class="empty">Lädt …</div>'; let j; try{ j=await api("recap"); }catch(e){ body.innerHTML='<div class="empty">Gerade nicht erreichbar.</div>'; return; }
   const per=j.hits||{}; const total=Object.entries(per).filter(([k])=>TBY[k]).reduce((a,[,v])=>a+v,0); const hated=Object.entries(per).filter(([k])=>TBY[k]).sort((a,b)=>b[1]-a[1]).slice(0,3); const medal=["🥇","🥈","🥉"];
   body.innerHTML=`<div class="stats"><div class="stat"><b>${fmt(total)}</b><span>Treffer auf Tools</span></div><div class="stat"><b>${fmt(j.players)}</b><span>Mitspieler</span></div><div class="stat"><b>${fmt(per._ko)}</b><span>Türme zerstört</span></div></div>
    <div class="stats"><div class="stat"><b>${fmt(per._win)}</b><span>Siege</span></div><div class="stat"><b>${fmt(j.duels)}</b><span>Duelle</span></div><div class="stat"><b>${fmt(j.wall)}</b><span>Wand-Zettel</span></div></div>
@@ -1053,6 +1054,7 @@ resize(); renderHome(); loadStats();
 (function idleArena(){ const B=threeTools([]), A=threeTools(B); const g=SIM.newGame({players:[],towers:{A,B}}); towerInfo=SIM.towerInfo(g); V={t:0,dur:150,overtime:false,double:false,phase:"idle",winner:null,crowns:{A:0,B:0},units:[],towers:g.towers,traps:[],spells:[],me:null,players:{}}; })();
 const roomParam=new URLSearchParams(location.search).get("room");
 if(roomParam){ hide("home"); $("duelName").value=saved.name||""; $("joinCode").value=roomParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); show("duel"); }
+else if(Date.now()>=COURSE_END&&!saved.recapShown){ saved.recapShown=true; persist(); hide("home"); openRecap(); }
 else if(!saved.seenHelp) openHelp();
 requestAnimationFrame(loop);
 })();
