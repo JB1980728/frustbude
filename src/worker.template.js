@@ -4,6 +4,8 @@
 import { DurableObject } from "cloudflare:workers";
 
 const HTML = __HTML__;
+const OG_JPG = "__OG__";
+const ICON_PNG = "__ICON__";
 
 const TOOL_IDS = ["ga","onepage","wix","miro","slack","meet","classroom","coda","posthog","clarity","mixpanel","amplitude","umami","contentsquare","chatgpt","gemini","stitch","figma","claude"];
 const WEAPON_IDS = ["fist","tomato","banana","egg","pie","highfive","rocket","love"];
@@ -325,6 +327,11 @@ export default {
     const url = new URL(req.url);
     const path = url.pathname;
 
+    // Vorschaubild für geteilte Links und App-Symbol
+    if (req.method === "GET" && (path === "/og.jpg" || path === "/icon.png")) {
+      const b64 = path === "/og.jpg" ? OG_JPG : ICON_PNG, bin = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+      return new Response(bin, { headers: { "content-type": path === "/og.jpg" ? "image/jpeg" : "image/png", "cache-control": "public, max-age=86400" } });
+    }
     if (req.method === "GET" && (path === "/" || path === "/index.html")) {
       return new Response(HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" } });
     }
