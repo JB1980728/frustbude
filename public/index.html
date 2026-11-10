@@ -806,8 +806,8 @@ let saved = {qDeck:[],qPos:0,allKO:0,best:0,unlocked:[],hate:{},timeBest:0,bossW
   level:"easy",name:"",badge:"",badges:[],hitsAll:0,w:{},mv:{},zen:0,duelWins:0,wall:0,teamGames:0,seenHelp:false,recapSeen:false};
 try{ const old=JSON.parse(localStorage.getItem("frustbude3")||localStorage.getItem("frustbude2")||"{}"); Object.assign(saved,old); }catch(e){}
 // Kompletter Neustart (Ranglisten, Punkte, Abzeichen, Rekorde): Einstellungen und Spitzname bleiben
-const RESET_EPOCH="2026-11-10";
-if(saved.epoch!==RESET_EPOCH){ const keep={}; ["sid","name","level","seenHelp","hintsSeen","muted","reported","samed","qDeck","qPos"].forEach(k=>{ if(saved[k]!==undefined) keep[k]=saved[k]; });
+const RESET_EPOCH="2026-11-10b";
+if(saved.epoch!==RESET_EPOCH){ const keep={}; ["sid","name","level","seenHelp","hintsSeen","muted","qDeck","qPos"].forEach(k=>{ if(saved[k]!==undefined) keep[k]=saved[k]; });
   saved={qDeck:[],qPos:0,allKO:0,best:0,unlocked:[],hate:{},timeBest:0,bossWins:0,bossHard:0,bossOpen:false,sid:"",reported:[],samed:[],
     level:"easy",name:"",badge:"",badges:[],hitsAll:0,w:{},mv:{},zen:0,duelWins:0,wall:0,teamGames:0,seenHelp:false,recapSeen:false};
   Object.assign(saved,keep); saved.epoch=RESET_EPOCH; }
