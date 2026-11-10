@@ -423,6 +423,23 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #chX{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);font-size:13px}
 #fFlip{position:absolute;left:8px;top:8px;display:none;font-weight:900;font-size:12px;background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:999px;padding:6px 10px}
 #fight.spec #fFlip{display:block}
+
+.onlrow{display:flex;gap:6px;align-items:stretch;margin-bottom:4px}.onlrow .online{flex:1;margin:0}
+.chatbtn{position:relative;font-weight:900;font-size:12.5px;background:rgba(168,85,247,.25);border:1px solid var(--purple);border-radius:12px;padding:5px 10px;white-space:nowrap}
+.chatbtn b{position:absolute;top:-7px;right:-6px;background:#ef4444;color:#fff;font-size:10px;border-radius:999px;padding:1px 6px;display:none}.chatbtn b.on{display:block}
+#gchat .card{height:calc(var(--vh,100dvh) - 28px)}
+.clist{display:flex;flex-direction:column;gap:5px;padding:4px 2px;min-height:60px}
+.cmsg{max-width:85%;align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:6px 10px;font-weight:800;font-size:13.5px;line-height:1.35;overflow-wrap:anywhere;text-align:left}
+.cmsg b{display:block;font-size:11px;color:var(--yellow)}
+.cmsg.me{align-self:flex-end;background:rgba(168,85,247,.3);border-color:var(--purple);border-radius:14px 14px 4px 14px}
+.cmsg.sys{align-self:center;background:none;border:0;color:var(--muted);font-size:12px}
+.cin{display:flex;gap:6px;margin-top:8px}.cin .field{margin:0;padding:10px 12px;font-size:16px}
+.cin button{flex:0 0 46px;border-radius:14px;background:linear-gradient(180deg,#ffe680,#ffb703);color:#1a0830;font-size:18px;font-weight:900}
+.rchat{margin:6px 0 10px}.rchat .clist{max-height:150px;background:rgba(0,0,0,.2);border-radius:12px;padding:6px}
+#fChat{position:absolute;left:8px;right:8px;top:46px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none}
+#fChat .cmsg{font-size:12px;padding:4px 9px;animation:chatFade 5s forwards}
+@keyframes chatFade{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#fChatRow{display:none;padding:0 8px 8px;margin:0}#fight.spec #fChatRow{display:flex}
 </style>
 </head>
 <body>
@@ -481,7 +498,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin-bottom:10px">Tools nerven? Hier darfst du es rauslassen.</div>
   <div class="nametag" id="homeTag" style="align-self:center;display:none"></div>
   <div class="classline" id="homeClass" style="display:none"></div>
-  <div class="online" id="homeOnline">🟢 Verbinde …</div>
+  <div class="onlrow"><div class="online" id="homeOnline">🟢 Verbinde …</div><button class="chatbtn" id="chatBtn">💬 Chat<b id="chatBadge"></b></button></div>
   <div class="seglbl">Wähle deinen Modus</div>
   <div class="modes">
     <button class="mode m-tap" id="tapBtn"><span class="me">👊</span><span class="mt"><b>Einfach draufhauen</b><small>Nur tippen. Nichts wehrt sich.</small></span></button>
@@ -650,6 +667,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="tlab" style="text-align:center">In der Mitte hängt:</div>
     <div class="midtool" id="midTool"></div>
     <div class="specline" id="specLine"></div>
+    <div class="rchat"><div class="clist scroll" id="rList"></div><div class="cin"><input class="field" id="rIn" maxlength="140" placeholder="Nachricht an alle im Raum …" autocomplete="off"><button id="rSend">➤</button></div></div>
     <div id="hostCtl">
       <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
       <div class="seg" id="lobbyLv"><button data-lv="easy">🤖 Bots leicht</button><button data-lv="hard">🤖 Bots schwer</button></div>
@@ -670,17 +688,27 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="fmid"><div class="ftime" id="fTime">30</div><div class="fround" id="fRound">RUNDE 1</div></div>
     <div class="fside R"><div class="fn"><span id="fNameR"></span></div><span class="pips" id="fPipsR"></span><div class="fsub" id="fSubR"></div><div class="fpow" id="fPowR"></div></div>
   </div>
-  <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div>
+  <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div><div id="fChat"></div>
     <div id="fStun"><b id="fStunT">😵‍💫 OVERLOADED!</b><span id="fStunS">Getroffen – kurz nicht hauen</span><div class="bar"><i id="fStunBar"></i></div></div>
     <button class="iconbtn muteToggle" id="fMute" aria-label="Ton aus">🔊</button>
     <button id="fFlip">🔄 Andere Seite ansehen</button>
     <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
   <div id="fCtl"><button id="fTap">👊 HAU DRAUF! <small>so schnell du kannst – oder überall aufs Bild tippen</small></button></div>
   <div id="fReacts" class="reacts"></div>
+  <div class="cin" id="fChatRow"><input class="field" id="fIn" maxlength="140" placeholder="Anfeuern …" autocomplete="off"><button id="fSend">➤</button></div>
 </div>
 
 <!-- Herausforderung von jemand anderem -->
 <div id="chBox"><span id="chTxt"></span><button id="chGo">⚔️ Mitmachen</button><button id="chX" aria-label="Schließen">✕</button></div>
+
+<!-- Chat für alle -->
+<div class="overlay hidden" id="gchat"><div class="card">
+  <button class="x" data-close="gchat">✕</button>
+  <div class="mid">💬 CHAT</div>
+  <div class="sub" style="margin:6px 0 8px">Für alle, die gerade online sind. <b>Nichts wird gespeichert</b> – nach ein paar Stunden ist alles weg.</div>
+  <div class="clist scroll" id="gList"></div>
+  <div class="cin"><input class="field" id="gIn" maxlength="140" placeholder="Schreib was …" autocomplete="off"><button id="gSend">➤</button></div>
+</div></div>
 
 <!-- Abbrechen? -->
 <div class="overlay hidden" id="quitAsk"><div class="card">
@@ -1623,7 +1651,7 @@ function renderLevelUI(){ if($("lvHint")) $("lvHint").textContent=saved.level===
 }
 
 /* ===================== Overlays ===================== */
-const OVERLAYS=["pick","home","help","timeEnd","bossLost","zen","stats","wall","profile","recap","custom","duel","results","modeIntro","quitAsk"];
+const OVERLAYS=["pick","home","help","timeEnd","bossLost","zen","stats","wall","profile","recap","custom","duel","results","modeIntro","quitAsk","gchat"];
 function show(id){ $(id).classList.remove("hidden"); }
 function hide(id){ $(id).classList.add("hidden"); }
 function anyOpen(){ return OVERLAYS.some(id=>!$(id).classList.contains("hidden")); }
@@ -1784,7 +1812,7 @@ function openDuel(prefill){
   $("joinLbl").textContent=prefill?"Du wurdest zum Duell eingeladen!":"Oder mit Code beitreten";
   if(prefill) $("joinCode").value=prefill; show("duel");
 }
-function connect(code,role){ hideChallenge();
+function connect(code,role){ hideChallenge(); CHAT.r=[]; renderChat("rList",CHAT.r);
   if(R.ws){ R.leaving=true; try{ R.ws.close(); }catch(e){} }
   R.code=code; R.role=role; R.leaving=false; R.st=null; R.you=null; R.ended=false; R.round=-1;
   const url=(location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/room/"+code;
@@ -1810,6 +1838,8 @@ function onRoomMsg(m){
   if(m.t==="state"){ R.off=m.now-Date.now(); const prev=R.st; R.st=m; const mine=me(); if(mine) R.role=mine.role; renderRoom(prev); return; }
   if(m.t==="snap"){ if(!FT.on||FT.local) return; FT.v=FIGHT.view(m.s); fEvents(m.s.ev||[]); return; }
   if(m.t==="react"){ fFloat(m.e); return; }
+  if(m.t==="chat"||m.t==="chatlog"){ onRoomChat(m); return; }
+  if(m.t==="chatErr"){ toast(m.msg,2400); return; }
   if(m.t==="feed"){ if(!FT.on) toast(m.txt,1800); return; }
   if(m.t==="error"){ toast(m.msg,3000); return; }
 }
@@ -1847,7 +1877,7 @@ function renderLobby(){
   $("botFill").style.display=isHost&&(!full||hasBots)?"block":"none"; $("botFill").textContent=hasBots?"🤖 BOTS ENTFERNEN":"🤖 FREIE PLÄTZE MIT BOTS FÜLLEN";
   $("startDuel").style.display=isHost?"block":"none"; $("startDuel").disabled=!ok; $("startDuel").textContent=ok?"KAMPF STARTEN! 🔔":"WARTE AUF GEGNER …";
   $("waitLine").style.display=!isHost?"block":"none";
-  $("challengeAll").style.display=isHost?"block":"none"; lbAnnounce();
+  $("challengeAll").style.display=isHost?"block":"none"; $("challengeAll").parentNode.style.gridTemplateColumns=isHost?"1fr 1fr":"1fr"; lbAnnounce();
   $("swapRole").textContent=mine&&mine.role==="player"?"👀 Nur zuschauen":"🥊 Mitspielen";
 }
 // alte Duell-Funktionen (Punkte-Rennen) sind ersetzt
@@ -1894,6 +1924,8 @@ function lbConnect(){
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
     if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; renderOnline(); renderOpenRooms(); }
     else if(m.t==="challenge"){ if(R.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws) showChallenge(); }
+    else if(m.t==="chat"||m.t==="chatlog") onLobbyChat(m);
+    else if(m.t==="chatErr") toast(m.msg,2400);
     else if(m.t==="challenged"){ toast(m.n>0?`📣 ${m.n} ${m.n===1?"Person wurde":"Leute wurden"} eingeladen!`:"Gerade ist sonst niemand online – teil den Link in Slack.",2600); } };
   ws.onclose=()=>{ if(LB.ws!==ws) return; LB.ws=null; $("homeOnline").textContent="🟢 Verbindung wird gesucht …"; setTimeout(lbConnect,LB.retry); LB.retry=Math.min(LB.retry*2,15000); };
   ws.onerror=()=>{};
@@ -1927,6 +1959,26 @@ function lbAnnounce(){
 setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
   if(!b&&!R.ws&&LB.queue) showChallenge(); lbAnnounce(); },1000);
 $("challengeAll").onclick=()=>{ if(!R.st) return; lbAnnounce(); setTimeout(()=>lbSend({t:"challenge",code:R.code}),300); sfx.pop(); };
+
+/* ===================== Chat (nur live, nichts gespeichert) ===================== */
+const CHAT={g:[],r:[],unread:0};
+function chatNode(m){ const d=document.createElement("div"); const mine=m.name===saved.name; d.className="cmsg"+(mine?" me":""); const b=document.createElement("b"); b.textContent=mine?"Du":m.name; d.appendChild(b); d.appendChild(document.createTextNode(m.text)); return d; }
+function renderChat(listId,arr){ const el=$(listId); if(!el) return; const atEnd=el.scrollHeight-el.scrollTop-el.clientHeight<40; el.innerHTML="";
+  if(!arr.length){ const d=document.createElement("div"); d.className="cmsg sys"; d.textContent=listId==="gList"?"Noch ruhig hier. Sag Hallo! 👋":"Noch keine Nachrichten. Sprüche klopfen erlaubt 😉"; el.appendChild(d); }
+  arr.forEach(m=>el.appendChild(chatNode(m))); if(atEnd||arr.length<=1) el.scrollTop=el.scrollHeight; }
+function chatNeedsName(){ if(saved.name&&saved.name.length>=2) return false; toast("Leg erst im Profil einen Spitznamen an, dann kannst du chatten.",2600); return true; }
+function sendGlobal(){ const t=$("gIn").value.trim(); if(!t) return; if(chatNeedsName()) return; lbSend({t:"chat",text:t}); $("gIn").value=""; }
+function sendRoom(inp){ const t=$(inp).value.trim(); if(!t) return; if(chatNeedsName()) return; rsend({t:"chat",text:t}); $(inp).value=""; }
+function onLobbyChat(m){ if(m.t==="chatlog"){ CHAT.g=m.msgs||[]; } else { CHAT.g.push(m); if(CHAT.g.length>25) CHAT.g.shift(); if($("gchat").classList.contains("hidden")&&m.name!==saved.name){ CHAT.unread++; } }
+  const bd=$("chatBadge"); bd.textContent=CHAT.unread>9?"9+":CHAT.unread; bd.classList.toggle("on",CHAT.unread>0); renderChat("gList",CHAT.g); }
+function onRoomChat(m){ if(m.t==="chatlog") CHAT.r=m.msgs||[]; else { CHAT.r.push(m); if(CHAT.r.length>15) CHAT.r.shift();
+    if(FT.on){ const box=$("fChat"); const n=chatNode(m); box.appendChild(n); while(box.children.length>3) box.firstChild.remove(); setTimeout(()=>n.remove(),5200); } }
+  renderChat("rList",CHAT.r); }
+$("chatBtn").onclick=()=>{ CHAT.unread=0; $("chatBadge").classList.remove("on"); renderChat("gList",CHAT.g); show("gchat"); };
+$("gSend").onclick=sendGlobal; $("gIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendGlobal(); });
+$("rSend").onclick=()=>sendRoom("rIn"); $("rIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendRoom("rIn"); });
+$("fSend").onclick=()=>sendRoom("fIn"); $("fIn").addEventListener("keydown",e=>{ e.stopPropagation(); if(e.key==="Enter") sendRoom("fIn"); });
+["gIn","rIn","fIn"].forEach(id=>$(id).addEventListener("pointerdown",e=>e.stopPropagation()));
 
 /* ===================== Duell: Tauziehen mit der Boxbirne ===================== */
 const FT={on:false,local:false,g:null,v:null,myTeam:"A",spec:false,myId:"me",format:"1v1",level:"easy",fx:[],words:[],gloves:[],items:[],banner:"",bannerSub:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,time:0,dp:0,swing:0,swingV:0,stun:0,itemT:3,flash:{L:0,R:0}};

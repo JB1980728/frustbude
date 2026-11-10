@@ -45,6 +45,17 @@ function cleanName(n) {
   return t;
 }
 function cleanBadge(b) { return cleanText(b, 8).replace(/\s/g, ""); }
+// Chat: kurz, ohne Links und Beleidigungen; nur im Arbeitsspeicher
+function chatCheck(c, raw) {
+  const now = Date.now();
+  if (!c.name || c.name === "Anonym") return { err: "Leg erst einen Spitznamen an, dann kannst du chatten." };
+  if (now - (c.lastChat || 0) < 1200) return { err: "Nicht so schnell 🙂" };
+  const text = cleanText(raw, 140).replace(/\n/g, " ");
+  if (text.length < 1) return { err: "" };
+  if (isBlocked(text)) return { err: "Das enthält Wörter oder Links, die hier nicht erlaubt sind." };
+  c.lastChat = now;
+  return { msg: { t: "chat", id: now + "-" + Math.random().toString(36).slice(2, 6), name: c.name, text, ts: now } };
+}
 function cleanSid(s) { return String(s || "").replace(/[^a-z0-9]/gi, "").slice(0, 40); }
 
 // Spam-Bremse (nur im Arbeitsspeicher, nichts wird dauerhaft gespeichert)
@@ -91,6 +102,7 @@ export class Room extends DurableObject {
     this.bots = [];
     this.g = null;
     this.tick = null;
+    this.chat = [];
   }
 
   async fetch(req) {
@@ -146,6 +158,7 @@ export class Room extends DurableObject {
         if (!st.hostId || !this.conns.has(st.hostId)) st.hostId = c.id;
       } else c.role = "spectator";
       this.send(c, { t: "welcome", you: c.id, role: c.role, full: wantPlay && c.role !== "player" });
+      if (this.chat.length) this.send(c, { t: "chatlog", msgs: this.chat });
       this.sync();
       return;
     }
@@ -156,6 +169,8 @@ export class Room extends DurableObject {
       else if (m.a === "grab") FIGHT.act(this.g, c.id, "grab", Math.floor(Number(m.id) || 0));
       return;
     }
+    if (m.t === "chat") { const r = chatCheck(c, m.text); if (r.err !== undefined) { if (r.err) this.send(c, { t: "chatErr", msg: r.err }); return; }
+      this.chat.push(r.msg); if (this.chat.length > 15) this.chat.shift(); this.broadcast(r.msg); return; }
     if (m.t === "react" && REACTIONS.includes(m.e) && now - c.lastReact > 350) { c.lastReact = now; this.broadcast({ t: "react", e: m.e }); return; }
     if (m.t === "rematch" && st.phase === "results") {
       st.phase = "lobby"; this.g = null;
@@ -254,7 +269,7 @@ export class Room extends DurableObject {
 
 /* ======================= Treffpunkt: Wer ist online, offene Duelle, Herausforderungen ======================= */
 export class Lobby extends DurableObject {
-  constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; }
+  constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; this.chat = []; }
   async fetch(req) {
     if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
     if (this.conns.size >= 300) return new Response("Voll", { status: 429 });
@@ -278,7 +293,9 @@ export class Lobby extends DurableObject {
     const now = Date.now(); if (now - c.msgWin > 5000) { c.msgWin = now; c.msgs = 0; } if (++c.msgs > 40) return;
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
     const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") this.send(c, this.view()); this.sync(); return; }
+    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") { this.send(c, this.view()); this.send(c, { t: "chatlog", msgs: this.chat.filter(x => Date.now() - x.ts < 3 * 3600000) }); } this.sync(); return; }
+    if (m.t === "chat") { const r = chatCheck(c, m.text); if (r.err !== undefined) { if (r.err) this.send(c, { t: "chatErr", msg: r.err }); return; }
+      this.chat.push(r.msg); if (this.chat.length > 25) this.chat.shift(); const s = JSON.stringify(r.msg); for (const o of this.conns.values()) { try { o.ws.send(s); } catch (e) {} } return; }
     if (m.t === "open" && code.length >= 4) {
       const cap = m.format === "2v2" ? 4 : 2, count = Math.max(1, Math.min(cap, Math.floor(Number(m.count) || 1)));
       const r = this.rooms.get(code); if (r && r.by !== c.id) return;
