@@ -513,6 +513,11 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #koPill{display:flex;flex-direction:column;align-items:center;line-height:1.05;padding:3px 10px;white-space:nowrap}
 @media (max-width:390px){.logo{font-size:20px;letter-spacing:.6px}}
 #lvEmoji{display:block;font-size:9.5px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;color:#fde047}
+
+.oroom.live{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.08)}
+.oroom.live .dot{width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 0 rgba(239,68,68,.6);animation:livePulse 1.4s infinite;flex:none;margin:0 3px}
+.oroom.live small{color:#fca5a5}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}70%{box-shadow:0 0 0 8px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
 </style>
 </head>
 <body>
@@ -722,7 +727,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="mid">DUELL</div>
     <div class="sub" style="margin:8px 0 10px">Tauziehen mit der Boxbirne: Wer schneller haut, schiebt sie zum Gegner. 1 gegen 1 oder 2 gegen 2.</div>
     <div class="online mkonly" id="duelOnline" style="margin-bottom:10px"></div>
-    <div class="seglbl mkonly">Offene Duelle – sofort mitmachen</div>
+    <div class="seglbl mkonly">Duelle – mitmachen oder zuschauen</div>
     <div id="openRooms" class="mkonly"></div>
     <input class="field" id="duelName" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
     <div class="seglbl mkonly">Jemanden herausfordern</div>
@@ -2039,18 +2044,22 @@ function renderOnline(){
 }
 function renderOpenRooms(){
   const box=$("openRooms"); if(!box) return; box.innerHTML="";
-  const rooms=LB.rooms.filter(r=>r.code!==R.code&&r.count<r.cap);
+  const rooms=LB.rooms.filter(r=>r.code!==R.code&&r.count<r.cap&&!r.live), live=LB.rooms.filter(r=>r.code!==R.code&&r.live);
+  live.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · ${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} läuft gerade</small></span><button>👀 Zuschauen</button>`;
+    d.querySelector(".nm").textContent=r.title||`${r.name} kämpft`; d.querySelector("button").onclick=()=>watchOpen(r.code); box.appendChild(d); });
+  if(!rooms.length&&live.length) return;
   if(!rooms.length){ box.innerHTML='<div class="oempty">Gerade wartet niemand. Erstell selbst ein Duell und tipp auf „📣 Alle einladen“.</div>'; return; }
   rooms.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>⚔️</span><span class="t"><span class="nm"></span><small>${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} · ${r.count}/${r.cap} dabei</small></span><button>Mitmachen</button>`;
     d.querySelector(".nm").textContent=`${r.name} sucht Gegner`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
 }
+function watchOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Zuschauen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"spectator"); }
 function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Mitboxen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
 function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; $("chBox").classList.add("on"); sfx.ding(); clearTimeout(LB.chT); }
 function hideChallenge(){ $("chBox").classList.remove("on"); }
 LB.dismissed=new Set();
 function checkChallenges(){
   const now=Date.now(), age=r=>r.ch+(now-(LB.roomsAt||now))/1000;
-  const open=LB.rooms.filter(r=>r.ch!==null&&r.ch!==undefined&&age(r)<600&&r.code!==R.code&&r.count<r.cap&&!LB.dismissed.has(r.code)).sort((a,b)=>age(a)-age(b));
+  const open=LB.rooms.filter(r=>!r.live&&r.ch!==null&&r.ch!==undefined&&age(r)<600&&r.code!==R.code&&r.count<r.cap&&!LB.dismissed.has(r.code)).sort((a,b)=>age(a)-age(b));
   const shown=$("chBox").classList.contains("on");
   if(shown&&!open.some(r=>r.code===LB.chCode)){ hideChallenge(); return; } // Gegner gefunden oder Raum zu
   if(shown||isBusy()||R.ws||!open.length) return;
@@ -2062,9 +2071,12 @@ $("chX").onclick=()=>{ if(LB.chCode) LB.dismissed.add(LB.chCode); hideChallenge(
 function lbAnnounce(){
   const st=R.st; let key="";
   if(st&&st.phase==="lobby"&&st.hostId===R.you){ const cap=st.format==="2v2"?4:2, count=st.people.filter(p=>p.role==="player"&&!p.isBot).length; if(count<cap&&!st.people.some(p=>p.isBot)) key=`${st.code}|${st.format}|${count}`; }
+  // Laufende Kämpfe auch melden, damit andere zuschauen können
+  else if(st&&st.phase!=="lobby"&&st.hostId===R.you){ const ps=st.people.filter(p=>p.role==="player"), nm=t=>ps.filter(p=>p.team===t).map(p=>(p.isBot?"🤖 ":"")+p.name).join(" & ")||"?";
+    key=`${st.code}|${st.format}|${ps.filter(p=>!p.isBot).length}|live|${nm("A")} vs ${nm("B")}`; }
   if(key===LB.ann) return;
   if(LB.ann&&!key) lbSend({t:"close",code:LB.ann.split("|")[0]});
-  if(key){ const [code,format,count]=key.split("|"); lbSend({t:"open",code,format,count:+count}); }
+  if(key){ const [code,format,count,live,title]=key.split("|"); lbSend({t:"open",code,format,count:+count,live:!!live,title:title||""}); }
   LB.ann=key;
 }
 setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
