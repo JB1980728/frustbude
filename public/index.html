@@ -138,7 +138,7 @@ body.duel #combo{top:112px}
 .tile .e{font-size:24px}
 .tile:active{transform:scale(.95)}
 .seg{display:flex;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:14px;padding:3px;gap:3px;margin-bottom:12px}
-.seg button{flex:1;padding:8px 4px;border-radius:11px;font-weight:900;font-size:13px;color:var(--muted)}
+.seg button{flex:1;padding:8px 4px;border-radius:11px;font-weight:900;font-size:12.5px;color:var(--muted);white-space:nowrap}
 .seg button.on{background:linear-gradient(180deg,#ffe680,#ffb703);color:#1a0830}
 .seglbl{font-size:11px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);text-align:left;margin:0 0 5px 4px}
 .fine{font-size:11.5px;color:var(--muted);margin-top:10px;font-weight:700;line-height:1.4}
@@ -285,7 +285,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div id="hint">Tippe auf die Boxbirne!</div>
     <div id="reactLayer"></div>
     <div id="globalPill" class="glass">🌍 <b id="globalNum">0</b> Klassen-Treffer</div>
-    <button id="rageBtn" aria-label="Frust-Fusion"><span>💢</span><small id="rageLbl">WUT 0 %</small></button>
+    <button id="rageBtn" aria-label="Overkill"><span>💢</span><small id="rageLbl">OVERKILL 0 %</small></button>
   </div>
   <div class="sectionlbl">Wen willst du verhauen?<span id="toolsHint"></span></div>
   <div class="strip" id="tools"></div>
@@ -299,9 +299,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin-bottom:10px">Tools nerven? Hier darfst du es rauslassen.</div>
   <div class="nametag" id="homeTag" style="align-self:center;display:none"></div>
   <div class="classline" id="homeClass" style="display:none"></div>
-  <div class="seglbl">Level</div>
+  <div class="seglbl">Level – wie viel Gegenwehr willst du?</div>
   <div class="seg" id="levelSeg">
-    <button data-lv="easy">😌 Leicht</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button>
+    <button data-lv="easy">😌 Frust ablassen</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button>
   </div>
   <button class="cta" id="freeBtn">🥊 FREIES SPIEL</button>
   <div class="gap"></div>
@@ -451,7 +451,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="specline" id="specLine"></div>
     <div id="hostCtl">
       <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
-      <div class="seg" id="lobbyLv"><button data-lv="easy">😌 Leicht</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button></div>
+      <div class="seg" id="lobbyLv"><button data-lv="easy">😌 Frust ablassen</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button></div>
     </div>
     <div class="fine" id="lobbyInfo" style="margin:0 0 10px"></div>
     <div class="row2" id="teamBtns" style="margin-bottom:10px"><button class="cta alt sm" id="toA">→ LILA</button><button class="cta alt sm" id="toB">→ GELB</button></div>
@@ -490,7 +490,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 /* ===================== Daten ===================== */
 const TOOLS = [
-  {id:"ga", name:"Google Analytics", ic:"📈", color:"#F9AB00", lines:["Daten erscheinen in 24–48 Stunden.","(not set)","Was ist nochmal ein Key Event?","Erst Cookies akzeptieren!","Users sind keine Menschen. Viel Spaß!"]},
+  {id:"ga", name:"Google Analytics", ic:"📈", color:"#F9AB00", lines:["Daten erscheinen in 24–48 Stunden.","(not set)","Was ist nochmal ein Key Event?","Erst Cookies akzeptieren!","Datenschutzerklärung gelesen? Alle 47 Seiten?","Users sind keine Menschen. Viel Spaß!"]},
   {id:"onepage", name:"Onepage", ic:"📄", color:"#FF4D8D", lines:["Diese Funktion gibt’s nur im Upgrade.","Formular gespeichert … vielleicht.","Schon veröffentlicht?","Tracking-ID? Wo war die nochmal?"]},
   {id:"wix", name:"Wix", ic:"🧩", color:"#F2F2F2", lines:["Element verrutscht. Schon wieder.","Mobile Ansicht? Überraschung!","Drag & Drop … aber wohin?","Upgrade, um die Werbung zu entfernen!"]},
   {id:"miro", name:"Miro", ic:"🗒️", color:"#FFD02F", lines:["Unendliches Board, endloses Suchen.","Wer hat meine Sticky Notes verschoben?","Zoom: 3 %. Viel Glück!","Board-Limit erreicht."]},
@@ -512,10 +512,10 @@ const TOOLS = [
 ];
 const BASE = TOOLS.length;
 const NAMES = {}; TOOLS.forEach(t=>NAMES[t.id]=t); NAMES.boss={name:"Mega-Bug",ic:"👑",color:"#ef4444"}; NAMES.custom={name:"Eigene Tools",ic:"➕",color:"#9B5DE5"};
-const HURT = ["Autsch!","Hey!","Aua!","Nicht ins Interface!","Ich melde das dem Support!","Okay, okay!","Fehler 418!","Das gibt ein schlechtes Rating!"];
+const HURT = ["Autsch!","Das war nicht DSGVO-konform!","Hey!","Aua!","Nicht ins Interface!","Ich melde das dem Support!","Okay, okay!","Fehler 418!","Das gibt ein schlechtes Rating!"];
 const LAST = ["Ich … geh … offline …","Wartungsarbeiten … ab sofort …","Fehler 500 – Tool kaputt.","Session beendet.","Bitte … 5 Sterne …","Update wird installiert … für immer."];
 const LOVE = ["Oh … danke? 🥺","Das … fühlt sich komisch an.","Ich … mag dich auch?","Hör auf, nett zu sein!"];
-const BOSS_LINES = ["Ich bin jeder Bug, den du je hattest!","Schon mal neu geladen?","Deadline: morgen, 9 Uhr!","Deine Session ist abgelaufen!","Ich hab noch 47 Pop-ups!","Bitte Cookies akzeptieren!","Ohne mich läuft hier nix!"];
+const BOSS_LINES = ["Ich bin jeder Bug, den du je hattest!","DSGVO-konform? Ich? Niemals!","Hier kommt die Datenschutz-Keule!","Schon mal neu geladen?","Deadline: morgen, 9 Uhr!","Deine Session ist abgelaufen!","Ich hab noch 47 Pop-ups!","Bitte Cookies akzeptieren!","Ohne mich läuft hier nix!"];
 const ITEMS = [
   {e:"🍪",l:"Cookies?",c:["#b5793a","#7a4a1d","#3b2412"]},
   {e:"🐛",l:"Bug!",c:["#4ade80","#166534","#14532d"]},
@@ -523,25 +523,11 @@ const ITEMS = [
   {e:"🔔",l:"@channel",c:["#fde047","#ca8a04","#1a1a1a"]},
   {e:"📎",l:"Anhang fehlt",c:["#cbd5e1","#64748b","#1a1a1a"]},
   {e:"🌀",l:"Lädt …",c:["#60a5fa","#1d4ed8","#ffffff"]},
+  {e:"⚖️",l:"DSGVO!",c:["#93c5fd","#1e3a8a","#ffffff"]},
+  {e:"📋",l:"Einwilligung?",c:["#e2e8f0","#475569","#1a1a1a"]},
+  {e:"⚖️",l:"Datenschutz-Keule!",c:["#a5b4fc","#312e81","#ffffff"]},
 ];
-const QUOTES = [
-  "Frust heißt nur: Dir ist wichtig, dass es gut wird. Das ist schon die halbe Miete.",
-  "Kein Mensch beherrscht ein Tool am ersten Tag. Auch die nicht, die so tun.",
-  "Du musst nicht jedes Tool lieben. Du musst nur wissen, welches deine Frage beantwortet.",
-  "Jeder Profi hat schon vor Google Analytics gesessen und gedacht: Was willst du von mir?",
-  "Fehler sind keine Niederlagen. Sie sind Daten. Und mit Daten kennst du dich inzwischen aus.",
-  "Was dich heute nervt, erklärst du in drei Monaten jemand anderem.",
-  "Funktional schlägt perfekt. Erst live, dann schön.",
-  "Du bist nicht langsam. Du lernst gerade zehn Dinge gleichzeitig.",
-  "Die Conversion von „verwirrt“ zu „kann ich“ liegt bei 100 %. Sie braucht nur Zeit.",
-  "Atme durch. Das Tool läuft dir nicht weg. Leider.",
-  "Heute ein Formular, morgen ein Produkt. Jeder gute PM hat mal mit einer Landingpage angefangen.",
-  "Neu fühlt sich am Anfang immer holprig an. Genau daran merkst du, dass du wächst.",
-  "Wer fragt, wirkt nicht dumm. Wer fragt, wird schneller fertig.",
-  "Ihr seid ein Team. Der Frust ist geteilt, also auch die Lösungen.",
-  "Vor ein paar Wochen wusstest du noch nicht, was AARRR ist. Jetzt schon. Merkst du was?",
-  "Pausen sind keine verlorene Zeit. Sie sind der Moment, in dem das Gelernte sich setzt.",
-];
+const QUOTES = ["Frust heißt nur: Dir ist wichtig, dass es gut wird. Das ist schon die halbe Miete.", "Kein Mensch beherrscht ein Tool am ersten Tag. Auch die nicht, die so tun.", "Du musst nicht jedes Tool lieben. Du musst nur wissen, welches deine Frage beantwortet.", "Jeder Profi hat schon vor Google Analytics gesessen und gedacht: Was willst du von mir?", "Fehler sind keine Niederlagen. Sie sind Daten. Und mit Daten kennst du dich inzwischen aus.", "Was dich heute nervt, erklärst du in drei Monaten jemand anderem.", "Funktional schlägt perfekt. Erst live, dann schön.", "Du bist nicht langsam. Du lernst gerade zehn Dinge gleichzeitig.", "Die Conversion von „verwirrt“ zu „kann ich“ liegt bei 100 %. Sie braucht nur Zeit.", "Atme durch. Das Tool läuft dir nicht weg. Leider.", "Heute ein Formular, morgen ein Produkt. Jeder gute PM hat mal mit einer Landingpage angefangen.", "Neu fühlt sich am Anfang immer holprig an. Genau daran merkst du, dass du wächst.", "Wer fragt, wirkt nicht dumm. Wer fragt, wird schneller fertig.", "Ihr seid ein Team. Der Frust ist geteilt, also auch die Lösungen.", "Vor ein paar Wochen wusstest du noch nicht, was AARRR ist. Jetzt schon. Merkst du was?", "Pausen sind keine verlorene Zeit. Sie sind der Moment, in dem das Gelernte sich setzt.", "Overloaded ist kein Dauerzustand. Es ist ein Signal für eine Pause.", "Ein Tool, das heute nervt, ist morgen eine Zeile in deinem Lebenslauf.", "Du musst nicht alles heute können. Nur ein bisschen mehr als gestern.", "Perfektion ist der natürliche Feind von „Abgegeben“.", "Das Gefühl, nichts zu verstehen, ist der Anfang vom Verstehen.", "Du bist nicht allein verwirrt. Ihr seid gemeinsam verwirrt. Das nennt man Teamwork.", "Erst die Frage, dann das Tool. Und zwischendurch ein Kaffee.", "Ein MVP ist auch nicht fertig – und trotzdem wertvoll. Genau wie du gerade.", "Rückschläge sind Iterationen mit schlechtem Timing.", "Du hast Personas, Empathy Maps und Usability-Tests überlebt. Das hier schaffst du auch.", "Mach eine Sache fertig. Dann die nächste. So entstehen große Dinge.", "Deine Lernkurve ist steil. Das fühlt sich anstrengend an, weil es nach oben geht.", "Auch die beste Heatmap zeigt: Manchmal klickt jeder daneben.", "Zehn Minuten Pause sind keine Schwäche. Sie sind Wartung.", "Die Deadline ist fix. Dein Wert als Mensch hängt nicht davon ab.", "Frag dich nicht, ob du gut genug bist. Frag dich, was du heute gelernt hast.", "Feedback tut kurz weh und hilft lange.", "Sei stolz auf das, was vor drei Monaten noch unmöglich klang.", "Ein schlechter Tag im Kurs ist immer noch ein Tag näher am Ziel.", "Kleine Schritte zählen. Vor allem die, die keiner sieht.", "Wenn nichts mehr geht: speichern, aufstehen, Fenster auf.", "Der Frust von heute ist die lustige Anekdote im Vorstellungsgespräch von morgen.", "Kein Produkt war beim ersten Release perfekt. Auch keine Karriere.", "Du bist hier, um zu lernen – nicht, um schon alles zu können.", "Manchmal ist der beste Overkill eine Tasse Tee und fünf Minuten Ruhe.", "Ein Bug ist nur ein Hinweis, wo es noch spannend wird.", "Du vergleichst deinen Anfang mit dem Mittelteil anderer. Lass das.", "Gestern Overloaded, heute weiter. Das ist Durchhaltevermögen.", "Gute PMs haben nicht auf alles eine Antwort. Sie finden heraus, wen sie fragen müssen.", "Je öfter du etwas falsch klickst, desto schneller klickst du es richtig.", "Die DSGVO ist kompliziert. Du bist trotzdem schlauer als jedes Cookie-Banner.", "Langsam ist auch eine Geschwindigkeit. Hauptsache, die Richtung stimmt.", "Heute schon gelacht? Dann hat sich der Tag schon gelohnt.", "Niemand erinnert sich, wie oft Wix verrutscht ist – aber daran, dass du fertig geworden bist."];
 const WEAPONS = [
   {id:"fist",     emoji:"🥊", name:"Boxen",     dmg:9,  melee:true, words:["BAM!","POW!","WUMMS!","ZACK!","BOING!","KAWUMM!"]},
   {id:"tomato",   emoji:"🍅", name:"Tomate",    dmg:7,  colors:["#e63946","#a4161a","#ffe8a3"], drip:true, words:["SPLAT!","PLATSCH!","MATSCH!"]},
@@ -554,9 +540,9 @@ const WEAPONS = [
 ];
 const W_BY = {}; WEAPONS.forEach(w=>W_BY[w.id]=w);
 const LV = {
-  easy:{label:"Leicht",emoji:"😌",hp:70, swing:.7,lock:true, bagThrow:null,      dodge:0,   bossHP:300,hearts:5,bossThrow:1.35,bossSpeed:.8, mult:.8},
-  mid: {label:"Mittel",emoji:"😤",hp:100,swing:1, lock:true, bagThrow:null,      dodge:0,   bossHP:400,hearts:3,bossThrow:1,   bossSpeed:1,  mult:1},
-  hard:{label:"Schwer",emoji:"🔥",hp:140,swing:1.2,lock:false,bagThrow:[2.4,3.8],dodge:2.2, bossHP:520,hearts:2,bossThrow:.78, bossSpeed:1.25,mult:1.3},
+  easy:{label:"Frust ablassen",emoji:"😌",hp:70, swing:.7, lock:true, thr:null, dodge:0, stun:0, bossHP:300,hearts:5,bossThrow:1.35,bossSpeed:.8, mult:.8},
+  mid: {label:"Mittel",emoji:"😤",hp:110,swing:1.05,lock:false,thr:{base:[4.2,6],k:.45,min:1.3,dur:1.45},dodge:1.3,stun:1.3, bossHP:430,hearts:3,bossThrow:.95,bossSpeed:1.05,mult:1.15},
+  hard:{label:"Schwer",emoji:"🔥",hp:150,swing:1.25,lock:false,thr:{base:[2.6,3.6],k:1,min:.45,dur:1.15},dodge:2.5,stun:1.7, bossHP:580,hearts:2,bossThrow:.72,bossSpeed:1.3,mult:1.5},
 };
 const BADGES = [
   {id:"first",e:"🥊",t:"Erster Schlag",d:"Ersten Treffer gelandet",f:s=>s.hitsAll>=1},
@@ -596,20 +582,36 @@ const COMIC = 'Bangers, Impact, "Arial Black", sans-serif';
 const toolBg = t => t.color2?`linear-gradient(135deg,${t.color},${t.color2})`:t.color;
 
 /* ===================== Speicher (nur dieses Gerät) ===================== */
-let saved = {allKO:0,best:0,unlocked:[],hate:{},timeBest:0,bossWins:0,bossHard:0,bossOpen:false,sid:"",reported:[],samed:[],
-  level:"mid",name:"",badge:"",badges:[],hitsAll:0,w:{},mv:{},zen:0,duelWins:0,wall:0,teamGames:0,seenHelp:false,recapSeen:false};
+let saved = {qDeck:[],qPos:0,allKO:0,best:0,unlocked:[],hate:{},timeBest:0,bossWins:0,bossHard:0,bossOpen:false,sid:"",reported:[],samed:[],
+  level:"easy",name:"",badge:"",badges:[],hitsAll:0,w:{},mv:{},zen:0,duelWins:0,wall:0,teamGames:0,seenHelp:false,recapSeen:false};
 try{ const old=JSON.parse(localStorage.getItem("frustbude3")||localStorage.getItem("frustbude2")||"{}"); Object.assign(saved,old); }catch(e){}
 if(!saved.sid) saved.sid=Math.random().toString(36).slice(2,12)+Date.now().toString(36);
 ["w","mv","hate"].forEach(k=>{ if(!saved[k]||typeof saved[k]!=="object") saved[k]={}; });
 ["unlocked","reported","samed","badges"].forEach(k=>{ if(!Array.isArray(saved[k])) saved[k]=[]; });
-if(!LV[saved.level]) saved.level="mid";
+if(!LV[saved.level]) saved.level="easy";
 function persist(){ try{ localStorage.setItem("frustbude3",JSON.stringify(saved)); }catch(e){} }
 persist();
+function nextQuote(){
+  if(!Array.isArray(saved.qDeck)||saved.qDeck.length!==QUOTES.length||saved.qPos>=saved.qDeck.length){ const last=saved.qDeck&&saved.qDeck[saved.qDeck.length-1]; saved.qDeck=[...QUOTES.keys()].sort(()=>Math.random()-.5); if(saved.qDeck[0]===last) saved.qDeck.push(saved.qDeck.shift()); saved.qPos=0; }
+  const q=QUOTES[saved.qDeck[saved.qPos++]]; persist(); return q;
+}
 function myBadge(){ const b=BADGES.find(x=>x.id===saved.badge); return b?b.e:""; }
 function myBadgeObj(){ return BADGES.find(x=>x.id===saved.badge); }
 
 /* ===================== Audio ===================== */
 let actx=null, master=null, noiseBuf=null, muted=false;
+let silentEl=null, audioUnlocked=false;
+function silentWavUrl(){ const n=1600, b=new ArrayBuffer(44+n), v=new DataView(b); const w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  w(0,"RIFF"); v.setUint32(4,36+n,true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,8000,true); v.setUint32(28,8000,true); v.setUint16(32,1,true); v.setUint16(34,8,true); w(36,"data"); v.setUint32(40,n,true);
+  for(let i=0;i<n;i++) v.setUint8(44+i,128); return URL.createObjectURL(new Blob([b],{type:"audio/wav"})); }
+function unlockAudio(){
+  try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
+  if(!silentEl){ try{ silentEl=new Audio(silentWavUrl()); silentEl.loop=true; silentEl.setAttribute("playsinline",""); }catch(e){} }
+  if(silentEl && silentEl.paused) silentEl.play().catch(()=>{});
+  if(actx && !audioUnlocked){ try{ const s=actx.createBufferSource(); s.buffer=actx.createBuffer(1,1,22050); s.connect(actx.destination); s.start(0); audioUnlocked=true; }catch(e){} }
+}
+["pointerdown","touchend","click","keydown"].forEach(ev=>window.addEventListener(ev,()=>{ ensureAudio(); unlockAudio(); },{capture:true,passive:true}));
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&actx&&actx.state!=="running") actx.resume().catch(()=>{}); });
 function ensureAudio(){
   if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); master=actx.createGain(); master.gain.value=.55; master.connect(actx.destination);
     noiseBuf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }catch(e){ actx=null; } }
@@ -699,7 +701,8 @@ let lookX=0, lookY=0;
 let bagSplats=[], plasters=[], wallSplats=[], screenSplats=[], projectiles=[], fists=[], parts=[], texts=[], items=[], speech=null;
 let shake=0, combo=0, lastHit=0, lastSpeech=0, hits=0, bestCombo=0, rage=0, barrage=null;
 let timeLeft=0, score=0, tKO=0, lastTick=0, bagThrowT=3, dodgeT=2;
-let toolOrder=[], orderPos=0;
+let toolOrder=[], orderPos=0, recentHits=[], stunCount=0;
+function hitRate(){ const now=performance.now(); recentHits=recentHits.filter(t=>now-t<3000); return recentHits.length/3; }
 const defeated=new Set(); const wUse={};
 let B=null;
 let G_=null; // aktive Geste
@@ -876,7 +879,7 @@ function setLevel(l){ if(!LV[l]) return; saved.level=l; lv=LV[l]; persist(); ren
 function select(i){
   curIdx=i; cur=tools[i]; hpMax=lv.hp; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
   theta=rand(-.15,.15); omega=0; dropY=-(G.chain+G.bh+80); dropV=0; squash=0; hurt=0; flash=0; blush=0; state="alive";
-  bagThrowT=lv.bagThrow?rand(lv.bagThrow[0]+1,lv.bagThrow[1]+1):99; dodgeT=rand(1.5,2.5);
+  bagThrowT=lv.thr?rand(lv.thr.base[0]*.6,lv.thr.base[1]*.6)+1:99; dodgeT=rand(1.5,2.5);
   renderChips(); updateHUD(); if(mode==="duel") setTimeout(()=>duelPush(true),0);
 }
 function playable(){ return (state==="alive"||state==="boss") && stunT<=0; }
@@ -937,7 +940,7 @@ function registerHit(w,fromRage,mult){
   combo=(now-lastHit<1300)?combo+1:1; lastHit=now;
   if(combo>bestCombo) bestCombo=combo;
   if(combo>saved.best){ saved.best=combo; checkUnlocks(); }
-  hits++; wUse[w.id]=(wUse[w.id]||0)+1; saved.hitsAll++; saved.w[w.id]=(saved.w[w.id]||0)+1; addHate("w_"+w.id);
+  hits++; recentHits.push(now); wUse[w.id]=(wUse[w.id]||0)+1; saved.hitsAll++; saved.w[w.id]=(saved.w[w.id]||0)+1; addHate("w_"+w.id);
   if(!fromRage){ rage=Math.min(100,rage+(w.rocket?5:7)); updateRage(); }
   const cb=$("combo"); if(combo>=3){ cb.textContent=`COMBO ×${combo}`; cb.classList.add("on"); cb.classList.remove("pop"); void cb.offsetWidth; cb.classList.add("pop"); }
   checkBadges();
@@ -1014,17 +1017,18 @@ function itemLanded(it){
   shake=reduced?0:20; sfx.hurtMe(); buzz([80,40,80]); combo=0; $("combo").classList.remove("on");
   if(mode==="boss"){ word(pick(["AUTSCH!","ERWISCHT!",it.l]),p.x,p.y-40,clamp(W*.09,30,56),"#ff6b6b"); B.hearts--; updateHUD();
     if(B.hearts<=0){ state="bossLost"; items=[]; say("HAHA! Ich bleibe!"); setTimeout(()=>show("bossLost"),1100); } }
-  else { stunT=1.4; word("BETÄUBT! 😵",W/2,H*.4,clamp(W*.1,32,60),"#ff6b6b",1.4); }
+  else { stunT=lv.stun||1.3; word("OVERLOADED! 😵‍💫",W/2,H*.4,clamp(W*.1,32,60),"#ff6b6b",1.4); stunCount++; if(stunCount===1) tip("items","🛡️ Tipp: Tippe fliegende Sachen weg, bevor sie dich treffen!",true); }
 }
 
-/* ===================== Frust-Fusion (Wut) ===================== */
-function updateRage(){ const b=$("rageBtn"); b.style.setProperty("--p",rage+"%"); b.classList.toggle("ready",rage>=100); $("rageLbl").textContent=rage>=100?(touchDev?"SCHÜTTELN!":"LEERTASTE!"):`WUT ${Math.round(rage)} %`; }
+/* ===================== OVERKILL ===================== */
+let rageReadyAt=0;
+function updateRage(){ const b=$("rageBtn"); b.style.setProperty("--p",rage+"%"); b.classList.toggle("ready",rage>=100); $("rageLbl").textContent=rage>=100?(touchDev?"SCHÜTTELN!":"LEERTASTE!"):`OVERKILL ${Math.round(rage)} %`; if(rage>=100&&!rageReadyAt) rageReadyAt=performance.now(); if(rage<100) rageReadyAt=0; }
 let lastRageToast=0;
 function triggerRage(src){
   if(!(state==="alive"||state==="boss")) return;
-  if(rage<100){ if(performance.now()-lastRageToast>2500){ lastRageToast=performance.now(); toast("Wut-Meter noch nicht voll – weiter draufhauen!"); } return; }
+  if(rage<100){ if(performance.now()-lastRageToast>2500){ lastRageToast=performance.now(); toast("OVERKILL-Meter noch nicht voll – weiter draufhauen!"); } return; }
   rage=0; updateRage(); barrage={n:16,t:0};
-  word("FRUST-FUSION!",W/2,H*.25,clamp(W*.11,34,70),"#ff6b6b",1.3); sfx.roar(); buzz([60,40,60,40,90]); if(!reduced) shake=26;
+  word("OVERKILL!",W/2,H*.25,clamp(W*.11,34,70),"#ff6b6b",1.3); sfx.roar(); buzz([60,40,60,40,90]); if(!reduced) shake=26;
   if(mode==="duel") sendAttack("fusion");
 }
 function barrageStep(dt){
@@ -1165,13 +1169,13 @@ function openZen(final){
   setTimeout(tick,600); zenTimer=setInterval(tick,4000);
 }
 function showQuote(){
-  clearInterval(zenTimer); $("zenBreath").style.display="none"; $("zenQuote").style.display="block"; $("quoteTxt").textContent=pick(QUOTES);
+  clearInterval(zenTimer); $("zenBreath").style.display="none"; $("zenQuote").style.display="block"; $("quoteTxt").textContent=nextQuote();
   $("sHits").textContent=fmt(hits); $("sCombo").textContent="×"+bestCombo; const fav=Object.entries(wUse).sort((a,b)=>b[1]-a[1])[0]; $("sFav").textContent=fav?W_BY[fav[0]].emoji:"🍅";
   saved.zen++; persist(); addHate("_zen"); checkBadges(true); sfx.ding();
 }
 
 /* ===================== HUD & Leisten ===================== */
-function frustText(f){ return f>80?"Kochend 🌋":f>60?"Genervt 😤":f>40?"Geht so 😐":f>20?"Entspannter 🙂":f>0?"Fast Zen 😌":"Zen 🧘"; }
+function frustText(f){ return f>90?"Overloaded 🤯":f>80?"Kochend 🌋":f>60?"Genervt 😤":f>40?"Geht so 😐":f>20?"Entspannter 🙂":f>0?"Fast Zen 😌":"Zen 🧘"; }
 function updateHUD(){
   const boss=mode==="boss"&&B;
   $("toolName").textContent=boss?"👑 MEGA-BUG":`${cur.ic||""} ${cur.name}`;
@@ -1235,26 +1239,26 @@ function startFrom(fn){ ensureAudio(); enableMotion(); hide("home"); setDuelUI(f
 /* ===================== Anleitung ===================== */
 const HELP=[
   ()=>`<h3>🥊 Willkommen in der Frustbude!</h3><p>Tools nerven? Hier darfst du sie verprügeln. Jede Boxbirne ist ein Tool aus dem Kurs.</p>
-   <ul><li><span class="e">🎯</span><span>Ziel: Hau die Boxbirne K.O. und bring deinen Frust auf 0 %.</span></li>
+   <ul><li><span class="e">🎯</span><span>Ziel: Hau die Boxbirne K.O. und bring deinen Frust von „Overloaded“ auf 0 %.</span></li>
    <li><span class="e">👑</span><span>Alle ${BASE} Tools besiegt? Dann wartet der Endgegner.</span></li>
    <li><span class="e">🌍</span><span>Jeder Treffer zählt im Klassen-Zähler mit – komplett anonym.</span></li></ul>`,
-  ()=>`<h3>🍅 Waffen & Wut</h3><ul>
+  ()=>`<h3>🍅 Waffen & OVERKILL</h3><ul>
    <li><span class="e">👇</span><span>Unten eine Waffe wählen, dann auf die Boxbirne ${touchDev?"tippen":"klicken"}.</span></li>
    <li><span class="e">🔓</span><span>🙌🏻 🚀 ❤️ schaltest du durch K.O.s und Combos frei.</span></li>
-   <li><span class="e">💢</span><span>Wut-Meter voll? ${touchDev?"Handy <b>schütteln</b> oder auf 💢 tippen":"<kbd>Leertaste</kbd> drücken oder 💢 klicken"} – Frust-Fusion!</span></li>
+   <li><span class="e">💢</span><span>OVERKILL-Meter voll? ${touchDev?"Handy <b>schütteln</b> oder auf 💢 tippen":"<kbd>Leertaste</kbd> drücken oder 💢 klicken"} – dann regnet es alles auf einmal!</span></li>
    <li><span class="e">🛡️</span><span>Fliegt etwas auf dich zu? Schnell wegtippen!</span></li></ul>`,
   ()=>`<h3>🥋 Spezial-Moves</h3><table class="mvtable"><tr><th>Move</th><th>Handy</th><th>Computer</th></tr>
    <tr><td>Haken</td><td>seitlich wischen</td><td>ziehen oder <kbd>Q</kbd>/<kbd>E</kbd></td></tr>
    <tr><td>Uppercut</td><td>nach oben wischen</td><td>hochziehen oder <kbd>W</kbd></td></tr>
    <tr><td>Super-Schlag</td><td>halten & loslassen</td><td>Maus halten oder <kbd>R</kbd> halten</td></tr>
    <tr><td>Trommelfeuer</td><td>3× schnell tippen</td><td>3× schnell klicken</td></tr>
-   <tr><td>Frust-Fusion</td><td>schütteln</td><td><kbd>Leertaste</kbd></td></tr></table>
-   <p style="font-size:12.5px;color:var(--muted)">Weitere Tasten: <kbd>1</kbd>–<kbd>8</kbd> Waffe · <kbd>M</kbd> Ton · <kbd>Esc</kbd> Menü</p>`,
+   <tr><td>OVERKILL</td><td>schütteln</td><td><kbd>Leertaste</kbd></td></tr></table>
+   <p style="font-size:12.5px;color:var(--muted)">Weitere Tasten: <kbd>1</kbd>–<kbd>8</kbd> Waffe · <kbd>M</kbd> Ton · <kbd>Esc</kbd> Menü<br>🔊 Kein Ton? Lautstärke hoch und 🔊 oben rechts prüfen.</p>`,
   ()=>`<h3>⚔️ Modi & Level</h3><ul>
    <li><span class="e">🥊</span><span><b>Freies Spiel:</b> alle Tools nacheinander, dann der Endgegner.</span></li>
    <li><span class="e">⏱️</span><span><b>30 Sekunden:</b> so viele Punkte wie möglich – mit Rangliste.</span></li>
    <li><span class="e">👥</span><span><b>Mehrspieler:</b> 1 gegen 1 oder 2 gegen 2 per Raum-Code. Andere können zuschauen und anfeuern.</span></li>
-   <li><span class="e">🔥</span><span><b>Level:</b> Leicht, Mittel, Schwer. Auf Schwer weicht die Boxbirne aus und wirft zurück – dafür gibt’s mehr Punkte.</span></li></ul>`,
+   <li><span class="e">😌</span><span><b>Frust ablassen:</b> einfach draufhauen, keine Gegenwehr.</span></li><li><span class="e">🔥</span><span><b>Mittel & Schwer:</b> Die Boxbirne weicht aus und wirft zurück – je schneller du haust, desto schneller kontert sie. Dafür gibt’s mehr Punkte.</span></li></ul>`,
 ];
 let helpIdx=0;
 function renderHelp(){ $("helpBody").innerHTML=HELP[helpIdx](); $("helpDots").innerHTML=HELP.map((_,i)=>`<i class="${i===helpIdx?"on":""}"></i>`).join("");
@@ -1507,6 +1511,23 @@ function showResults(){
   $("countdown").style.display="none"; show("results"); sfx.ding(); confetti(W/2,H*.5,80);
 }
 
+/* ===================== Tipps für Ratlose ===================== */
+const tipsShown=new Set(); let lastTipT=0, lastInputT=performance.now(), handT=0;
+function tip(id,msg,force){ const now=performance.now(); if(tipsShown.has(id)) return; if(!force&&now-lastTipT<7000) return; tipsShown.add(id); lastTipT=now; toast(msg,3600); }
+function tipsTick(){
+  if(!(state==="alive"||state==="boss") || anyOpen()) return;
+  const now=performance.now(), idle=(now-lastInputT)/1000;
+  if(hits===0 && idle>4){ handT=1; if(idle>5) tip("idle0",touchDev?"👆 Einfach auf die Boxbirne tippen!":"👆 Einfach auf die Boxbirne klicken!"); } else handT=0;
+  if(hits>0 && idle>14) tip("idle"+Math.floor(idle/14)+"_"+hits,pick(["Noch Frust übrig? Weiter geht’s! 🍅","Die Boxbirne lacht dich schon aus … 😏","Probier mal die Torte 🥧 – mehr Schaden!"]));
+  if(hits>=12 && !saved.mv.haken) tip("haken",touchDev?"🥊 Tipp: Wisch seitlich über die Boxbirne – das ist ein Haken!":"🥊 Tipp: Mit gedrückter Maus seitlich ziehen = Haken (oder Q/E)");
+  if(hits>=25 && !saved.mv.super) tip("super",touchDev?"💥 Tipp: Finger gedrückt halten und loslassen = Super-Schlag!":"💥 Tipp: Maustaste halten und loslassen = Super-Schlag (oder R halten)");
+  if(hits>=35 && !saved.mv.uppercut) tip("upper",touchDev?"⬆️ Tipp: Nach oben wischen = Uppercut!":"⬆️ Tipp: Nach oben ziehen = Uppercut (oder W)");
+  if(rageReadyAt && now-rageReadyAt>4000) tip("rage"+Math.floor(rageReadyAt),touchDev?"💢 OVERKILL ist bereit! Schüttel dein Handy oder tipp auf 💢":"💢 OVERKILL ist bereit! Drück die Leertaste");
+  if(hits>=30 && Object.keys(wUse).length===1) tip("weapons","🍌 Tipp: Probier mal andere Waffen unten – die Torte macht am meisten Schaden!");
+}
+setInterval(tipsTick,1000);
+["pointerdown","keydown"].forEach(ev=>window.addEventListener(ev,()=>{ lastInputT=performance.now(); handT=0; },{capture:true,passive:true}));
+
 /* ===================== Schleife ===================== */
 let last=0;
 function update(dt){
@@ -1518,10 +1539,14 @@ function update(dt){
     if(s<=5&&s<lastTick){ lastTick=s; sfx.tick(); $("timer").classList.add("warn"); } if(timeLeft<=0) endTime(); }
   if(mode==="duel") duelTick();
   if(mode==="boss") updateBoss(dt);
-  // Schwer: Boxbirne weicht aus und wirft zurück
-  if(mode!=="boss" && state==="alive" && Math.abs(dropY)<40){
-    if(lv.dodge){ dodgeT-=dt; if(dodgeT<=0){ dodgeT=rand(1.4,2.4); omega+=(Math.random()<.5?-1:1)*rand(lv.dodge*.8,lv.dodge*1.2); } }
-    if(lv.bagThrow){ bagThrowT-=dt; if(bagThrowT<=0){ bagThrowT=rand(lv.bagThrow[0],lv.bagThrow[1]); const [bx,by]=toWorld(0,G.chain+G.bh*.45); throwItem(bx,by,1.35); say(pick(["Na warte!","Zurück an dich!","Fang!","Retourkutsche!"])); } }
+  // Mittel/Schwer: Boxbirne weicht aus und wirft zurück – je schneller du haust, desto schneller
+  if(mode!=="boss" && state==="alive" && Math.abs(dropY)<40 && hits>0){
+    if(lv.dodge){ dodgeT-=dt; if(dodgeT<=0){ dodgeT=rand(1.3,2.3)/(1+hitRate()*.15); omega+=(Math.random()<.5?-1:1)*rand(lv.dodge*.8,lv.dodge*1.2); } }
+    if(lv.thr){ bagThrowT-=dt; if(bagThrowT<=0){ const r=hitRate(); bagThrowT=Math.max(lv.thr.min,rand(lv.thr.base[0],lv.thr.base[1])/(1+r*lv.thr.k));
+      const [bx,by]=toWorld(0,G.chain+G.bh*.45), dur=Math.max(.7,lv.thr.dur/(1+r*.12)); throwItem(bx,by,dur);
+      if(saved.level==="hard"&&r>3.2&&Math.random()<.45) setTimeout(()=>{ if(state==="alive"){ const [x2,y2]=toWorld(0,G.chain+G.bh*.4); throwItem(x2,y2,dur); } },220);
+      if(r>3.5&&performance.now()-lastSpeech>1800) { say(pick(["Du willst Tempo? Kriegst du!","OVERLOADED? Ich doch nicht!","Retourkutsche!","DSGVO-Keule!"])); }
+      else if(Math.random()<.35&&performance.now()-lastSpeech>2200) say(pick(["Na warte!","Zurück an dich!","Fang!","Hier, deine Einwilligung!"])); } }
   }
   for(let i=items.length-1;i>=0;i--){ const it=items[i]; it.t+=dt/it.dur; if(it.t>=1){ items.splice(i,1); itemLanded(it); } }
   if(combo&&performance.now()-lastHit>1300){ combo=0; $("combo").classList.remove("on"); }
@@ -1577,6 +1602,7 @@ function render(){
   if(G_&&G_.down&&!G_.moved){ const p=chargeOf(G_); if(p>0){ ctx.save(); ctx.lineWidth=7; ctx.strokeStyle="rgba(255,255,255,.18)"; ctx.beginPath(); ctx.arc(G_.x,G_.y,34,0,Math.PI*2); ctx.stroke();
     ctx.strokeStyle=p>=1?"#ff4d4d":"#ffd23f"; ctx.beginPath(); ctx.arc(G_.x,G_.y,34,-Math.PI/2,-Math.PI/2+p*Math.PI*2); ctx.stroke();
     if(p>=1){ ctx.font=`22px ${COMIC}`; ctx.fillStyle="#ff4d4d"; ctx.textAlign="center"; ctx.fillText("SUPER!",G_.x,G_.y-46); } ctx.restore(); } }
+  if(handT>0 && state==="alive" && mode!=="boss"){ const [hx,hy]=toWorld(0,G.chain+G.bh*.5), bb=Math.sin(performance.now()/180)*10; ctx.save(); ctx.globalAlpha=.9; emoji("👆",hx+G.bw*.15,hy+G.bh*.32+bb,G.emo*1.3); ctx.restore(); }
   if(stunT>0){ ctx.fillStyle=`rgba(40,0,60,${Math.min(.35,stunT*.3)})`; ctx.fillRect(0,0,W,H); emoji("😵‍💫",W/2,H*.5,60+Math.sin(performance.now()/90)*6); }
   ctx.restore();
   screenSplats.forEach(s=>drawSplat(s,clamp((2.6-s.age)/1,0,1)*.92));
@@ -1605,7 +1631,7 @@ function localXY(e){ const r=canvas.getBoundingClientRect(); return [e.clientX-r
 canvas.addEventListener("pointerdown",e=>{
   e.preventDefault(); ensureAudio(); const [x,y]=localXY(e); lookX=x; lookY=y;
   if(!(state==="alive"||state==="boss")) return;
-  if(stunT>0){ toast("😵 Betäubt – kurz durchatmen!",900); return; }
+  if(stunT>0){ toast("😵‍💫 Overloaded – kurz durchatmen!",900); return; }
   if(hitItem(x,y)) return;
   try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
   G_={id:e.pointerId,x,y,cx:x,cy:y,t:performance.now(),down:true,moved:false,lastStep:-1};
@@ -1657,7 +1683,7 @@ $("menuBtn").onclick=()=>{ if(mode==="duel"){ toast("Mitten im Duell? Erst zu En
 $("wallBtn").onclick=()=>{ show("wall"); loadWall(); };
 document.querySelectorAll("#levelSeg button").forEach(b=>b.onclick=()=>{ setLevel(b.dataset.lv); sfx.pop(); });
 $("freeBtn").onclick=()=>startFrom(()=>{ mode="free"; B=null; sfx.ding(); select(curIdx<BASE?curIdx:0);
-  setTimeout(()=>toast(touchDev?"Tipp: Halten = Super-Schlag · Wischen = Haken 🥋":"Tipp: Maus halten = Super-Schlag · Leertaste = Frust-Fusion 💢",3200),1600); });
+  setTimeout(()=>toast(touchDev?"Tipp: Halten = Super-Schlag · Wischen = Haken 🥋":"Tipp: Maus halten = Super-Schlag · Leertaste = OVERKILL 💢",3200),1600); });
 $("timeBtn").onclick=()=>startFrom(()=>startTime());
 $("bossBtn").onclick=()=>{ if(!saved.bossOpen){ toast(`Erst alle ${BASE} Tools im freien Spiel K.O. hauen!`); return; } startFrom(()=>startBoss()); };
 $("duelBtn").onclick=()=>{ ensureAudio(); hide("home"); openDuel(); };
@@ -1671,7 +1697,7 @@ $("tAgain").onclick=()=>{ hide("timeEnd"); startTime(); renderChips(); };
 $("tMenu").onclick=()=>{ hide("timeEnd"); mode="free"; select(0); openHome(); };
 $("bossRetry").onclick=()=>{ hide("bossLost"); screenSplats=[]; startBoss(); };
 $("bossMenu").onclick=()=>{ hide("bossLost"); screenSplats=[]; mode="free"; B=null; select(0); openHome(); };
-$("zenSkip").onclick=showQuote; $("zenNext").onclick=()=>{ $("quoteTxt").textContent=pick(QUOTES); };
+$("zenSkip").onclick=showQuote; $("zenNext").onclick=()=>{ $("quoteTxt").textContent=nextQuote(); sfx.pop(); };
 $("zenGo").onclick=()=>{ hide("zen"); clearInterval(zenTimer); if(zenFinal){ zenFinal=false; mode="free"; B=null; screenSplats=[]; defeated.clear(); select(0); toast("Neue Runde! Der Endgegner bleibt freigeschaltet 👑",3000); } else if(state==="idle") openHome(); };
 $("wallInput").addEventListener("input",()=>{ $("wallCount").textContent=$("wallInput").value.length; }); $("wallSend").onclick=sendWall;
 $("nameInput").addEventListener("input",renderProfile); $("profSave").onclick=saveProfile;

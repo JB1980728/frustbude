@@ -195,7 +195,7 @@ export class Room extends DurableObject {
       const kind = ["tomato", "shake", "fusion"].includes(m.kind) ? m.kind : "shake";
       const s = JSON.stringify({ t: "attack", from: c.name, team: c.team, kind });
       for (const o of this.conns.values()) if (o.joined && o.role === "player" && o.team !== c.team) { try { o.ws.send(s); } catch (e) {} }
-      this.broadcast({ t: "feed", txt: `${c.name}: ${kind === "fusion" ? "FRUST-FUSION! 💢" : kind === "tomato" ? "Super-Schlag! 🍅" : "Uppercut! 🥊"}` });
+      this.broadcast({ t: "feed", txt: `${c.name}: ${kind === "fusion" ? "OVERKILL! 💢" : kind === "tomato" ? "Super-Schlag! 🍅" : "Uppercut! 🥊"}` });
       return;
     }
     if (m.t === "react" && REACTIONS.includes(m.e) && now - c.lastReact > 350) {
