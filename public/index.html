@@ -461,6 +461,36 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .wi{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:start;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:8px 10px;margin:0 0 7px;text-align:left}
 .wi .e{font-size:30px;text-align:center;line-height:1.1}.wi b{font-size:14px}.wi .st{display:block;font-size:11px;font-weight:900;color:#fde047;margin:1px 0 3px}.wi p{margin:0;font-size:12.5px;font-weight:800;line-height:1.35;color:#e9e1ff}
 .wi.locked{opacity:.6}
+
+/* Warteraum kompakt: alles auf einen Bildschirm, Start-Knopf immer sichtbar */
+#duelLobby .lhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+#duelLobby .lhead .mid{font-size:26px}
+.lcode{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);border:2px dashed rgba(255,210,63,.6);border-radius:12px;padding:3px 10px}
+.lcode small{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase}
+.lcode b{font-family:var(--comic);font-weight:400;font-size:22px;letter-spacing:2px}
+#duelLobby .row2{gap:8px}
+#duelLobby .row2 .cta{font-size:16px;padding:8px 6px;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+#duelLobby .teams{margin:8px 0}
+#duelLobby .team{min-height:0;padding:7px 8px}
+#duelLobby .team h4{font-size:16px;margin-bottom:3px}
+#duelLobby .team .p{margin:2px 0;padding:4px 7px;font-size:12.5px}
+#duelLobby .team .slot{margin:2px 0;padding:4px 7px}
+#duelLobby .vs{font-size:24px}
+.midrow{display:flex;align-items:center;gap:8px;margin:0 0 6px}.midrow .tlab{margin:0;white-space:nowrap}.midrow .midtool{flex:1;margin:0;min-width:0}
+#duelLobby .tpick{padding:6px 8px}
+#duelLobby .rchat{margin:4px 0 6px}
+#duelLobby .rchat .clist{max-height:76px;min-height:34px;padding:4px}
+#duelLobby .rchat .cmsg{font-size:12.5px;padding:4px 8px}
+#duelLobby .rchat .cmsg.sys{font-size:11.5px;padding:2px}
+#duelLobby .cin{margin-top:5px}#duelLobby .cin .field{padding:8px 10px}
+#duelLobby .cin button{flex-basis:40px}
+#duelLobby #hostCtl{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#duelLobby #hostCtl .seg{margin:0}#duelLobby #hostCtl .seg button{padding:7px 2px;font-size:11.5px}
+#duelLobby .fine{margin:5px 0!important;font-size:11px}
+#duelLobby #botFill{margin-bottom:6px!important;font-size:15px;padding:7px}
+#duelLobby #startDuel{position:sticky;bottom:0;z-index:2;font-size:21px;padding:11px}
+#duelLobby .ghost{padding:6px}
+#duelLobby .specline:empty{display:none}
 </style>
 </head>
 <body>
@@ -685,22 +715,19 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="cta alt mkonly" id="botDuel">🤖 GEGEN BOT ÜBEN</button>
   </div>
   <div id="duelLobby" style="display:none">
-    <div class="mid">WARTERAUM</div>
-    <div class="sub" style="margin:6px 0 4px">Teile diesen Code mit deinen Gegnern:</div>
-    <div class="codebox" id="roomCode">-----</div>
-    <div class="row2"><button class="cta alt sm" id="shareRoom">📤 LINK TEILEN</button><button class="cta sm" id="challengeAll">📣 ALLE HERAUSFORDERN</button></div>
+    <div class="lhead"><div class="mid">WARTERAUM</div><div class="lcode"><small>Code</small><b id="roomCode">-----</b></div></div>
+    <div class="row2"><button class="cta alt sm" id="shareRoom">📤 Link teilen</button><button class="cta sm" id="challengeAll">📣 Alle einladen</button></div>
     <div class="teams">
       <div class="team A"><h4 id="teamAH">TEAM LILA</h4><div id="teamA"></div></div>
       <div class="vs">VS</div>
       <div class="team B"><h4 id="teamBH">TEAM GELB</h4><div id="teamB"></div></div>
     </div>
-    <div class="tlab" style="text-align:center">In der Mitte hängt:</div>
-    <div class="midtool" id="midTool"></div>
+    <div class="midrow"><span class="tlab">In der Mitte:</span><div class="midtool" id="midTool"></div></div>
     <div class="specline" id="specLine"></div>
     <div class="rchat"><div class="clist scroll" id="rList"></div><div class="cnote" id="rNote"></div><div class="cin"><input class="field" id="rIn" maxlength="140" placeholder="Nachricht an alle im Raum …" autocomplete="off"><button id="rSend">➤</button></div></div>
     <div id="hostCtl">
-      <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
-      <div class="seg" id="lobbyLv"><button data-lv="easy">🤖 Bots leicht</button><button data-lv="hard">🤖 Bots schwer</button></div>
+      <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 : 1</button><button data-f="2v2">👥 2 : 2</button></div>
+      <div class="seg" id="lobbyLv"><button data-lv="easy">🤖 leicht</button><button data-lv="hard">🤖 schwer</button></div>
     </div>
     <div class="fine" id="lobbyInfo" style="margin:0 0 10px"></div>
     <div class="classline" id="waitLine" style="display:none">⏳ Warte, bis der Host den Kampf startet.</div>
@@ -1852,7 +1879,7 @@ function genCode(){ const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let
 function needName(){ const n=$("duelName").value.trim(); if(n.length<2){ toast("Bitte erst einen Spitznamen eingeben (mind. 2 Zeichen)."); $("duelName").focus(); return null; }
   if(n!==saved.name){ saved.name=n.slice(0,16); persist(); api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:saved.name,badge:myBadge(),kind:"profile"})}).catch(()=>{}); } return saved.name; }
 function openDuel(prefill){
-  $("duelName").value=saved.name||""; $("duelEntry").style.display="block"; $("duelLobby").style.display="none"; $("duelEntry").classList.toggle("joinonly",!!prefill);
+  $("duelName").value=saved.name||""; $("duelEntry").style.display="block"; $("duelLobby").style.display="none"; $("duelX").style.display=""; $("duelEntry").classList.toggle("joinonly",!!prefill);
   $("joinLbl").textContent=prefill?"Du wurdest zum Duell eingeladen!":"Oder mit Code beitreten";
   if(prefill) $("joinCode").value=prefill; show("duel");
 }
@@ -1903,7 +1930,7 @@ function midToolBtn(){ const st=R.st, t=NAMES[st.tool]||null, can=st.hostId===R.
   if(can) b.onclick=()=>openPick(id=>{ rsend({t:"tool",tool:id}); show("duel"); },"WELCHES TOOL HÄNGT IN DER MITTE?","Diese Boxbirne hängt zwischen euch. Wer sie schneller wegschiebt, gewinnt.");
   return b; }
 function renderLobby(){
-  const st=R.st, isHost=st.hostId===R.you, mine=me(); $("roomCode").textContent=st.code;
+  const st=R.st, isHost=st.hostId===R.you, mine=me(); $("roomCode").textContent=st.code; $("duelX").style.display="none";
   if(R.rulesFor!==st.code){ R.rulesFor=st.code; modeIntro("fight",()=>show("duel"),true,{level:st.level}); }
   ["A","B"].forEach(t=>{ const box=$("team"+t); box.innerHTML=""; const ps=st.people.filter(p=>p.role==="player"&&p.team===t); const cap=st.format==="2v2"?2:1;
     ps.forEach(p=>{ const d=document.createElement("div"); d.className="p"; d.textContent=`${p.isBot?"🤖":(p.badge||"🥊")} ${p.name}${p.id===R.you?" (du)":""}`; if(p.id===st.hostId){ const h=document.createElement("span"); h.className="host"; h.textContent="👑"; d.appendChild(h); } box.appendChild(d); });
@@ -1911,7 +1938,7 @@ function renderLobby(){
   $("teamAH").textContent=st.format==="2v2"?"TEAM LILA":"SPIELER 1"; $("teamBH").textContent=st.format==="2v2"?"TEAM GELB":"SPIELER 2";
   const mt=$("midTool"); mt.innerHTML=""; mt.appendChild(midToolBtn());
   const specs=st.people.filter(p=>p.role==="spectator"); $("specLine").textContent=specs.length?`👀 Zuschauer: ${specs.map(p=>p.name).join(", ")}`:"";
-  $("hostCtl").style.display=isHost?"block":"none";
+  $("hostCtl").style.display=isHost?"grid":"none";
   document.querySelectorAll("#lobbyFmt button").forEach(b=>b.classList.toggle("on",b.dataset.f===st.format));
   document.querySelectorAll("#lobbyLv button").forEach(b=>b.classList.toggle("on",b.dataset.lv===st.level));
   $("lobbyInfo").textContent=(st.format==="2v2"?"2 gegen 2: Eure Treffer zählen zusammen.":"1 gegen 1")+" · Wer zuerst 2 Runden gewinnt, hat gewonnen."+(isHost?"":" Der Host startet.");
@@ -1983,7 +2010,7 @@ function renderOnline(){
 function renderOpenRooms(){
   const box=$("openRooms"); if(!box) return; box.innerHTML="";
   const rooms=LB.rooms.filter(r=>r.code!==R.code&&r.count<r.cap);
-  if(!rooms.length){ box.innerHTML='<div class="oempty">Gerade wartet niemand. Erstell selbst ein Duell und tipp auf „📣 Alle herausfordern“.</div>'; return; }
+  if(!rooms.length){ box.innerHTML='<div class="oempty">Gerade wartet niemand. Erstell selbst ein Duell und tipp auf „📣 Alle einladen“.</div>'; return; }
   rooms.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>⚔️</span><span class="t"><span class="nm"></span><small>${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} · ${r.count}/${r.cap} dabei</small></span><button>Mitmachen</button>`;
     d.querySelector(".nm").textContent=`${r.name} sucht Gegner`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
 }
@@ -2013,7 +2040,7 @@ $("challengeAll").onclick=()=>{ if(!R.st) return; lbAnnounce(); setTimeout(()=>l
 const CHAT={g:[],r:[],unread:0};
 function chatNode(m){ const d=document.createElement("div"); const mine=m.name===saved.name; d.className="cmsg"+(mine?" me":""); const b=document.createElement("b"); b.textContent=mine?"Du":m.name; d.appendChild(b); d.appendChild(document.createTextNode(m.text)); return d; }
 function renderChat(listId,arr){ const el=$(listId); if(!el) return; el.innerHTML="";
-  if(!arr.length){ const d=document.createElement("div"); d.className="cmsg sys"; d.textContent=listId==="gList"?"Noch ruhig hier. Sag Hallo! 👋":"Noch keine Nachrichten. Sprüche klopfen erlaubt 😉"; el.appendChild(d); }
+  if(!arr.length){ const d=document.createElement("div"); d.className="cmsg sys"; d.textContent=listId==="gList"?"Noch ruhig hier. Sag Hallo! 👋":"Noch keine Nachrichten 😉"; el.appendChild(d); }
   arr.forEach(m=>el.appendChild(chatNode(m))); chatBottom(el); }
 // immer zur neuesten Nachricht nach unten scrollen
 function chatBottom(el){ el.scrollTop=el.scrollHeight; requestAnimationFrame(()=>{ el.scrollTop=el.scrollHeight; setTimeout(()=>{ el.scrollTop=el.scrollHeight; },320); }); }
