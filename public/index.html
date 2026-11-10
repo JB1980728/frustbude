@@ -440,6 +440,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #fChat .cmsg{font-size:12px;padding:4px 9px;animation:chatFade 5s forwards}
 @keyframes chatFade{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 #fChatRow{display:none;padding:0 8px 8px;margin:0}#fight.spec #fChatRow{display:flex}
+
+.cnote{font-size:12px;font-weight:900;color:#fca5a5;min-height:0;margin-top:4px;text-align:left}
+.cnote:empty{display:none}
 </style>
 </head>
 <body>
@@ -668,7 +671,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="tlab" style="text-align:center">In der Mitte hängt:</div>
     <div class="midtool" id="midTool"></div>
     <div class="specline" id="specLine"></div>
-    <div class="rchat"><div class="clist scroll" id="rList"></div><div class="cin"><input class="field" id="rIn" maxlength="140" placeholder="Nachricht an alle im Raum …" autocomplete="off"><button id="rSend">➤</button></div></div>
+    <div class="rchat"><div class="clist scroll" id="rList"></div><div class="cnote" id="rNote"></div><div class="cin"><input class="field" id="rIn" maxlength="140" placeholder="Nachricht an alle im Raum …" autocomplete="off"><button id="rSend">➤</button></div></div>
     <div id="hostCtl">
       <div class="seg" id="lobbyFmt"><button data-f="1v1">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
       <div class="seg" id="lobbyLv"><button data-lv="easy">🤖 Bots leicht</button><button data-lv="hard">🤖 Bots schwer</button></div>
@@ -708,7 +711,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="mid">💬 CHAT</div>
   <div class="sub" style="margin:6px 0 8px">Für alle, die gerade online sind. <b>Nichts wird gespeichert</b> – nach ein paar Stunden ist alles weg.</div>
   <div class="clist scroll" id="gList"></div>
-  <div class="cin"><input class="field" id="gIn" maxlength="140" placeholder="Schreib was …" autocomplete="off"><button id="gSend">➤</button></div>
+  <div class="cnote" id="gNote"></div>
+  <div class="cin" id="gNameRow" style="display:none"><input class="field" id="gName" maxlength="16" placeholder="Erst Spitznamen wählen …" autocomplete="off"><button id="gNameOk">OK</button></div>
+  <div class="cin" id="gMsgRow"><input class="field" id="gIn" maxlength="140" placeholder="Schreib was …" autocomplete="off"><button id="gSend">➤</button></div>
 </div></div>
 
 <!-- Abbrechen? -->
@@ -1840,7 +1845,7 @@ function onRoomMsg(m){
   if(m.t==="snap"){ if(!FT.on||FT.local) return; FT.v=FIGHT.view(m.s); fEvents(m.s.ev||[]); return; }
   if(m.t==="react"){ fFloat(m.e); return; }
   if(m.t==="chat"||m.t==="chatlog"){ onRoomChat(m); return; }
-  if(m.t==="chatErr"){ toast(m.msg,2400); return; }
+  if(m.t==="chatErr"){ chatNote(m.msg); return; }
   if(m.t==="feed"){ if(!FT.on) toast(m.txt,1800); return; }
   if(m.t==="error"){ toast(m.msg,3000); return; }
 }
@@ -1926,7 +1931,7 @@ function lbConnect(){
     if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; renderOnline(); renderOpenRooms(); }
     else if(m.t==="challenge"){ if(R.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws) showChallenge(); }
     else if(m.t==="chat"||m.t==="chatlog") onLobbyChat(m);
-    else if(m.t==="chatErr") toast(m.msg,2400);
+    else if(m.t==="chatErr") chatNote(m.msg);
     else if(m.t==="challenged"){ toast(m.n>0?`📣 ${m.n} ${m.n===1?"Person wurde":"Leute wurden"} eingeladen!`:"Gerade ist sonst niemand online – teil den Link in Slack.",2600); } };
   ws.onclose=()=>{ if(LB.ws!==ws) return; LB.ws=null; if(document.hidden) return; $("homeOnline").textContent="🟢 Verbindung wird gesucht …"; clearTimeout(LB.rt); LB.rt=setTimeout(lbConnect,LB.retry); LB.retry=Math.min(LB.retry*2,8000); };
   ws.onerror=()=>{};
@@ -1972,15 +1977,22 @@ function chatNode(m){ const d=document.createElement("div"); const mine=m.name==
 function renderChat(listId,arr){ const el=$(listId); if(!el) return; const atEnd=el.scrollHeight-el.scrollTop-el.clientHeight<40; el.innerHTML="";
   if(!arr.length){ const d=document.createElement("div"); d.className="cmsg sys"; d.textContent=listId==="gList"?"Noch ruhig hier. Sag Hallo! 👋":"Noch keine Nachrichten. Sprüche klopfen erlaubt 😉"; el.appendChild(d); }
   arr.forEach(m=>el.appendChild(chatNode(m))); if(atEnd||arr.length<=1) el.scrollTop=el.scrollHeight; }
-function chatNeedsName(){ if(saved.name&&saved.name.length>=2) return false; toast("Leg erst im Profil einen Spitznamen an, dann kannst du chatten.",2600); return true; }
-function sendGlobal(){ const t=$("gIn").value.trim(); if(!t) return; if(chatNeedsName()) return; lbSend({t:"chat",text:t}); $("gIn").value=""; }
-function sendRoom(inp){ const t=$(inp).value.trim(); if(!t) return; if(chatNeedsName()) return; rsend({t:"chat",text:t}); $(inp).value=""; }
+let chatNoteT=0;
+function chatNote(msg){ ["gNote","rNote"].forEach(id=>{ const el=$(id); if(el) el.textContent=msg||""; }); clearTimeout(chatNoteT); if(msg) chatNoteT=setTimeout(()=>chatNote(""),4000); if(FT.on&&msg) toast(msg,2400); }
+function chatNeedsName(){ if(saved.name&&saved.name.length>=2) return false; chatNote("Leg erst einen Spitznamen an, dann kannst du chatten."); chatNameUI(); return true; }
+function chatNameUI(){ const need=!(saved.name&&saved.name.length>=2); $("gNameRow").style.display=need?"flex":"none"; $("gMsgRow").style.display=need?"none":"flex"; }
+function saveChatName(){ const n=$("gName").value.trim().slice(0,16); if(n.length<2){ chatNote("Mindestens 2 Zeichen, bitte."); return; }
+  saved.name=n; persist(); LB.lastKey=""; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:isBusy()}); renderHome();
+  api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:n,badge:myBadge(),kind:"profile"})}).catch(()=>{}); chatNote(""); chatNameUI(); setTimeout(()=>$("gIn").focus(),50); }
+function sendGlobal(){ const t=$("gIn").value.trim(); if(!t) return; if(chatNeedsName()) return; if(!LB.ws||LB.ws.readyState!==1){ chatNote("Keine Verbindung – versuch’s gleich nochmal."); if(!LB.ws) lbConnect(); return; } lbSend({t:"chat",text:t}); $("gIn").value=""; }
+function sendRoom(inp){ const t=$(inp).value.trim(); if(!t) return; if(chatNeedsName()) return; if(!R.ws||R.ws.readyState!==1){ chatNote("Keine Verbindung zum Raum."); return; } rsend({t:"chat",text:t}); $(inp).value=""; }
 function onLobbyChat(m){ if(m.t==="chatlog"){ CHAT.g=m.msgs||[]; } else { CHAT.g.push(m); if(CHAT.g.length>25) CHAT.g.shift(); if($("gchat").classList.contains("hidden")&&m.name!==saved.name){ CHAT.unread++; } }
   const bd=$("chatBadge"); bd.textContent=CHAT.unread>9?"9+":CHAT.unread; bd.classList.toggle("on",CHAT.unread>0); renderChat("gList",CHAT.g); }
 function onRoomChat(m){ if(m.t==="chatlog") CHAT.r=m.msgs||[]; else { CHAT.r.push(m); if(CHAT.r.length>15) CHAT.r.shift();
     if(FT.on){ const box=$("fChat"); const n=chatNode(m); box.appendChild(n); while(box.children.length>3) box.firstChild.remove(); setTimeout(()=>n.remove(),5200); } }
   renderChat("rList",CHAT.r); }
-$("chatBtn").onclick=()=>{ CHAT.unread=0; $("chatBadge").classList.remove("on"); renderChat("gList",CHAT.g); show("gchat"); };
+$("chatBtn").onclick=()=>{ CHAT.unread=0; $("chatBadge").classList.remove("on"); renderChat("gList",CHAT.g); chatNameUI(); chatNote(LB.ws?"":"Verbindung wird gesucht … gleich klappt’s."); show("gchat"); };
+$("gNameOk").onclick=saveChatName; $("gName").addEventListener("keydown",e=>{ if(e.key==="Enter") saveChatName(); });
 $("gSend").onclick=sendGlobal; $("gIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendGlobal(); });
 $("rSend").onclick=()=>sendRoom("rIn"); $("rIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendRoom("rIn"); });
 $("fSend").onclick=()=>sendRoom("fIn"); $("fIn").addEventListener("keydown",e=>{ e.stopPropagation(); if(e.key==="Enter") sendRoom("fIn"); });
