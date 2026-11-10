@@ -105,6 +105,7 @@ body.duel #combo{top:112px}
 .weapon{flex:0 0 72px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 7px;border-radius:16px;background:var(--card);border:1px solid var(--line);position:relative;scroll-snap-align:start;transition:transform .12s,background .2s,border-color .2s}
 .weapon .e{font-size:29px;line-height:1.05;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));transition:transform .2s}
 .weapon .t{font-size:11px;font-weight:900;color:var(--muted);white-space:nowrap}
+.weapon .r{font-size:8.5px;font-weight:900;color:#fde047;white-space:nowrap;line-height:1}
 .weapon .k{position:absolute;top:3px;left:6px;font-size:9.5px;font-weight:900;color:rgba(255,255,255,.35)}
 .weapon.active{background:linear-gradient(180deg,rgba(255,210,63,.25),rgba(255,77,141,.18));border-color:var(--yellow);box-shadow:0 0 0 2px rgba(255,210,63,.22)}
 .weapon.active .t{color:var(--yellow)}
@@ -384,6 +385,31 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #fStun .bar{height:7px;border-radius:99px;background:rgba(255,255,255,.15);margin-top:7px;overflow:hidden}#fStun .bar i{display:block;height:100%;background:#ff6b6b}
 #fight.spec #fCtl{display:none!important}
 .midtool{margin:4px 0 10px}
+
+#home{padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom))}
+#home>.card{width:100%;max-width:560px;min-height:calc(var(--vh,100dvh) - 16px);margin:0;justify-content:space-between;gap:6px}
+#home .modes{flex:1;justify-content:space-evenly;margin-bottom:6px}
+#home .mode{flex:1 1 auto;max-height:96px}
+#home .nametag{cursor:pointer}
+
+#bossShow{position:absolute;inset:0;z-index:6;display:none;background:radial-gradient(circle at 50% 60%,rgba(60,0,0,.75),rgba(0,0,0,.96));text-align:center;overflow:hidden}
+#bossShow.on{display:block}
+#bossShow.flicker{animation:bsFlick .18s steps(2) 8}
+@keyframes bsFlick{0%{background:#000}100%{background:radial-gradient(circle at 50% 60%,rgba(120,0,0,.6),#000)}}
+.bs-warn{position:absolute;left:0;right:0;top:22%;font-family:var(--comic);font-size:clamp(34px,11vw,64px);color:#ff3b3b;letter-spacing:3px;opacity:0;text-shadow:0 0 30px rgba(255,0,0,.8)}
+#bossShow.s2 .bs-warn{opacity:1;animation:bsBlink .35s steps(2) infinite}
+@keyframes bsBlink{50%{opacity:.15}}
+.bs-line{position:absolute;left:8%;right:8%;top:42%;font-weight:900;font-size:clamp(15px,4.4vw,20px);color:#fca5a5;min-height:1.4em}
+.bs-card{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%) scale(.4);opacity:0;transition:transform .45s cubic-bezier(.2,1.6,.4,1),opacity .3s;width:min(86%,360px);background:linear-gradient(180deg,#3b0a0a,#1a0505);border:3px solid #ff3b3b;border-radius:18px;padding:12px 14px 14px;box-shadow:0 0 50px rgba(255,0,0,.5)}
+#bossShow.s3 .bs-card{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#bossShow.s3 .bs-warn,#bossShow.s3 .bs-line{opacity:0}
+.bs-card small{display:block;font-weight:900;font-size:12px;letter-spacing:2px;color:#fca5a5}
+.bs-card b{display:block;font-family:var(--comic);font-weight:400;font-size:clamp(44px,14vw,72px);color:#ffd23f;line-height:1;text-shadow:4px 4px 0 #7f1d1d}
+.bs-card span{display:block;font-weight:800;font-size:13px;color:#fee2e2;margin-top:4px}
+.bs-hp{height:12px;border-radius:99px;background:rgba(255,255,255,.12);margin-top:10px;overflow:hidden}
+.bs-hp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ef4444,#a855f7);transition:width 1.3s linear}
+#bossShow.s3 .bs-hp i{width:100%}
+#bsSkip{position:absolute;right:10px;bottom:10px;font-weight:900;font-size:12px;color:#fca5a5;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 12px}
 </style>
 </head>
 <body>
@@ -421,6 +447,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div id="countdown">3</div>
     <div id="hint"></div>
     <div id="koStamp"><b>K.O.!</b><span id="koTxt"></span></div>
+    <div id="bossShow"><div class="bs-warn">⚠️ WARNUNG ⚠️</div><div class="bs-line" id="bsLine"></div>
+      <div class="bs-card"><small>DER ENDGEGNER</small><b>MEGA-BUG</b><span>Jeder Bug, den du je hattest – in einem.</span><div class="bs-hp"><i></i></div></div>
+      <button id="bsSkip">Überspringen ⏩</button></div>
     <div id="stunBox"><b>😵‍💫 OVERLOADED!</b><span>Getroffen – kurz nicht schlagen · OVERKILL −30 %</span><div class="bar"><i id="stunBar"></i></div></div>
     <div id="reactLayer"></div>
     <div id="globalPill" class="glass">🌍 <b id="globalNum">0</b> Klassen-Treffer</div>
@@ -839,6 +868,10 @@ const sfx = {
   tick(){ tone(.05,"square",1200,1200,.06); },
   charge(p){ tone(.06,"square",300+p*700,300+p*700,.04); },
   pop(){ tone(.08,"sine",900,1500,.12); },
+  rumble(){ noise(2.2,"lowpass",160,40,.9,.7); tone(2,"sine",45,30,.6); },
+  siren(){ for(let i=0;i<4;i++){ tone(.3,"square",880,880,.07,i*.6); tone(.3,"square",660,660,.07,i*.6+.3); } },
+  step(){ tone(.25,"sine",70,30,1); noise(.2,"lowpass",300,60,.8); },
+  laugh(){ [0,1,2,3,4].forEach(i=>tone(.16,"sawtooth",230-i*18,180-i*18,.18,i*.17)); },
 };
 function buzz(p){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} }
 
@@ -893,7 +926,8 @@ let tools=TOOLS.slice();
 let mode="free";   // free | time | boss | duel
 let lv=LV[saved.level];
 let curIdx=0, cur=tools[0], weapon=W_BY.tomato;
-let stunMax=1.3, immuneUntil=0, chill=false, cdUntil=0, weak=null, weakT=3, raging=false;
+let stunMax=1.3, immuneUntil=0, chill=false, cdUntil=0, weak=null, weakT=3, raging=false, slipT=0, stickT=0, blindT=0;
+const W_ROLE={fist:"schnell",tomato:"Ziel leichter",banana:"stoppt Würfe",egg:"stoppt Wackeln",pie:"stoppt Macken",highfive:"doppelt",rocket:"Max-Schaden",love:"lädt OVERKILL"};
 let hp=100, hpMax=100, state="idle", theta=0, omega=0, dropY=0, dropV=0, squash=0, hurt=0, flash=0, blush=0, koT=0, stunT=0;
 let lookX=0, lookY=0;
 let bagSplats=[], plasters=[], wallSplats=[], screenSplats=[], projectiles=[], fists=[], parts=[], texts=[], items=[], speech=null;
@@ -1081,7 +1115,7 @@ function checkBadges(force){
 /* ===================== Spiel: Boxbirne ===================== */
 function setLevel(l){ if(!LV[l]) return; saved.level=l; lv=LV[l]; persist(); renderLevelUI(); }
 function select(i){
-  curIdx=i; cur=tools[i]; hpMax=Math.round(lv.hp*(mode==="free"&&!chill?2.2:1)); hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
+  curIdx=i; cur=tools[i]; hpMax=Math.round(lv.hp*(mode==="free"?(chill?3:2.2):1)); slipT=0; stickT=0; blindT=0; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
   theta=rand(-.15,.15); omega=0; dropY=-(G.chain+G.bh+80); dropV=0; squash=0; hurt=0; flash=0; blush=0; state="alive";
   bagThrowT=lv.thr?rand(lv.thr.base[0]*.6,lv.thr.base[1]*.6)+1:99; dodgeT=rand(1.5,2.5);
   pops=[]; heat=[]; ghost=null; freezeT=0; bagOffX=0; bagOffV=0; bagOffTarget=0; quirkT=1.2; bagHits=0; deadline=0; deadlineDone=false;
@@ -1182,13 +1216,21 @@ function hitBag(lx,ly,x,y,w,fromRage,mv){
   bagHits++; if(cur.id==="classroom"&&!deadline&&mode!=="boss"){ deadline=performance.now()+(saved.level==="hard"?7000:saved.level==="easy"?12000:9000); }
   if(cur.id==="clarity") heat.push({x,y,age:0});
   let dmg=registerHit(w,fromRage,mv?mv.mult:1);
-  if(weak&&!fromRage&&Math.hypot(lx-weak.lx,ly-weak.ly)<G.bw*.2){ dmg*=3; weak=null; weakT=rand(3,5); word("VOLLTREFFER ×3!",x,y-40,clamp(W*.07,22,36),"#4ade80",.9); sfx.unlock(); stars(x,y,true); }
+  if(weak&&!fromRage&&Math.hypot(lx-weak.lx,ly-weak.ly)<G.bw*(w.id==="tomato"?.34:.2)){ dmg*=3; weak=null; weakT=rand(3,5); word("VOLLTREFFER ×3!",x,y-40,clamp(W*.07,22,36),"#4ade80",.9); sfx.unlock(); stars(x,y,true); }
   if(cur.id==="contentsquare" && mode!=="boss" && !fromRage){ const inZone=zoneTop?ly<G.chain+G.bh*.5:ly>=G.chain+G.bh*.5; dmg*=inZone?2:.5; if(inZone&&Math.random()<.3) word("ZONE! ×2",x,y-34,22,"#f0abfc",.6); }
   if(cur.id==="ga" && mode!=="boss"){ const tool=cur; if(Math.random()<.3) note("⏳ Daten werden verarbeitet …");
     setTimeout(()=>{ if(cur===tool&&state==="alive") applyBagDmg(dmg,lx,ly,x,y,w,mv,true); },900); bagFx(lx,ly,x,y,w,mv,dmg); return; }
   bagFx(lx,ly,x,y,w,mv,dmg); applyBagDmg(dmg,lx,ly,x,y,w,mv,false);
 }
+function weaponEffect(w){
+  if(chill||mode==="boss") return;
+  if(w.id==="banana"&&lv.thr){ if(slipT<=0) word("RUTSCHT AUS – WIRFT NICHT!",W/2,H*.2,clamp(W*.05,16,24),"#fde047",.9); slipT=4; items=[]; }
+  else if(w.id==="egg"){ if(stickT<=0) word("KLEBT FEST!",W/2,H*.2,clamp(W*.05,16,24),"#fde047",.9); stickT=4; }
+  else if(w.id==="pie"&&QUIRK[cur.id]){ if(blindT<=0) word("BLIND – KEINE MACKEN!",W/2,H*.2,clamp(W*.05,16,24),"#fde047",.9); blindT=4; freezeT=0; ghost=null; pops=pops.filter(p=>!p.lock); }
+  else if(w.id==="love"){ rage=Math.min(100,rage+12); updateRage(); }
+}
 function bagFx(lx,ly,x,y,w,mv,dmg){
+  weaponEffect(w);
   addHate(cur.custom?"custom":cur.id);
   omega+=((lx>=0?1:-1)*(.9+dmg*.07)+rand(-.25,.25))*lv.swing*(raging?1.7:1); squash=Math.min(.3,.09+dmg*.007); hurt=w.love?0:.42; flash=1;
   if(mv&&mv.kind==="haken") omega+=mv.dir*3.4;
@@ -1224,7 +1266,7 @@ function ko(){
 function baseAllDefeated(){ return TOOLS.every(t=>defeated.has(t.id)); }
 function nextBag(){
   if(mode==="time"||mode==="duel"){ select(toolOrder[(orderPos++)%toolOrder.length]); return; }
-  if(koRound>=3){ koRound=0; saved.bossOpen=true; persist(); startBoss(); return; }
+  if(koRound>=3){ koRound=0; saved.bossOpen=true; persist(); bossShowThen(); return; }
   if(tools.every(t=>defeated.has(t.id))) defeated.clear();
   for(let k=1;k<=tools.length;k++){ const i=(curIdx+k)%tools.length; if(!defeated.has(tools[i].id)){ select(i); return; } }
   select((curIdx+1)%tools.length);
@@ -1275,7 +1317,7 @@ function hitPop(x,y){
       if(mode==="time"||mode==="duel") score+=p.kind==="figma"?40:25; rage=Math.min(100,rage+3); updateRage(); return true; } }
   return false;
 }
-function quirkTick(dt){ if(chill||mode==="time") return;
+function quirkTick(dt){ if(chill||mode==="time"||blindT>0) return;
   if(mode==="boss"||state!=="alive"||cur.custom) { if(state!=="alive"){ freezeT=0; } return; }
   const q=cur.id; freezeT-=dt;
   bagOffV+=((bagOffTarget-bagOffX)*60-bagOffV*9)*dt; bagOffX+=bagOffV*dt;
@@ -1351,11 +1393,37 @@ function barrageStep(dt){
 function bossAlive(){ return state==="boss" && B && B.hp>0; }
 function bossCenter(){ return [B.x, G.ground-B.s*.5-B.jumpY+B.enterY]; }
 function bossHitTest(x,y){ const [cx,cy]=bossCenter(); const dx=(x-cx)/(B.s*.56), dy=(y-cy)/(B.s*.54); return dx*dx+dy*dy<=1 || (Math.abs(x-cx)<B.s*.2 && y<cy && y>cy-B.s*.8); }
+// Kleine Show vor dem Endgegner – wie im Videospiel
+let bsTimers=[];
+function bossShowThen(){
+  mode="boss"; state="bossShow"; B=null; items=[]; projectiles=[]; fists=[]; updateHUD(); renderChips();
+  const el=$("bossShow"), T=(ms,f)=>bsTimers.push(setTimeout(f,ms)); bsTimers.forEach(clearTimeout); bsTimers=[];
+  el.className="on flicker"; $("bsLine").textContent=""; sfx.rumble(); if(!reduced) shake=10; buzz([200]);
+  T(1300,()=>{ el.className="on s2"; sfx.siren(); });
+  const txt="Aus den tiefsten Tiefen des Kurses kommt etwas …";
+  T(2500,()=>{ let i=0; const ty=setInterval(()=>{ $("bsLine").textContent=txt.slice(0,++i); if(i>=txt.length) clearInterval(ty); },35); bsTimers.push(ty); });
+  [2700,3300,3900].forEach(ms=>T(ms,()=>{ sfx.step(); if(!reduced) shake=14; buzz(60); }));
+  T(4500,()=>{ el.className="on s3"; sfx.roar(); });
+  T(6300,()=>{ sfx.laugh(); });
+  T(7200,endBossShow);
+}
+function endBossShow(){ bsTimers.forEach(t=>{ clearTimeout(t); clearInterval(t); }); bsTimers=[]; $("bossShow").className=""; if(state==="bossShow"){ startBoss(); BossMusic.start(); } }
+$("bsSkip").addEventListener("pointerdown",e=>{ e.stopPropagation(); e.preventDefault(); endBossShow(); });
+// Bedrohliche Musik im Endgegner-Kampf, wird mit jeder Phase schneller
+const BossMusic={timer:null,step:0,
+  start(){ this.stop(); this.step=0; const bass=[82.4,82.4,98,82.4,110,98,73.4,77.8];
+    const tick=()=>{ if(mode!=="boss"||!(state==="boss"||state==="bossIntro")){ this.stop(); return; }
+      const ph=B?B.phase:0, i=this.step++; if(i%2===0) tone(.16,"sawtooth",bass[(i/2|0)%8],bass[(i/2|0)%8],.07);
+      if(i%4===0) tone(.12,"sine",110,40,.35); if(i%4===2) noise(.04,"highpass",6000,5000,.06);
+      if(B&&B.hearts===1&&i%8===0){ tone(.12,"sine",60,40,.5); tone(.12,"sine",60,40,.4,.18); }
+      clearTimeout(this.timer); this.timer=setTimeout(tick,60000/[125,145,170][ph]/4); };
+    tick(); },
+  stop(){ clearTimeout(this.timer); this.timer=null; }};
 function startBoss(){
   mode="boss"; state="bossIntro"; speech=null; projectiles=[]; fists=[]; bagSplats=[]; items=[]; screenSplats=[];
   B={s:G.bs,x:W/2,targetX:W/2,hp:lv.bossHP,max:lv.bossHP,phase:0,throwT:2.2,runT:rand(6,9),hidden:false,fleeing:false,hideT:0,jumpY:0,jumpV:0,enterY:-H*1.2,enterV:0,
      walk:0,moving:false,armT:0,hurt:0,flash:0,squash:0,splats:[],hearts:lv.hearts,dir:1,introT:0,speedBoost:0,gone:false};
-  word("⚠️ ENDGEGNER ⚠️",W/2,H*.3,clamp(W*.11,34,64),"#ff6b6b",1.8); sfx.roar(); buzz([100,60,100]);
+  buzz([100,60,100]);
   updateHUD(); renderChips();
 }
 function bossPhaseCheck(){
@@ -1519,7 +1587,7 @@ function renderWeapons(fresh){
   const box=$("weapons"); box.innerHTML="";
   WEAPONS.forEach((w,i)=>{ const un=isUnlocked(w), b=document.createElement("button");
     b.className="weapon"+(w===weapon?" active":"")+(un?"":" locked")+(fresh===w.id?" new":"");
-    b.innerHTML=`<span class="k">${i+1}</span><span class="e">${w.emoji}</span><span class="t">${un?w.name:w.unlock.label}</span>${un?"":'<span class="lock">🔒</span>'}`;
+    b.innerHTML=`<span class="k">${i+1}</span><span class="e">${w.emoji}</span><span class="t">${un?w.name:w.unlock.label}</span>${un&&!chill?`<span class="r">${W_ROLE[w.id]||""}</span>`:""}${un?"":'<span class="lock">🔒</span>'}`;
     b.onclick=()=>{ ensureAudio(); if(!un){ toast(`🔒 ${w.emoji} ${w.name}: freischalten mit ${w.unlock.type==="ko"?w.unlock.n+" K.O.s":"einer Combo ×"+w.unlock.n}`); return; } weapon=w; renderWeapons(); };
     box.appendChild(b); });
   if(fresh){ const el=box.children[WEAPONS.findIndex(w=>w.id===fresh)]; if(el&&el.scrollIntoView) el.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}); }
@@ -1767,7 +1835,7 @@ function modeInfo(kind,o){
     free:{e:"🥊",t:"FREIES SPIEL",g:"Such dir ein Tool aus und hau es K.O. Nach 3 K.O.s wartet der Endgegner.",
       l:(saved.level==="easy"?[["👆",`${tap} auf die Boxbirne`],["😌","Stufe „Wenig“: Es wirft nichts zurück"]]
         :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: Du kannst kurz nicht schlagen und dein OVERKILL verliert 30 %"]])
-        .concat([["🎯","Grüne Zielscheibe auf der Boxbirne? Triff sie – dreifacher Schaden!"],["😡","Kurz vor dem K.O. rastet das Tool aus: Es glüht rot und wehrt sich stärker"],["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Unten Waffe wählen. Starke Waffen (🚀 🥧 ❤️) laden nach – dann kurz wechseln"],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
+        .concat([["🎯","Grüne Zielscheibe auf der Boxbirne? Triff sie – dreifacher Schaden!"],["😡","Kurz vor dem K.O. rastet das Tool aus: Es glüht rot und wehrt sich stärker"],["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Waffe je nach Lage: 🥊 schnell · 🍅 Zielscheibe leichter · 🍌 stoppt Würfe · 🥚 stoppt Wackeln · 🥧 stoppt Macken · 🚀 viel Schaden · ❤️ lädt OVERKILL. Starke Waffen laden nach."],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
     time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
       l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🎯","Grüne Zielscheibe? Triff sie – dreifacher Schaden!"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
@@ -1818,7 +1886,7 @@ function fHit(x,y){
   if(fHitItem(x,y)) return;
   const v=FT.v; if(v.pu){ const px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH; if(Math.hypot(x-px,y-py)<Math.max(48,FW*.1)){ if(FT.local) FIGHT.act(FT.g,"me","grab",v.pu.id); else rsend({t:"act",a:"grab",id:v.pu.id}); sfx.pop(); return; } }
   if(FT.stun>0||v.frozen[FT.myTeam]>0){ sfx.thud(); return; }
-  if(FT.local) FIGHT.act(FT.g,"me","hit"); else { rsend({t:"act",a:"hit"}); fHitFx("L"); }
+  if(FT.local) FIGHT.act(FT.g,"me","hit"); else { const now=performance.now(); FT.myTaps=(FT.myTaps||[]).filter(t=>now-t<1000); if(FT.myTaps.length>=10) return; FT.myTaps.push(now); rsend({t:"act",a:"hit"}); fHitFx("L"); }
 }
 function fWord(txt,x,y,size,col,life){ FT.words.push({txt,x,y,size,c:col,age:0,max:life||.6}); if(FT.words.length>14) FT.words.shift(); }
 function fBanner(txt,sub,t){ FT.banner=txt; FT.bannerSub=sub||""; FT.bannerT=t||1.2; }
@@ -1999,6 +2067,9 @@ function update(dt){
   omega+=(-18*theta-1.5*omega)*dt; theta=clamp(theta+omega*dt,-1.15,1.15);
   dropV+=(-dropY*70-dropV*7.5)*dt; dropY+=dropV*dt;
   squash-=squash*11*dt; hurt-=dt; blush-=dt; stunT-=dt;
+  slipT=Math.max(0,slipT-dt); blindT=Math.max(0,blindT-dt); stickT=Math.max(0,stickT-dt);
+  if(stickT>0){ omega-=omega*7*dt; theta-=theta*3*dt; bagOffTarget=0; }
+  { const st=(slipT>0?`🍌${Math.ceil(slipT)} `:"")+(stickT>0?`🥚${Math.ceil(stickT)} `:"")+(blindT>0?`🥧${Math.ceil(blindT)}`:""); const he=$("hearts"); if(mode!=="boss"&&he.textContent!==st) he.textContent=st; }
   // Schwachstelle: leuchtet kurz auf, Treffer dort zählen dreifach
   if(state==="alive"&&!chill&&mode!=="boss"){ if(weak){ weak.t-=dt; if(weak.t<=0){ weak=null; weakT=rand(3,5); } } else { weakT-=dt; if(weakT<=0) weak={lx:rand(-G.bw*.28,G.bw*.28),ly:G.chain+G.bh*rand(.18,.82),t:2.2}; } } else weak=null;
   // Wutausbruch kurz vor dem K.O.
@@ -2014,7 +2085,7 @@ function update(dt){
   // Mittel/Schwer: Boxbirne weicht aus und wirft zurück – je schneller du haust, desto schneller
   if(mode!=="boss" && state==="alive" && Math.abs(dropY)<40 && hits>0){
     if(lv.dodge){ dodgeT-=dt; if(dodgeT<=0){ dodgeT=rand(1.3,2.3)/(1+hitRate()*.15); omega+=(Math.random()<.5?-1:1)*rand(lv.dodge*.8,lv.dodge*1.2); } }
-    if(lv.thr){ bagThrowT-=dt; if(bagThrowT<=0){ const r=hitRate(); bagThrowT=Math.max(lv.thr.min*(mode==="free"?.8:1),rand(lv.thr.base[0],lv.thr.base[1])/(1+r*lv.thr.k*(mode==="free"?1.8:1)))*(raging?.5:1);
+    if(lv.thr&&slipT<=0){ bagThrowT-=dt; if(bagThrowT<=0){ const r=hitRate(); bagThrowT=Math.max(lv.thr.min*(mode==="free"?.8:1),rand(lv.thr.base[0],lv.thr.base[1])/(1+r*lv.thr.k*(mode==="free"?1.8:1)))*(raging?.5:1);
       const [bx,by]=toWorld(0,G.chain+G.bh*.45), dur=Math.max(.7,lv.thr.dur/(1+r*.12)); throwItem(bx,by,dur);
       if(saved.level==="hard"&&r>3.2&&Math.random()<.45) setTimeout(()=>{ if(state==="alive"){ const [x2,y2]=toWorld(0,G.chain+G.bh*.4); throwItem(x2,y2,dur); } },220);
       if(r>3.5&&performance.now()-lastSpeech>1800) { say(pick(["Du willst Tempo? Kriegst du!","OVERLOADED? Ich doch nicht!","Retourkutsche!","DSGVO-Keule!"])); }
@@ -2168,8 +2239,8 @@ function setMuted(m){ muted=!!m; saved.muted=muted; persist(); document.querySel
 $("muteBtn").onclick=()=>{ ensureAudio(); setMuted(!muted); };
 document.querySelectorAll(".muteToggle").forEach(b=>b.onclick=e=>{ e.stopPropagation(); ensureAudio(); setMuted(!muted); });
 setMuted(!!saved.muted);
-function gameRunning(){ return state==="alive"||state==="boss"||state==="ko"||state==="bossIntro"||(mode==="time"&&state!=="over"&&state!=="idle"); }
-function abortGame(){ items=[]; pops=[]; projectiles=[]; fists=[]; barrage=null; screenSplats=[]; stunT=0; $("timer").style.display="none";
+function gameRunning(){ return state==="alive"||state==="boss"||state==="ko"||state==="bossIntro"||state==="bossShow"||(mode==="time"&&state!=="over"&&state!=="idle"); }
+function abortGame(){ bsTimers.forEach(t=>{ clearTimeout(t); clearInterval(t); }); bsTimers=[]; $("bossShow").className=""; BossMusic.stop(); items=[]; pops=[]; projectiles=[]; fists=[]; barrage=null; screenSplats=[]; stunT=0; $("timer").style.display="none";
   if(mode==="time"){ timeLeft=0; score=0; tKO=0; } if(mode==="boss"){ B=null; } if(mode==="free"&&!chill){ koRound=0; defeated.clear(); }
   mode="free"; chill=false; state="idle"; updateHUD(); }
 $("menuBtn").onclick=()=>{ if(mode==="duel"){ toast("Mitten im Duell? Erst zu Ende hauen! 😤"); return; } if(gameRunning()){ show("quitAsk"); return; } openHome(); };
@@ -2196,17 +2267,18 @@ $("freeBtn").onclick=()=>{ ensureAudio(); modeIntro("free",()=>openPick()); };
 $("tapBtn").onclick=()=>{ ensureAudio(); modeIntro("tap",startChill); };
 $("pickRandom").onclick=()=>{ const i=(Math.random()*BASE)|0; if(pickCb){ const f=pickCb; pickCb=null; hide("pick"); f(TOOLS[i].id); } else startTool(i); };
 $("timeBtn").onclick=()=>{ ensureAudio(); modeIntro("time",()=>startFrom(()=>startTime())); };
-$("bossBtn").onclick=()=>{ if(!saved.bossOpen){ toast("Erst 3 Tools im freien Spiel K.O. hauen!"); return; } modeIntro("boss",()=>startFrom(()=>startBoss())); };
+$("bossBtn").onclick=()=>{ if(!saved.bossOpen){ toast("Erst 3 Tools im freien Spiel K.O. hauen!"); return; } modeIntro("boss",()=>startFrom(()=>bossShowThen())); };
 $("duelBtn").onclick=()=>{ ensureAudio(); hide("home"); openDuel(); };
 $("resumeBtn").onclick=()=>hide("home");
-$("tRank").onclick=()=>openStats("rank"); $("tWall").onclick=()=>{ show("wall"); loadWall(); }; $("tProfile").onclick=openProfile; $("tHelp").onclick=openHelp; $("tRecap").onclick=openRecap;
+$("tRank").onclick=()=>openStats("rank"); $("tWall").onclick=()=>{ show("wall"); loadWall(); }; $("homeTag").onclick=()=>$("tProfile").click();
+$("tProfile").onclick=openProfile; $("tHelp").onclick=openHelp; $("tRecap").onclick=openRecap;
 $("tZen").onclick=()=>{ hide("home"); openZen(false); };
 document.querySelectorAll("#statsMain button").forEach(b=>b.onclick=()=>openStats(b.dataset.m));
 $("helpX").onclick=closeHelp; $("helpPrev").onclick=()=>{ helpIdx=Math.max(0,helpIdx-1); renderHelp(); };
 $("helpNext").onclick=()=>{ if(helpIdx<HELP.length-1){ helpIdx++; renderHelp(); } else closeHelp(); };
 $("tAgain").onclick=()=>{ hide("timeEnd"); startTime(); renderChips(); };
 $("tMenu").onclick=()=>{ hide("timeEnd"); mode="free"; state="idle"; openHome(); };
-$("bossRetry").onclick=()=>{ hide("bossLost"); screenSplats=[]; startBoss(); };
+$("bossRetry").onclick=()=>{ hide("bossLost"); screenSplats=[]; startBoss(); BossMusic.start(); };
 $("bossMenu").onclick=()=>{ hide("bossLost"); screenSplats=[]; mode="free"; B=null; state="idle"; koRound=0; openHome(); };
 $("zenSkip").onclick=showQuote; $("zenNext").onclick=()=>{ $("quoteTxt").textContent=nextQuote(); sfx.pop(); };
 $("zenGo").onclick=()=>{ hide("zen"); clearInterval(zenTimer); if(zenFinal){ zenFinal=false; mode="free"; B=null; screenSplats=[]; koRound=0; openPick(); return; toast("Neue Runde! Der Endgegner bleibt freigeschaltet 👑",3000); } else if(state==="idle") openHome(); };

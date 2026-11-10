@@ -159,7 +159,9 @@ export class Room extends DurableObject {
     if (m.t === "react" && REACTIONS.includes(m.e) && now - c.lastReact > 350) { c.lastReact = now; this.broadcast({ t: "react", e: m.e }); return; }
     if (m.t === "rematch" && st.phase === "results") {
       st.phase = "lobby"; this.g = null;
-      this.broadcast({ t: "feed", txt: `${c.name} will eine Revanche! ⚔️` });
+      // 2 gegen 2: Bei jeder Revanche werden die Teams neu gemischt – so spielt jeder mal mit und gegen jeden
+      if (st.format === "2v2") { const ps = this.players().slice(0, 4); if (ps.length === 4) { const pairs = [[0, 1], [0, 2], [0, 3]], pr = pairs[st.round % 3]; ps.forEach((p, i) => { p.team = pr.includes(i) ? "A" : "B"; }); } }
+      this.broadcast({ t: "feed", txt: `${c.name} will eine Revanche! ⚔️` + (st.format === "2v2" ? " Die Teams werden neu gemischt." : "") });
       this.sync(); return;
     }
     if (st.phase !== "lobby") return;

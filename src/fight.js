@@ -21,6 +21,9 @@ const FIGHT = (() => {
     const p = g.players[pid]; if (!p || g.phase !== "fight") return false;
     if (a === "grab") {
       if (!g.pu || g.pu.id !== id) return false;
+      // Aufhol-Bonus: Wer vorne liegt, darf erst nach 0,4 Sekunden zugreifen
+      const lead = g.pos > .05 ? "A" : g.pos < -.05 ? "B" : null;
+      if (lead === p.team && (g.pu.age || 0) < .4) return false;
       const k = g.pu.kind, t = p.team, o = t === "A" ? "B" : "A"; g.pu = null; g.puT = rnd(5, 8);
       if (k === "turbo") g.boost[t] = POWERS.turbo.dur;
       else if (k === "freeze") g.frozen[o] = POWERS.freeze.dur;
@@ -67,7 +70,7 @@ const FIGHT = (() => {
     g.t += dt;
     for (const t of ["A", "B"]) { g.boost[t] = Math.max(0, g.boost[t] - dt); g.frozen[t] = Math.max(0, g.frozen[t] - dt); }
     if (!g.rush && g.dur - g.t <= RUSH) { g.rush = true; g.ev.push({ k: "rush" }); }
-    if (g.pu) { g.pu.t -= dt; if (g.pu.t <= 0) { g.pu = null; g.puT = rnd(4, 7); } }
+    if (g.pu) { g.pu.t -= dt; g.pu.age = (g.pu.age || 0) + dt; if (g.pu.t <= 0) { g.pu = null; g.puT = rnd(4, 7); } }
     else if (!g.rush || g.dur - g.t > 3) { g.puT -= dt; if (g.puT <= 0) { const kinds = Object.keys(POWERS); g.pu = { id: g.puN++, kind: kinds[(Math.random() * kinds.length) | 0], x: rnd(.25, .75), y: rnd(.5, .8), t: 3.5 }; g.ev.push({ k: "pu", kind: g.pu.kind }); } }
     if (g.t >= g.dur) endRound(g, Math.abs(g.pos) < .02 ? "draw" : g.pos > 0 ? "A" : "B", false);
   }
@@ -75,7 +78,7 @@ const FIGHT = (() => {
   function bot(g, pid, dt) {
     const p = g.players[pid]; if (!p || !p.bot || g.phase !== "fight") return;
     const L = BOT[p.level] || BOT.easy;
-    if (g.pu) { if (p.puSeen !== g.pu.id) { p.puSeen = g.pu.id; p.puWant = Math.random() < L.grabP ? rnd(L.grab[0], L.grab[1]) : -1; } if (p.puWant > 0) { p.puWant -= dt; if (p.puWant <= 0) act(g, pid, "grab", g.pu.id); } }
+    if (g.pu) { if (p.puSeen !== g.pu.id) { p.puSeen = g.pu.id; p.puWant = Math.random() < L.grabP ? rnd(L.grab[0], L.grab[1]) : -1; } if (p.puWant > 0) { p.puWant -= dt; if (p.puWant <= 0 && !act(g, pid, "grab", g.pu.id) && g.pu) p.puWant = .15; } }
     if (!p.botRate || Math.random() < dt * .5) p.botRate = rnd(L.rate[0], L.rate[1]); // mal schneller, mal langsamer
     p.botT -= dt;
     while (p.botT <= 0) { p.botT += 1 / p.botRate * rnd(.7, 1.3); act(g, pid, "hit"); if (g.phase !== "fight") return; }
