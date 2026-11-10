@@ -491,6 +491,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #duelLobby #startDuel{position:sticky;bottom:0;z-index:2;font-size:21px;padding:11px}
 #duelLobby .ghost{padding:6px}
 #duelLobby .specline:empty{display:none}
+
+.lcode{cursor:pointer;color:#fff}.lcode .cp{font-size:15px}
+.lcode.ok{border-color:#4ade80;background:rgba(74,222,128,.15)}
 </style>
 </head>
 <body>
@@ -715,7 +718,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="cta alt mkonly" id="botDuel">🤖 GEGEN BOT ÜBEN</button>
   </div>
   <div id="duelLobby" style="display:none">
-    <div class="lhead"><div class="mid">WARTERAUM</div><div class="lcode"><small>Code</small><b id="roomCode">-----</b></div></div>
+    <div class="lhead"><div class="mid">WARTERAUM</div><button class="lcode" id="codeCopy" aria-label="Code kopieren"><small>Code</small><b id="roomCode">-----</b><span class="cp" id="codeCp">📋</span></button></div>
     <div class="row2"><button class="cta alt sm" id="shareRoom">📤 Link teilen</button><button class="cta sm" id="challengeAll">📣 Alle einladen</button></div>
     <div class="teams">
       <div class="team A"><h4 id="teamAH">TEAM LILA</h4><div id="teamA"></div></div>
@@ -1993,7 +1996,7 @@ function lbConnect(){
   LB.ws=ws;
   ws.onopen=()=>{ LB.retry=1000; LB.lastKey=""; ws.send(JSON.stringify({t:"hello",name:saved.name,sid:saved.sid,busy:isBusy()})); LB.ann=""; if(R.st) renderLobby(); };
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
-    if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; renderOnline(); renderOpenRooms(); }
+    if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; LB.roomsAt=Date.now(); renderOnline(); renderOpenRooms(); checkChallenges(); }
     else if(m.t==="challenge"){ if(R.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws) showChallenge(); }
     else if(m.t==="chat"||m.t==="chatlog") onLobbyChat(m);
     else if(m.t==="chatErr") chatNote(m.msg);
@@ -2015,10 +2018,19 @@ function renderOpenRooms(){
     d.querySelector(".nm").textContent=`${r.name} sucht Gegner`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
 }
 function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Mitboxen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
-function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; $("chBox").classList.add("on"); sfx.ding(); clearTimeout(LB.chT); LB.chT=setTimeout(hideChallenge,30000); }
+function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; $("chBox").classList.add("on"); sfx.ding(); clearTimeout(LB.chT); }
 function hideChallenge(){ $("chBox").classList.remove("on"); }
+LB.dismissed=new Set();
+function checkChallenges(){
+  const now=Date.now(), age=r=>r.ch+(now-(LB.roomsAt||now))/1000;
+  const open=LB.rooms.filter(r=>r.ch!==null&&r.ch!==undefined&&age(r)<600&&r.code!==R.code&&r.count<r.cap&&!LB.dismissed.has(r.code)).sort((a,b)=>age(a)-age(b));
+  const shown=$("chBox").classList.contains("on");
+  if(shown&&!open.some(r=>r.code===LB.chCode)){ hideChallenge(); return; } // Gegner gefunden oder Raum zu
+  if(shown||isBusy()||R.ws||!open.length) return;
+  const r=open[0]; LB.queue={code:r.code,name:r.name,format:r.format,until:now+60000}; showChallenge();
+}
 $("chGo").onclick=()=>joinOpen(LB.chCode);
-$("chX").onclick=hideChallenge;
+$("chX").onclick=()=>{ if(LB.chCode) LB.dismissed.add(LB.chCode); hideChallenge(); };
 // Raum im Treffpunkt anmelden, solange Plätze frei sind
 function lbAnnounce(){
   const st=R.st; let key="";
@@ -2029,11 +2041,13 @@ function lbAnnounce(){
   LB.ann=key;
 }
 setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
-  if(!b&&!R.ws&&LB.queue) showChallenge(); lbAnnounce(); },1000);
+  if(!b&&!R.ws&&LB.queue) showChallenge(); checkChallenges(); lbAnnounce(); },1000);
 // Echtzeit: Lebenszeichen alle 8 Sekunden; Seite im Hintergrund = offline, wieder sichtbar = sofort online
 setInterval(()=>lbSend({t:"ping"}),8000);
 document.addEventListener("visibilitychange",()=>{ if(document.hidden){ if(LB.ws){ const w=LB.ws; LB.ws=null; try{ w.close(); }catch(e){} } } else if(!LB.ws){ LB.retry=1000; lbConnect(); } });
 window.addEventListener("pagehide",()=>{ if(LB.ws){ const w=LB.ws; LB.ws=null; try{ w.close(); }catch(e){} } });
+async function copyText(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ try{ const ta=document.createElement("textarea"); ta.value=t; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,99); const ok=document.execCommand("copy"); ta.remove(); return ok; }catch(e2){ return false; } } }
+$("codeCopy").onclick=async()=>{ if(!R.code) return; const ok=await copyText(R.code); const b=$("codeCopy"); b.classList.toggle("ok",ok); $("codeCp").textContent=ok?"✅":"📋"; chatNote(ok?"Code kopiert – einfach einfügen und teilen!":`Code: ${R.code}`); setTimeout(()=>{ b.classList.remove("ok"); $("codeCp").textContent="📋"; },2000); sfx.pop(); };
 $("challengeAll").onclick=()=>{ if(!R.st) return; lbAnnounce(); setTimeout(()=>lbSend({t:"challenge",code:R.code}),300); sfx.pop(); };
 
 /* ===================== Chat (nur live, nichts gespeichert) ===================== */

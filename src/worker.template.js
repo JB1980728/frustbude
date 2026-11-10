@@ -292,7 +292,7 @@ export class Lobby extends DurableObject {
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
   view() {
     const people = [...this.conns.values()].map(c => ({ name: c.name || null, busy: !!c.busy }));
-    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < 30 * 60000).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap }));
+    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < 30 * 60000).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap, ch: r.ch ? Math.round((Date.now() - r.ch) / 1000) : null }));
     return { t: "online", people, rooms };
   }
   sync() { if (this.syncT) return; this.syncT = setTimeout(() => { this.syncT = null; const s = JSON.stringify(this.view()); for (const c of this.conns.values()) { try { c.ws.send(s); } catch (e) {} } }, 120); }
@@ -309,12 +309,12 @@ export class Lobby extends DurableObject {
       const cap = m.format === "2v2" ? 4 : 2, count = Math.max(1, Math.min(cap, Math.floor(Number(m.count) || 1)));
       const r = this.rooms.get(code); if (r && r.by !== c.id) return;
       if (!r && [...this.rooms.values()].filter(x => x.by === c.id).length >= 2) return;
-      this.rooms.set(code, { code, by: c.id, name: c.name || "Jemand", format: m.format === "2v2" ? "2v2" : "1v1", count, cap, ts: r ? r.ts : now }); this.sync(); return;
+      this.rooms.set(code, { code, by: c.id, name: c.name || "Jemand", format: m.format === "2v2" ? "2v2" : "1v1", count, cap, ts: r ? r.ts : now, ch: r ? r.ch : 0 }); this.sync(); return;
     }
     if (m.t === "close" && code) { const r = this.rooms.get(code); if (r && r.by === c.id) { this.rooms.delete(code); this.sync(); } return; }
     if (m.t === "challenge" && code && now - c.lastCh > 20000) {
       const r = this.rooms.get(code); if (!r || r.by !== c.id) return;
-      c.lastCh = now; const s = JSON.stringify({ t: "challenge", code, name: c.name || "Jemand", format: r.format, ts: now });
+      c.lastCh = now; r.ch = now; this.sync(); const s = JSON.stringify({ t: "challenge", code, name: c.name || "Jemand", format: r.format, ts: now });
       for (const o of this.conns.values()) if (o !== c) { try { o.ws.send(s); } catch (e) {} }
       this.send(c, { t: "challenged", n: this.conns.size - 1 }); return;
     }
