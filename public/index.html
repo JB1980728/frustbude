@@ -1731,7 +1731,7 @@ function renderStats(){
     if(!LBDATA){ list.innerHTML='<div class="empty">Ranglisten laden … oder gerade nicht erreichbar.</div>'; return; }
     const rows=LBDATA[statsSub]||[]; const unit={wins:"Siege",duel:"Treffer",time:"K.O.s",timeHard:"K.O.s",boss:"×"}[statsSub];
     if(!rows.length){ list.innerHTML='<div class="empty">Noch niemand hier. Sei die erste Person! 🏆</div>'; return; }
-    rows.forEach((r,i)=>{ const d=document.createElement("div"); d.className="lbrow"; d.innerHTML=`<div class="pos">${i+1}</div><div class="nm"></div><div class="v">${fmt(r.v)} <small style="font-family:Nunito;font-size:11px;color:var(--muted)">${unit}</small></div>`;
+    rows.forEach((r,i)=>{ const d=document.createElement("div"); d.className="lbrow"; d.innerHTML=`<div class="pos">${i+1}</div><div class="nm"></div><div class="v">${fmt(r.v)} <small style="font-family:Nunito;font-size:11px;color:var(--muted)">${unit}${r.d!==undefined?` · ${fmt(r.d)} ${r.d===1?"Duell":"Duelle"}`:""}</small></div>`;
       d.querySelector(".nm").textContent=`${r.badge||""} ${r.name}`; list.appendChild(d); });
   } else {
     const tabs=[["all","🌍 Ganze Klasse"],["me","🙋 Nur ich"]]; if(!["all","me"].includes(statsSub)) statsSub=NET.online?"all":"me";

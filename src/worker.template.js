@@ -408,7 +408,9 @@ export default {
 
       if (path === "/api/leaderboard" && req.method === "GET") {
         const q = (col, extra) => db.prepare(`SELECT name, badge, ${col} AS v FROM lb WHERE ${col} > 0 ${extra || ""} ORDER BY ${col} DESC, ts ASC LIMIT 15`).all().then(r => r.results || []);
-        const [wins, duel, time, timeHard, boss] = await Promise.all([q("wins"), q("best_duel"), q("best_ko"), q("best_ko_hard"), q("boss")]);
+        // Duell: alle, die schon ein Duell gespielt haben – auch mit 0 Siegen
+        const winsQ = db.prepare("SELECT name, badge, wins AS v, duels AS d FROM lb WHERE duels > 0 ORDER BY wins DESC, duels DESC, ts ASC LIMIT 30").all().then(r => r.results || []);
+        const [wins, duel, time, timeHard, boss] = await Promise.all([winsQ, q("best_duel"), q("best_ko"), q("best_ko_hard"), q("boss")]);
         return json({ wins, duel, time, timeHard, boss });
       }
 
