@@ -71,7 +71,8 @@ const FIGHT = (() => {
     for (const t of ["A", "B"]) { g.boost[t] = Math.max(0, g.boost[t] - dt); g.frozen[t] = Math.max(0, g.frozen[t] - dt); }
     if (!g.rush && g.dur - g.t <= RUSH) { g.rush = true; g.ev.push({ k: "rush" }); }
     if (g.pu) { g.pu.t -= dt; g.pu.age = (g.pu.age || 0) + dt; if (g.pu.t <= 0) { g.pu = null; g.puT = rnd(4, 7); } }
-    else if (!g.rush || g.dur - g.t > 3) { g.puT -= dt; if (g.puT <= 0) { const kinds = Object.keys(POWERS); g.pu = { id: g.puN++, kind: kinds[(Math.random() * kinds.length) | 0], x: rnd(.25, .75), y: rnd(.5, .8), t: 3.5 }; g.ev.push({ k: "pu", kind: g.pu.kind }); } }
+    else if (!g.rush || g.dur - g.t > 3) { g.puT -= dt; if (g.puT <= 0) { const kinds = Object.keys(POWERS); const side = Math.random() < .5; // weit weg von der Boxbirne: am linken oder rechten Rand, oben oder unten
+      g.pu = { id: g.puN++, kind: kinds[(Math.random() * kinds.length) | 0], x: side ? rnd(.08, .17) : rnd(.83, .92), y: Math.random() < .5 ? rnd(.12, .3) : rnd(.72, .9), t: 3 }; g.ev.push({ k: "pu", kind: g.pu.kind }); } }
     if (g.t >= g.dur) endRound(g, Math.abs(g.pos) < .02 ? "draw" : g.pos > 0 ? "A" : "B", false);
   }
 

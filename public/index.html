@@ -1904,7 +1904,7 @@ function modeInfo(kind,o){
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
     fight:{e:"⚔️",t:"DUELL: TAUZIEHEN",g:"Eine Boxbirne hängt zwischen euch. Hau drauf, so schnell du kannst – jeder Treffer schiebt sie zum Gegner. Erreicht sie deine Seite, verlierst du die Runde.",
-      l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⚡","Superkräfte tauchen im Feld auf – wer zuerst tippt, bekommt sie: ⚡ Turbo (doppelt schieben), 🧊 Einfrieren (Gegner kurz lahm), 💥 Mega-Schlag (großer Schubs)"],["🔥","Endspurt: In den letzten 10 Sekunden zählt jeder Treffer doppelt – Aufholen geht immer!"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
+      l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⚡","Superkräfte tauchen am Rand auf, weit weg von der Boxbirne – wer sie zuerst trifft, bekommt sie: ⚡ Turbo (doppelt schieben), 🧊 Einfrieren (Gegner kurz lahm), 💥 Mega-Schlag (großer Schubs)"],["🔥","Endspurt: In den letzten 10 Sekunden zählt jeder Treffer doppelt – Aufholen geht immer!"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
         .concat((o&&o.level||saved.level)==="hard"?[["🛡️","Schwer: Die Boxbirne wirft Sachen nach dir – antippen, sonst bist du kurz „Overloaded“"]]:[]).concat(touchDev?[]:[["⌨️","Am Computer: Leertaste oder jede Buchstabentaste"]])},
   };
   return M[kind];
@@ -2026,7 +2026,7 @@ function startBotFight(tool){
 function fHit(x,y){
   if(!FT.on||FT.spec||!FT.v||FT.v.phase!=="fight") return;
   if(fHitItem(x,y)) return;
-  const v=FT.v; if(v.pu){ const px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH; if(Math.hypot(x-px,y-py)<Math.max(48,FW*.1)){ if(FT.local) FIGHT.act(FT.g,"me","grab",v.pu.id); else rsend({t:"act",a:"grab",id:v.pu.id}); sfx.pop(); return; } }
+  const v=FT.v; if(v.pu){ const px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH; if(Math.hypot(x-px,y-py)<Math.max(30,FW*.065)){ if(FT.local) FIGHT.act(FT.g,"me","grab",v.pu.id); else rsend({t:"act",a:"grab",id:v.pu.id}); sfx.pop(); return; } }
   if(FT.stun>0||v.frozen[FT.myTeam]>0){ sfx.thud(); return; }
   if(FT.local) FIGHT.act(FT.g,"me","hit"); else { const now=performance.now(); FT.myTaps=(FT.myTaps||[]).filter(t=>now-t<1000); if(FT.myTaps.length>=10) return; FT.myTaps.push(now); rsend({t:"act",a:"hit"}); fHitFx("L"); }
 }
@@ -2168,9 +2168,9 @@ function fRender(){
   paintBag(c,{bw:G2.bw,bh:G2.bh,chain:G2.cy-railY,tool,hurt:Math.max(FT.flash.L,FT.flash.R)>0,look:FT.dp>0?1:-1,flash:Math.max(FT.flash.L,FT.flash.R)/.12,low:Math.abs(FT.dp)>.6});
   c.restore();
   // Superkraft im Feld
-  if(v&&v.pu&&v.phase==="fight"){ const P=FIGHT.POWERS[v.pu.kind], px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH, r=Math.max(34,FW*.08), pul=1+.08*Math.sin(FT.time*10);
+  if(v&&v.pu&&v.phase==="fight"){ const P=FIGHT.POWERS[v.pu.kind], px=(FT.myTeam==="A"?v.pu.x:1-v.pu.x)*FW, py=v.pu.y*FH, r=Math.max(22,FW*.05), pul=1+.08*Math.sin(FT.time*10);
     c.save(); c.fillStyle="rgba(253,224,71,.22)"; c.beginPath(); c.arc(px,py,r*1.25*pul,0,Math.PI*2); c.fill();
-    c.strokeStyle="#fde047"; c.lineWidth=4; c.beginPath(); c.arc(px,py,r*1.25,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(v.pu.t/3.5,0,1)); c.stroke();
+    c.strokeStyle="#fde047"; c.lineWidth=4; c.beginPath(); c.arc(px,py,r*1.25,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(v.pu.t/3,0,1)); c.stroke();
     fEmoji(c,P.e,px,py,r*1.3*pul); c.font=`${Math.round(clamp(FW*.035,12,16))}px ${COMIC}`; c.textAlign="center"; c.lineWidth=4; c.strokeStyle="#1a0830"; c.strokeText(P.name,px,py+r*1.55); c.fillStyle="#fde047"; c.fillText(P.name,px,py+r*1.55); c.restore(); }
   // Handschuhe, die zuschlagen
   FT.gloves.forEach(gl=>{ const k=Math.sin(Math.min(1,gl.t/.2)*Math.PI), dir=gl.side==="L"?1:-1, sx=gl.side==="L"?edge*.4:FW-edge*.4, x=sx+(gl.x-sx)*k; fEmoji(c,"🥊",x,gl.y,G2.bw*.4,gl.side==="L"); });
