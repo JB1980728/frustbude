@@ -334,6 +334,21 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #home .cta{font-size:clamp(17px,5.6vw,23px);padding:12px 8px}
 #pick,#modeIntro{z-index:30}
 .modehint{font-size:11.5px;font-weight:800;color:var(--muted);margin:-4px 0 10px}
+
+.modes{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.mode{display:flex;align-items:center;gap:11px;text-align:left;padding:9px 12px;border-radius:16px;border:2px solid;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.mode:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.mode .me{font-size:28px;width:38px;text-align:center;flex:0 0 38px}
+.mode .mt{display:flex;flex-direction:column;min-width:0}
+.mode b{font-family:var(--comic);font-weight:400;font-size:21px;letter-spacing:1px;line-height:1.05}
+.mode small{font-weight:800;font-size:12px;line-height:1.3;opacity:.92}
+.m-tap{background:linear-gradient(180deg,#86efac,#22c55e);border-color:#16a34a;color:#052e16}
+.m-free{background:linear-gradient(180deg,#ffe680,#ffb703);border-color:#d97706;color:#1a0830}
+.m-time{background:linear-gradient(180deg,#c4b5fd,#8b5cf6);border-color:#6d28d9;color:#fff}
+.m-boss{background:linear-gradient(180deg,#a78bfa,#6d28d9);border-color:#4c1d95;color:#fff}
+.m-duel{background:linear-gradient(180deg,#fca5a5,#ef4444);border-color:#b91c1c;color:#fff}
+.weapon::after{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(var(--cd,0)*100%);background:rgba(10,3,20,.62);border-radius:0 0 16px 16px;pointer-events:none}
+.weapon .cdt{position:absolute;top:3px;right:6px;font-size:9.5px;font-weight:900;color:var(--yellow)}
 </style>
 </head>
 <body>
@@ -387,20 +402,18 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin-bottom:10px">Tools nerven? Hier darfst du es rauslassen.</div>
   <div class="nametag" id="homeTag" style="align-self:center;display:none"></div>
   <div class="classline" id="homeClass" style="display:none"></div>
-  <button class="cta tap" id="tapBtn">👊 EINFACH DRAUFHAUEN</button>
-  <div class="modehint">Nur tippen, nichts beachten – Frust raus.</div>
-  <div class="seglbl">Für die anderen Modi: Wie viel Gegenwehr?</div>
+  <div class="seglbl">Wähle deinen Modus</div>
+  <div class="modes">
+    <button class="mode m-tap" id="tapBtn"><span class="me">👊</span><span class="mt"><b>Einfach draufhauen</b><small>Nur tippen, so schnell du willst. Nichts wehrt sich.</small></span></button>
+    <button class="mode m-free" id="freeBtn"><span class="me">🥊</span><span class="mt"><b>Freies Spiel</b><small>Tools K.O. hauen, Waffen klug wechseln, Würfen ausweichen.</small></span></button>
+    <button class="mode m-time" id="timeBtn"><span class="me">⏱️</span><span class="mt"><b>30 Sekunden</b><small>So viele K.O.s wie möglich – mit Rangliste.</small></span></button>
+    <button class="mode m-boss" id="bossBtn"><span class="me" id="bossE">👑</span><span class="mt"><b>Endgegner</b><small id="bossSub">Der Mega-Bug rennt weg und wirft zurück.</small></span></button>
+    <button class="mode m-duel" id="duelBtn"><span class="me">⚔️</span><span class="mt"><b>Duell</b><small>Zwei Tools boxen gegeneinander – per Link mit anderen.</small></span></button>
+  </div>
+  <div class="seglbl">Gegenwehr (gilt nicht für „Einfach draufhauen“)</div>
   <div class="seg" id="levelSeg">
     <button data-lv="easy">😌 Wenig</button><button data-lv="mid">😤 Mittel</button><button data-lv="hard">🔥 Schwer</button>
   </div>
-  <button class="cta" id="freeBtn">🥊 FREIES SPIEL</button>
-  <div class="gap"></div>
-  <div class="row2">
-    <button class="cta alt sm" id="timeBtn">⏱️ 30 SEKUNDEN</button>
-    <button class="cta alt sm" id="bossBtn">👑 ENDGEGNER</button>
-  </div>
-  <div class="gap"></div>
-  <button class="cta red" id="duelBtn">⚔️ DUELL: GEGENEINANDER</button>
   <div class="tiles">
     <button class="tile" id="tRank"><span class="e">🏆</span>Ranglisten</button>
     <button class="tile" id="tWall"><span class="e">📝</span>Frust-Wand</button>
@@ -440,7 +453,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   </div>
   <div class="fine" id="tRankHint" style="margin:-4px 0 12px"></div>
   <button class="cta" id="tAgain">NOCHMAL! 🔁</button>
-  <button class="ghost" id="tMenu">Zum Menü</button>
+  <button class="ghost" id="tMenu">🏠 Hauptmenü</button>
 </div></div>
 
 <!-- Boss verloren / Spiel verloren -->
@@ -448,7 +461,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="big" style="color:#ff6b6b">AUTSCH!</div>
   <div class="sub">Der Mega-Bug hat gewonnen … diesmal.<br>Tipp: Tippe seine Würfe weg, bevor sie dich treffen!</div>
   <button class="cta red" id="bossRetry">REVANCHE! ⚔️</button>
-  <button class="ghost" id="bossMenu">Zum Menü</button>
+  <button class="ghost" id="bossMenu">🏠 Hauptmenü</button>
 </div></div>
 
 <!-- Zen -->
@@ -561,7 +574,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="cta alt sm" id="botFill" style="margin-bottom:10px">🤖 LEERE PLÄTZE MIT BOTS FÜLLEN</button>
     <div class="row2" id="teamBtns" style="margin-bottom:10px"><button class="cta alt sm" id="toA">→ LILA</button><button class="cta alt sm" id="toB">→ GELB</button></div>
     <button class="cta red" id="startDuel">LOS GEHT'S! 🔔</button>
-    <div class="row2" style="margin-top:8px"><button class="ghost" id="swapRole">👀 Nur zuschauen</button><button class="ghost" id="leaveRoom">🚪 Raum verlassen</button></div>
+    <div class="row2" style="margin-top:8px"><button class="ghost" id="swapRole">👀 Nur zuschauen</button><button class="ghost" id="leaveRoom">🏠 Hauptmenü</button></div>
   </div>
 </div></div>
 
@@ -574,7 +587,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   </div>
   <div id="fStage"><canvas id="fc"></canvas><div id="fBanner"><b></b><span></span></div><div id="fReact"></div><div id="fState"></div>
     <div id="fRules">👊 unterbricht 💥 · 🛡️ stoppt 👊 · 💥 bricht 🛡️</div>
-    <button class="iconbtn" id="fExit" aria-label="Verlassen">✕</button></div>
+    <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
   <div id="fCtl">
     <button class="fbtn" data-a="jab"><span class="e">👊</span><b>SCHLAG</b><small>schnell</small></button>
     <button class="fbtn" data-a="heavy"><span class="e">💥</span><b>HAKEN</b><small>stark</small></button>
@@ -591,7 +604,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="mi-goal" id="miG"></div>
   <ul class="mi-list" id="miL"></ul>
   <button class="cta" id="miGo">LOS GEHT'S!</button>
-  <button class="ghost" id="miBack">Zurück</button>
+  <button class="ghost" id="miBack">🏠 Hauptmenü</button>
 </div></div>
 
 <!-- Ergebnis -->
@@ -656,12 +669,13 @@ const WEAPONS = [
   {id:"tomato",   emoji:"🍅", name:"Tomate",    dmg:7,  colors:["#e63946","#a4161a","#ffe8a3"], drip:true, words:["SPLAT!","PLATSCH!","MATSCH!"]},
   {id:"banana",   emoji:"🍌", name:"Banane",    dmg:8,  colors:["#ffd23f","#e9b800","#6b4a1f"], words:["FLATSCH!","BANANE!","KLATSCH!"]},
   {id:"egg",      emoji:"🥚", name:"Ei",        dmg:6,  colors:["#fffaf0","#ffb703","#ffffff"], drip:true, words:["KNACKS!","PLATSCH!","EIEIEI!"]},
-  {id:"pie",      emoji:"🥧", name:"Torte",     dmg:14, colors:["#fff3e0","#ff8fab","#d00000"], big:true, words:["SCHMATZ!","TORTE!","KLATSCH!"]},
+  {id:"pie",      emoji:"🥧", name:"Torte",     dmg:30, colors:["#fff3e0","#ff8fab","#d00000"], big:true, words:["SCHMATZ!","TORTE!","KLATSCH!"]},
   {id:"highfive", emoji:"🙌🏻", name:"High Five", dmg:7,  melee:true, double:true, words:["HIGH FIVE!","KLATSCH!","DOPPELT!"], unlock:{type:"ko",n:3,label:"3 K.O."}},
-  {id:"rocket",   emoji:"🚀", name:"Rakete",    dmg:22, colors:["#2b2118","#ff7b00","#ffd23f"], rocket:true, big:true, words:["KAWUMM!","LIFT-OFF!","BOOM!"], unlock:{type:"combo",n:10,label:"Combo ×10"}},
-  {id:"love",     emoji:"❤️", name:"Liebe",     dmg:18, colors:["#ff4d8d","#ff8fab","#ffffff"], love:true, words:["LOVE!","HERZLICH!","MIT LIEBE!"], unlock:{type:"ko",n:8,label:"8 K.O."}},
+  {id:"rocket",   emoji:"🚀", name:"Rakete",    dmg:75, colors:["#2b2118","#ff7b00","#ffd23f"], rocket:true, big:true, words:["KAWUMM!","LIFT-OFF!","BOOM!"], unlock:{type:"combo",n:10,label:"Combo ×10"}},
+  {id:"love",     emoji:"❤️", name:"Liebe",     dmg:36, colors:["#ff4d8d","#ff8fab","#ffffff"], love:true, words:["LOVE!","HERZLICH!","MIT LIEBE!"], unlock:{type:"ko",n:8,label:"8 K.O."}},
 ];
-const W_CD = {rocket:.9, love:.7, pie:.35, highfive:.15}; // Nachladezeit im 30-Sekunden-Modus, damit nicht nur die Rakete gewinnt
+const W_CD = {fist:.2, tomato:.28, banana:.3, egg:.25, highfive:.3, pie:.9, love:1.3, rocket:2.0}; // Nachladezeit: starke Waffen machen mehr Schaden, brauchen aber länger
+const wCdUntil = {};
 const W_BY = {}; WEAPONS.forEach(w=>W_BY[w.id]=w);
 const LV = {
   easy:{label:"Frust ablassen",emoji:"😌",hp:70, swing:.7, lock:true, thr:null, dodge:0, stun:0, bossHP:300,hearts:5,bossThrow:1.35,bossSpeed:.8, mult:.8},
@@ -753,7 +767,13 @@ const sfx = {
   slap(){ noise(.09,"highpass",2500,1200,.7); tone(.08,"triangle",420,200,.2); },
   splat(big){ noise(big?.28:.18,"bandpass",rand(900,1400),250,.75,.9); tone(.12,"triangle",rand(260,340),70,.25); },
   whoosh(){ noise(.18,"bandpass",350,1700,.12,1.2); },
-  rocket(){ noise(.3,"bandpass",600,2400,.25,.8); },
+  rocket(){ noise(.55,"bandpass",250,3200,.35,.7); tone(.5,"sawtooth",90,420,.12); noise(.25,"highpass",3000,6000,.12,.5,.2); },
+  rocketBoom(){ noise(1.1,"lowpass",2200,50,1.1); tone(.8,"sine",110,24,1); tone(.3,"square",160,40,.15,.03); noise(.35,"bandpass",900,300,.5,.8,.12); },
+  pie(){ noise(.32,"lowpass",900,140,.95,1.4); tone(.18,"sine",300,70,.5); for(let i=0;i<4;i++) noise(.06,"bandpass",rand(1800,3200),900,.25,3,.12+i*.05); },
+  plopp(){ tone(.09,"sine",520,1300,.5); tone(.12,"sine",880,1800,.3,.09); tone(.06,"triangle",1500,2200,.15,.18); },
+  tomato(){ noise(.16,"bandpass",700,180,.8,1.2); tone(.1,"sine",240,90,.35); },
+  egg(){ noise(.03,"highpass",4000,3000,.6); tone(.04,"square",1800,900,.15); noise(.14,"bandpass",1200,400,.45,1.5,.03); },
+  banana(){ noise(.08,"highpass",2200,900,.7); tone(.14,"triangle",500,180,.25); },
   boom(){ noise(.9,"lowpass",1600,60,1); tone(.7,"sine",95,28,.9); tone(.25,"square",220,60,.12,.02); },
   smallBoom(){ noise(.45,"lowpass",1800,90,.8); tone(.35,"sine",120,40,.6); },
   love(){ [660,880,990].forEach((f,i)=>tone(.22,"sine",f,f*1.02,.2,i*.07)); },
@@ -1004,7 +1024,7 @@ function checkBadges(force){
 /* ===================== Spiel: Boxbirne ===================== */
 function setLevel(l){ if(!LV[l]) return; saved.level=l; lv=LV[l]; persist(); renderLevelUI(); }
 function select(i){
-  curIdx=i; cur=tools[i]; hpMax=lv.hp; hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
+  curIdx=i; cur=tools[i]; hpMax=Math.round(lv.hp*(mode==="free"&&!chill?2.2:1)); hp=hpMax; bagSplats=[]; plasters=[]; speech=null; items=[];
   theta=rand(-.15,.15); omega=0; dropY=-(G.chain+G.bh+80); dropV=0; squash=0; hurt=0; flash=0; blush=0; state="alive";
   bagThrowT=lv.thr?rand(lv.thr.base[0]*.6,lv.thr.base[1]*.6)+1:99; dodgeT=rand(1.5,2.5);
   pops=[]; heat=[]; ghost=null; freezeT=0; bagOffX=0; bagOffV=0; bagOffTarget=0; quirkT=1.2; bagHits=0; deadline=0; deadlineDone=false;
@@ -1019,13 +1039,13 @@ function targetCenter(){ return mode==="boss"&&B ? bossCenter() : toWorld(0,G.ch
 // normaler Schlag/Wurf mit der aktuellen Waffe
 function fire(x,y,opt){
   opt=opt||{}; lookX=x; lookY=y;
-  if(mode==="time"&&!opt.rage){ const now=performance.now(), w0=opt.weapon||weapon; if(now<cdUntil) return; cdUntil=now+(W_CD[w0.id]||0)*1000; }
+  if(!chill&&!opt.rage&&!(opt.mv&&opt.mv.kind==="drum")){ const now=performance.now(), w0=opt.weapon||weapon; if(now<(wCdUntil[w0.id]||0)){ cdNag(w0); return; } wCdUntil[w0.id]=now+(W_CD[w0.id]||0)*1000; }
   if(chill&&state==="alive"&&opt.aim===undefined){ const lx=rand(-G.bw*.32,G.bw*.32), ly=G.chain+G.bh*rand(.15,.85); [x,y]=toWorld(lx,ly); opt.aim={lx,ly,id:cur.id}; }
   const w=opt.weapon||weapon;
   if(w.melee){ const side=x<W/2?-1:1;
     fists.push({tx:x,ty:y,sx:x+side*rand(40,90),sy:H+70,t:0,ph:"in",side,w,aim:opt.aim!==undefined?opt.aim:aimAt(x,y),n:w.double?2:1,mv:opt.mv,scale:opt.scale||1}); }
   else { if(projectiles.length>44) return;
-    projectiles.push({sx:W/2+rand(-W*.18,W*.18),sy:H+50,tx:x,ty:y,t:0,dur:w.rocket?.26:rand(.34,.44),arc:w.rocket?0:rand(70,140),spin:w.rocket?0:rand(-12,12),w,
+    projectiles.push({sx:W/2+rand(-W*.18,W*.18),sy:H+50,tx:x,ty:y,t:0,dur:w.rocket?.55:rand(.34,.44),arc:w.rocket?0:rand(70,140),spin:w.rocket?0:rand(-12,12),w,
       aim:opt.aim!==undefined?opt.aim:aimAt(x,y),mv:opt.mv,scale:opt.scale||1,rage:opt.rage,dodgeChecked:!!opt.rage});
     w.rocket?sfx.rocket():sfx.whoosh(); }
 }
@@ -1045,7 +1065,7 @@ function moveSuper(x,y,charge){
 let tapTimes=[], lastDrum=0;
 function drumCheck(x,y){
   const now=performance.now(); tapTimes=tapTimes.filter(t=>now-t<650); tapTimes.push(now);
-  if(tapTimes.length>=3 && now-lastDrum>1600){ lastDrum=now; tapTimes=[];
+  if(tapTimes.length>=3 && now-lastDrum>1600 && (W_CD[weapon.id]||0)<.5){ lastDrum=now; tapTimes=[];
     note("🥁 Trommelfeuer!");
     const [cx,cy]=targetCenter();
     for(let i=0;i<4;i++) setTimeout(()=>{ if(!playable()) return; const px=cx+rand(-G.bw*.3,G.bw*.3), py=cy+rand(-G.bh*.25,G.bh*.25); fire(px,py,{mv:{kind:"drum",mult:.8}}); },70*i+60);
@@ -1081,9 +1101,9 @@ function addScore(dmg){ if(mode==="time"||mode==="duel") score+=Math.round(dmg*1
 function effects(x,y,w,splatFn,mv){
   const big = mv && (mv.kind==="super"||mv.kind==="uppercut");
   if(w.melee){ stars(x,y,big); big?sfx.heavy():w.double?sfx.slap():sfx.punch(); }
-  else if(w.rocket){ explosion(x,y,28); sfx.smallBoom(); splatFn(); if(!reduced) shake=Math.max(shake,14); }
-  else if(w.love){ hearts(x,y,9); sfx.love(); splatFn(); }
-  else { burst(x,y,w.colors.slice(0,2),16,560); sfx.splat(w.big); splatFn(); }
+  else if(w.rocket){ explosion(x,y,36); sfx.rocketBoom(); splatFn(); if(!reduced) shake=Math.max(shake,20); }
+  else if(w.love){ hearts(x,y,9); sfx.plopp(); splatFn(); }
+  else { burst(x,y,w.colors.slice(0,2),16,560); (sfx[w.id]||(()=>sfx.splat(w.big)))(); splatFn(); }
   if(!mv || mv.kind==="drum") word(pick(w.words),x+rand(-30,30),y-G.bw*.35);
   buzz(big?40:w.big?30:14);
 }
@@ -1429,7 +1449,7 @@ function renderHome(){
   const tag=$("homeTag"); if(saved.name){ tag.style.display="inline-flex"; tag.innerHTML=""; tag.append(document.createTextNode(`${saved.name} `)); const bo=myBadgeObj(); if(bo){ const sm=document.createElement("small"); sm.textContent=`${bo.e} ${bo.t}`; tag.appendChild(sm); } } else tag.style.display="none";
   const el=$("homeClass"); if(!NET.online){ el.style.display="none"; }
   else { const t=topTool(NET.per); el.style.display="block"; el.innerHTML=`🌍 Die Klasse hat schon <b>${fmt(NET.total)}×</b> zugeschlagen`+(t?`<br>🔥 Meistgehasst: <b>${esc(NAMES[t].ic+" "+NAMES[t].name)}</b>`:""); }
-  $("bossBtn").textContent = (saved.bossOpen) ? "👑 ENDGEGNER" : "🔒 ENDGEGNER";
+  $("bossE").textContent = saved.bossOpen ? "👑" : "🔒"; $("bossSub").textContent = saved.bossOpen ? "Der Mega-Bug rennt weg und wirft zurück." : "Erst im Freien Spiel 3 Tools K.O. hauen.";
   $("resumeBtn").style.display = (state==="alive"||state==="boss") && mode!=="duel" ? "block" : "none";
   renderLevelUI();
 }
@@ -1683,7 +1703,7 @@ function modeIntro(kind,go,okOnly){
   hide("home"); hide("duel"); show("modeIntro");
 }
 $("miGo").onclick=()=>{ hide("modeIntro"); const f=miGo; miGo=null; if(f) f(); };
-$("miBack").onclick=()=>{ hide("modeIntro"); miGo=null; if(R.st) show("duel"); else openHome(); };
+$("miBack").onclick=()=>{ hide("modeIntro"); miGo=null; if(R.ws||R.st) leaveRoom(true); openHome(); };
 
 /* ===================== Duell im Tekken-Stil ===================== */
 const FT={on:false,local:false,g:null,v:null,myTeam:"A",spec:false,myId:"me",format:"1v1",an:{L:{},R:{}},fx:[],words:[],banner:"",bannerSub:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,ghost:{L:1,R:1},time:0,blocking:false};
@@ -1858,7 +1878,7 @@ function fResults(){
     d.innerHTML=`<div>${p.team===w?"🏆":"🥊"}</div><div class="nm"></div><div class="v">${fmt(p.st.dmg)} 💥</div>`; d.querySelector(".nm").textContent=`${p.bot?"🤖 ":""}${p.name} · ${p.st.hits} Treffer · ${p.st.blocks} geblockt`; list.appendChild(d); });
   if(!FT.spec&&w===FT.myTeam){ if(!FT.local){ saved.duelWins=(saved.duelWins||0)+1; } persist(); checkBadges(true); confetti(W/2,H*.5,80); sfx.ding(); } else sfx.thud();
   if(FT.format==="2v2"&&!FT.spec){ saved.teamGames=(saved.teamGames||0)+1; persist(); }
-  $("rematchBtn").textContent=FT.local?"NOCHMAL! ⚔️":"REVANCHE! ⚔️"; $("resMenu").textContent=FT.local?"Zum Menü":"Raum verlassen";
+  $("rematchBtn").textContent=FT.local?"NOCHMAL! ⚔️":"REVANCHE! ⚔️"; $("resMenu").textContent=FT.local?"🏠 Hauptmenü":"🏠 Raum verlassen & Hauptmenü";
   $("rematchBtn").style.display=FT.spec?"none":"block";
   show("results");
 }
@@ -1901,7 +1921,7 @@ function update(dt){
   dropV+=(-dropY*70-dropV*7.5)*dt; dropY+=dropV*dt;
   squash-=squash*11*dt; hurt-=dt; blush-=dt; stunT-=dt;
   { const sb=$("stunBox"); const on=stunT>0&&!anyOpen(); sb.style.display=on?"block":"none"; if(on) $("stunBar").style.width=clamp(stunT/stunMax,0,1)*100+"%"; }
-  { const wb=document.querySelector(".weapon.active"); if(wb) wb.classList.toggle("cooling",mode==="time"&&performance.now()<cdUntil); } flash=Math.max(0,flash-dt*4); shake*=Math.exp(-9*dt);
+  { const now=performance.now(); document.querySelectorAll("#weapons .weapon").forEach((b,i)=>{ const w=WEAPONS[i]; if(!w) return; const left=Math.max(0,(wCdUntil[w.id]||0)-now)/1000, d=W_CD[w.id]||1; b.style.setProperty("--cd",chill?0:Math.min(1,left/d).toFixed(3)); }); } flash=Math.max(0,flash-dt*4); shake*=Math.exp(-9*dt);
   if(state==="ko"){ koT+=dt; if(koT>(mode==="time"||mode==="duel"?.85:1.9) && !(mode==="duel"&&R.ended)) nextBag(); }
   if(mode==="time"&&(state==="alive"||state==="ko")){ timeLeft-=dt; const s=Math.ceil(timeLeft); $("timer").textContent=Math.max(0,s);
     if(s<=5&&s<lastTick){ lastTick=s; sfx.tick(); $("timer").classList.add("warn"); } if(timeLeft<=0) endTime(); }
@@ -2076,6 +2096,8 @@ function openPick(cb,title,sub){
     b.onclick=()=>{ if(pickCb){ const f=pickCb; pickCb=null; hide("pick"); f(t.id); } else startTool(i); }; g.appendChild(b); });
   hide("home"); show("pick");
 }
+let cdNagT=0;
+function cdNag(w){ const now=performance.now(); if(now-cdNagT<1200) return; cdNagT=now; const h=$("hint"); h.textContent=`${w.emoji} ${w.name} lädt nach … nimm solange eine andere Waffe!`; h.style.opacity=1; }
 function startTool(i){ hide("pick"); startFrom(()=>{ mode="free"; B=null; sfx.ding(); select(i); }); }
 function startChill(){ startFrom(()=>{ mode="free"; chill=true; lv=Object.assign({},LV.easy,{thr:null,stun:0,dodge:0,lock:true}); B=null; sfx.ding(); select((Math.random()*BASE)|0); }); }
 $("freeBtn").onclick=()=>{ ensureAudio(); modeIntro("free",()=>openPick()); };
@@ -2098,11 +2120,11 @@ $("zenSkip").onclick=showQuote; $("zenNext").onclick=()=>{ $("quoteTxt").textCon
 $("zenGo").onclick=()=>{ hide("zen"); clearInterval(zenTimer); if(zenFinal){ zenFinal=false; mode="free"; B=null; screenSplats=[]; koRound=0; openPick(); return; toast("Neue Runde! Der Endgegner bleibt freigeschaltet 👑",3000); } else if(state==="idle") openHome(); };
 $("wallInput").addEventListener("input",()=>{ $("wallCount").textContent=$("wallInput").value.length; }); $("wallSend").onclick=sendWall;
 $("nameInput").addEventListener("input",renderProfile); $("profSave").onclick=saveProfile;
-document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>hide(b.dataset.close));
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ hide(b.dataset.close); if(!anyOpen()&&!FT.on&&!(state==="alive"||state==="boss"||state==="ko")) openHome(); });
 function addCustom(){ const v=$("customInput").value.trim(); if(!v){ $("customInput").focus(); return; }
   const t={id:"c"+Date.now(),name:v,ic:"🛠️",color:pick(["#FF6B35","#06D6A0","#EF476F","#118AB2","#FFD166","#9B5DE5","#F15BB5","#00BBF9"]),custom:true,lines:["Ich bin auch nervig!","Bitte neu laden.","Schon mal aus- und wieder eingeschaltet?","Unerwarteter Fehler. Wie immer."]};
   tools.push(t); $("customInput").value=""; hide("custom"); if(mode!=="free"){ mode="free"; B=null; $("timer").style.display="none"; } select(tools.length-1); sfx.thud(); }
-$("customGo").onclick=addCustom; $("customInput").addEventListener("keydown",e=>{ if(e.key==="Enter") addCustom(); }); $("customCancel").onclick=()=>hide("custom");
+$("customGo").onclick=addCustom; $("customInput").addEventListener("keydown",e=>{ if(e.key==="Enter") addCustom(); }); $("customCancel").onclick=()=>{ hide("custom"); if(!anyOpen()&&!(state==="alive"||state==="boss")) openHome(); };
 // Mehrspieler-Buttons
 let newFmt="1v1";
 document.querySelectorAll("#fmtSeg button").forEach(b=>b.onclick=()=>{ newFmt=b.dataset.f; document.querySelectorAll("#fmtSeg button").forEach(x=>x.classList.toggle("on",x===b)); });
