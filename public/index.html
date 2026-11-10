@@ -640,6 +640,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div id="duelEntry">
     <div class="mid">DUELL</div>
     <div class="sub" style="margin:8px 0 10px">Tauziehen mit der Boxbirne: Wer schneller haut, schiebt sie zum Gegner. 1 gegen 1 oder 2 gegen 2.</div>
+    <div class="online mkonly" id="duelOnline" style="margin-bottom:10px"></div>
     <div class="seglbl mkonly">Offene Duelle – sofort mitmachen</div>
     <div id="openRooms" class="mkonly"></div>
     <input class="field" id="duelName" maxlength="16" placeholder="Dein Spitzname" autocomplete="off">
@@ -1927,13 +1928,14 @@ function lbConnect(){
     else if(m.t==="chat"||m.t==="chatlog") onLobbyChat(m);
     else if(m.t==="chatErr") toast(m.msg,2400);
     else if(m.t==="challenged"){ toast(m.n>0?`📣 ${m.n} ${m.n===1?"Person wurde":"Leute wurden"} eingeladen!`:"Gerade ist sonst niemand online – teil den Link in Slack.",2600); } };
-  ws.onclose=()=>{ if(LB.ws!==ws) return; LB.ws=null; $("homeOnline").textContent="🟢 Verbindung wird gesucht …"; setTimeout(lbConnect,LB.retry); LB.retry=Math.min(LB.retry*2,15000); };
+  ws.onclose=()=>{ if(LB.ws!==ws) return; LB.ws=null; if(document.hidden) return; $("homeOnline").textContent="🟢 Verbindung wird gesucht …"; clearTimeout(LB.rt); LB.rt=setTimeout(lbConnect,LB.retry); LB.retry=Math.min(LB.retry*2,8000); };
   ws.onerror=()=>{};
 }
 function renderOnline(){
   const el=$("homeOnline"), n=LB.people.length; if(!n){ el.textContent="🟢 Verbinde …"; return; }
   const named=LB.people.filter(p=>p.name).map(p=>p.name+(p.busy?" 🎮":"")), others=n-named.length;
-  el.textContent=n<=1?"🟢 Gerade bist nur du online":`🟢 ${n} online: ${named.slice(0,5).join(", ")}${named.length>5?" …":""}${others>0?(named.length?" + ":"")+others+(others===1?" weitere Person":" weitere"):""}`;
+  const txt=n<=1?"🟢 Gerade bist nur du online":`🟢 ${n} online: ${named.slice(0,5).join(", ")}${named.length>5?" …":""}${others>0?(named.length?" + ":"")+others+(others===1?" weitere Person":" weitere"):""}`;
+  el.textContent=txt; if($("duelOnline")) $("duelOnline").textContent=txt;
 }
 function renderOpenRooms(){
   const box=$("openRooms"); if(!box) return; box.innerHTML="";
@@ -1958,6 +1960,10 @@ function lbAnnounce(){
 }
 setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
   if(!b&&!R.ws&&LB.queue) showChallenge(); lbAnnounce(); },1000);
+// Echtzeit: Lebenszeichen alle 8 Sekunden; Seite im Hintergrund = offline, wieder sichtbar = sofort online
+setInterval(()=>lbSend({t:"ping"}),8000);
+document.addEventListener("visibilitychange",()=>{ if(document.hidden){ if(LB.ws){ const w=LB.ws; LB.ws=null; try{ w.close(); }catch(e){} } } else if(!LB.ws){ LB.retry=1000; lbConnect(); } });
+window.addEventListener("pagehide",()=>{ if(LB.ws){ const w=LB.ws; LB.ws=null; try{ w.close(); }catch(e){} } });
 $("challengeAll").onclick=()=>{ if(!R.st) return; lbAnnounce(); setTimeout(()=>lbSend({t:"challenge",code:R.code}),300); sfx.pop(); };
 
 /* ===================== Chat (nur live, nichts gespeichert) ===================== */

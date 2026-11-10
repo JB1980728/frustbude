@@ -274,25 +274,29 @@ export class Lobby extends DurableObject {
     if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
     if (this.conns.size >= 300) return new Response("Voll", { status: 429 });
     const pair = new WebSocketPair(); const [client, server] = Object.values(pair); server.accept();
-    const c = { id: crypto.randomUUID().slice(0, 8), ws: server, name: "", sid: "", busy: false, lastCh: 0, msgs: 0, msgWin: Date.now() };
+    const c = { id: crypto.randomUUID().slice(0, 8), ws: server, name: "", sid: "", busy: false, lastCh: 0, msgs: 0, msgWin: Date.now(), seen: Date.now() };
     this.conns.set(c.id, c);
-    server.addEventListener("message", e => this.onMsg(c, e.data));
-    const bye = () => { if (!this.conns.has(c.id)) return; this.conns.delete(c.id); for (const [k, r] of this.rooms) if (r.by === c.id) this.rooms.delete(k); this.sync(); };
+    // Wer sich 20 Sekunden nicht meldet (Handy gesperrt, App zu), fliegt aus der Online-Liste
+    if (!this.sweep) this.sweep = setInterval(() => { const now = Date.now(); for (const o of this.conns.values()) if (now - o.seen > 20000) { try { o.ws.close(1000, "timeout"); } catch (e) {} this.drop(o); } if (!this.conns.size) { clearInterval(this.sweep); this.sweep = null; } }, 5000);
+    server.addEventListener("message", e => { c.seen = Date.now(); this.onMsg(c, e.data); });
+    const bye = () => this.drop(c);
     server.addEventListener("close", bye); server.addEventListener("error", bye);
     return new Response(null, { status: 101, webSocket: client });
   }
+  drop(c) { if (!this.conns.has(c.id)) return; this.conns.delete(c.id); for (const [k, r] of this.rooms) if (r.by === c.id) this.rooms.delete(k); this.sync(); }
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
   view() {
     const people = [...this.conns.values()].map(c => ({ name: c.name || null, busy: !!c.busy }));
     const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < 30 * 60000).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap }));
     return { t: "online", people, rooms };
   }
-  sync() { if (this.syncT) return; this.syncT = setTimeout(() => { this.syncT = null; const s = JSON.stringify(this.view()); for (const c of this.conns.values()) { try { c.ws.send(s); } catch (e) {} } }, 400); }
+  sync() { if (this.syncT) return; this.syncT = setTimeout(() => { this.syncT = null; const s = JSON.stringify(this.view()); for (const c of this.conns.values()) { try { c.ws.send(s); } catch (e) {} } }, 120); }
   onMsg(c, raw) {
     if (typeof raw !== "string" || raw.length > 500) return;
     const now = Date.now(); if (now - c.msgWin > 5000) { c.msgWin = now; c.msgs = 0; } if (++c.msgs > 40) return;
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
     const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+    if (m.t === "ping") return;
     if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") { this.send(c, this.view()); this.send(c, { t: "chatlog", msgs: this.chat.filter(x => Date.now() - x.ts < 3 * 3600000) }); } this.sync(); return; }
     if (m.t === "chat") { const r = chatCheck(c, m.text); if (r.err !== undefined) { if (r.err) this.send(c, { t: "chatErr", msg: r.err }); return; }
       this.chat.push(r.msg); if (this.chat.length > 25) this.chat.shift(); const s = JSON.stringify(r.msg); for (const o of this.conns.values()) { try { o.ws.send(s); } catch (e) {} } return; }
