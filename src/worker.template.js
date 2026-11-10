@@ -7,7 +7,7 @@ const HTML = __HTML__;
 
 const TOOL_IDS = ["ga","onepage","wix","miro","slack","meet","classroom","coda","posthog","clarity","mixpanel","amplitude","umami","contentsquare","chatgpt","gemini","stitch","figma","claude"];
 const WEAPON_IDS = ["fist","tomato","banana","egg","pie","highfive","rocket","love"];
-const ALLOWED = new Set([...TOOL_IDS, "boss", "custom", "_ko", "_boss", "_zen", ...WEAPON_IDS.map(w => "w_" + w)]);
+const ALLOWED = new Set([...TOOL_IDS, "boss", "custom", "_ko", "_boss", "_zen", "_win", ...WEAPON_IDS.map(w => "w_" + w)]);
 const REACTIONS = ["🔥","😂","👏","🍅","😱","💪","❤️"];
 
 // Grobe Beleidigungen und Hetze blockieren (je Wort geprüft, Tricks wie A.r.s.c.h oder 4rsch werden erkannt)
@@ -67,6 +67,7 @@ async function ensureSchema(db) {
     db.prepare("CREATE INDEX IF NOT EXISTS wall_vis ON wall(reports, id)"),
     db.prepare("CREATE TABLE IF NOT EXISTS lb (sid TEXT PRIMARY KEY, name TEXT NOT NULL, badge TEXT, wins INTEGER NOT NULL DEFAULT 0, duels INTEGER NOT NULL DEFAULT 0, best_duel INTEGER NOT NULL DEFAULT 0, best_time INTEGER NOT NULL DEFAULT 0, boss INTEGER NOT NULL DEFAULT 0, ts INTEGER)"),
   ]);
+  for (const col of ["trophies", "botwins"]) { try { await db.prepare(`ALTER TABLE lb ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`).run(); } catch (e) {} }
   schemaReady = true;
 }
 
@@ -76,21 +77,21 @@ async function readBody(req) {
   return txt ? JSON.parse(txt) : {};
 }
 
-/* ======================= Mehrspieler-Raum ======================= */
-const DUEL_MS = 45000;
+/* ======================= Mehrspieler-Raum (Arena läuft auf dem Server) ======================= */
+__SIM__
 const BOT_NAMES = ["Bot Bernd","Bot Lotte","Bot Kalle","Bot Frieda","Bot Ronny","Bot Uschi"];
-const LVL = { easy: { hp: 70, mult: .8, dps: 20 }, mid: { hp: 110, mult: 1.15, dps: 30 }, hard: { hp: 150, mult: 1.5, dps: 42 } };
-const COUNTDOWN_MS = 3800;
+const COUNTDOWN_MS = 3500;
+const TICK_MS = 100;
 
 export class Room extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.env = env;
     this.conns = new Map();
-    this.st = { code: "", phase: "lobby", format: "1v1", level: "mid", hostId: null, seed: 0, startAt: 0, endsAt: 0, results: null, round: 0 };
-    this.finishTimer = null;
+    this.st = { code: "", phase: "lobby", format: "1v1", level: "mid", hostId: null, startAt: 0, round: 0, towers: null };
     this.bots = [];
-    this.botTimer = null;
+    this.g = null;
+    this.tick = null;
   }
 
   async fetch(req) {
@@ -101,8 +102,7 @@ export class Room extends DurableObject {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     server.accept();
-    const c = { id: crypto.randomUUID().slice(0, 8), ws: server, name: "", badge: "", sid: "", role: "spectator", team: "A", joined: false,
-      score: 0, hits: 0, ko: 0, combo: 0, hp: 100, tool: "", lastLive: 0, lastAtk: 0, lastReact: 0, msgs: 0, msgWin: Date.now() };
+    const c = { id: crypto.randomUUID().slice(0, 8), ws: server, name: "", badge: "", sid: "", role: "spectator", team: "A", joined: false, lastReact: 0, lastCard: 0, msgs: 0, msgWin: Date.now() };
     this.conns.set(c.id, c);
     server.addEventListener("message", e => this.onMsg(c, e.data));
     server.addEventListener("close", () => this.onClose(c));
@@ -111,184 +111,150 @@ export class Room extends DurableObject {
   }
 
   send(c, obj) { try { c.ws.send(JSON.stringify(obj)); } catch (e) {} }
-  broadcast(obj, except) { const s = JSON.stringify(obj); for (const c of this.conns.values()) if (c.joined && c !== except) { try { c.ws.send(s); } catch (e) {} } }
+  broadcast(obj) { const s = JSON.stringify(obj); for (const c of this.conns.values()) if (c.joined) { try { c.ws.send(s); } catch (e) {} } }
   humans() { return [...this.conns.values()].filter(c => c.joined && c.role === "player"); }
   players() { return [...this.humans(), ...this.bots]; }
-  dropBot() { if (!this.bots.length) return; const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length; const team = a >= b ? "A" : "B"; let i = this.bots.findIndex(x => x.team === team); if (i < 0) i = 0; this.bots.splice(i, 1); }
   cap() { return this.st.format === "2v2" ? 4 : 2; }
-  pub(c) { return { id: c.id, isBot: !!c.isBot, name: c.name, badge: c.badge, role: c.role, team: c.team, score: c.score, hits: c.hits, ko: c.ko, combo: c.combo, hp: c.hp, tool: c.tool }; }
+  dropBot() { if (!this.bots.length) return; const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length; const team = a >= b ? "A" : "B"; let i = this.bots.findIndex(x => x.team === team); if (i < 0) i = 0; this.bots.splice(i, 1); }
+  pub(c) { return { id: c.id, isBot: !!c.isBot, name: c.name, badge: c.badge, role: c.role, team: c.team }; }
   state() {
     return { t: "state", now: Date.now(), code: this.st.code, phase: this.st.phase, format: this.st.format, level: this.st.level, hostId: this.st.hostId,
-      seed: this.st.seed, startAt: this.st.startAt, endsAt: this.st.endsAt, results: this.st.results, round: this.st.round,
+      startAt: this.st.startAt, round: this.st.round, towers: this.st.towers,
       people: [...[...this.conns.values()].filter(c => c.joined), ...this.bots].map(c => this.pub(c)) };
   }
   sync() { this.broadcast(this.state()); }
+  joinTeam(c) { const a = this.players().filter(p => p.team === "A" && p !== c).length, b = this.players().filter(p => p.team === "B" && p !== c).length; c.team = a <= b ? "A" : "B"; }
 
   balanceTeams() {
     const ps = this.players();
-    if (this.st.format === "1v1") { ps.forEach((p, i) => { if (i < 2) p.team = i === 0 ? "A" : "B"; else p.role = "spectator"; }); return; }
-    const count = t => ps.filter(p => p.team === t).length;
-    ps.forEach(p => { if (count(p.team) > 2) p.team = p.team === "A" ? "B" : "A"; });
-    ps.slice(4).forEach(p => p.role = "spectator");
+    if (this.st.format === "1v1") { ps.forEach((p, i) => { if (i < 2) p.team = i === 0 ? "A" : "B"; else p.role = "spectator"; }); }
+    else { const count = t => ps.filter(p => p.team === t && p.role === "player").length; ps.forEach(p => { if (count(p.team) > 2) p.team = p.team === "A" ? "B" : "A"; }); ps.slice(4).forEach(p => p.role = "spectator"); }
     this.bots = this.bots.filter(b => b.role === "player");
   }
 
   onMsg(c, raw) {
-    if (typeof raw !== "string" || raw.length > 2000) return;
+    if (typeof raw !== "string" || raw.length > 1000) return;
     const now = Date.now();
     if (now - c.msgWin > 1000) { c.msgWin = now; c.msgs = 0; }
-    if (++c.msgs > 40) return;
+    if (++c.msgs > 30) return;
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
     const st = this.st;
 
     if (m.t === "join" && !c.joined) {
-      c.name = cleanName(m.name) || "Anonym";
-      c.badge = cleanBadge(m.badge);
-      c.sid = cleanSid(m.sid);
-      c.joined = true;
+      c.name = cleanName(m.name) || "Anonym"; c.badge = cleanBadge(m.badge); c.sid = cleanSid(m.sid); c.joined = true;
       const wantPlay = m.role === "player";
       if (wantPlay && st.phase === "lobby" && this.players().length >= this.cap() && this.bots.length) this.dropBot();
       if (wantPlay && st.phase === "lobby" && this.players().length < this.cap()) {
-        c.role = "player";
-        const a = this.players().filter(p => p.team === "A" && p !== c).length, b = this.players().filter(p => p.team === "B" && p !== c).length;
-        c.team = a <= b ? "A" : "B";
+        c.role = "player"; this.joinTeam(c);
         if (!st.hostId || !this.conns.has(st.hostId)) st.hostId = c.id;
       } else c.role = "spectator";
       this.send(c, { t: "welcome", you: c.id, role: c.role, full: wantPlay && c.role !== "player" });
       this.sync();
+      if (st.phase === "live" && this.g) this.send(c, { t: "snap", s: { ...SIM.snap(this.g), ev: [] } });
       return;
     }
     if (!c.joined) return;
 
-    if (m.t === "team" && st.phase === "lobby" && c.role === "player" && st.format === "2v2" && (m.team === "A" || m.team === "B")) {
+    if (m.t === "card" && st.phase === "live" && this.g && c.role === "player" && now >= st.startAt) {
+      if (now - c.lastCard < 150) return; c.lastCard = now;
+      const card = String(m.card || ""), x = Number(m.x), y = Number(m.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      if (card !== "overkill" && !SIM.CARDS[card]) return;
+      SIM.play(this.g, c.id, card, x, y);
+      return;
+    }
+    if (m.t === "react" && ["🔥","😂","👏","🍅","😱","💪","❤️"].includes(m.e) && now - c.lastReact > 350) { c.lastReact = now; this.broadcast({ t: "react", e: m.e }); return; }
+    if (m.t === "rematch" && st.phase === "results") {
+      st.phase = "lobby"; this.g = null;
+      this.broadcast({ t: "feed", txt: `${c.name} will eine Revanche! ⚔️` });
+      this.sync(); return;
+    }
+    if (st.phase !== "lobby") return;
+
+    if (m.t === "team" && c.role === "player" && st.format === "2v2" && (m.team === "A" || m.team === "B")) {
       if (this.players().filter(p => p.team === m.team).length < 2) { c.team = m.team; this.sync(); }
       return;
     }
-    if (m.t === "play" && st.phase === "lobby" && c.role === "spectator" && this.players().length >= this.cap() && this.bots.length) this.dropBot();
-    if (m.t === "play" && st.phase === "lobby" && c.role === "spectator" && this.players().length < this.cap()) {
-      c.role = "player";
-      const a = this.players().filter(p => p.team === "A" && p !== c).length, b = this.players().filter(p => p.team === "B" && p !== c).length;
-      c.team = a <= b ? "A" : "B";
-      if (!st.hostId || !this.conns.has(st.hostId)) st.hostId = c.id;
-      this.sync(); return;
+    if (m.t === "play" && c.role === "spectator") {
+      if (this.players().length >= this.cap() && this.bots.length) this.dropBot();
+      if (this.players().length < this.cap()) { c.role = "player"; this.joinTeam(c); if (!st.hostId || !this.conns.has(st.hostId)) st.hostId = c.id; this.sync(); }
+      return;
     }
-    if (m.t === "watch" && st.phase === "lobby" && c.role === "player") {
+    if (m.t === "watch" && c.role === "player") {
       c.role = "spectator";
       if (st.hostId === c.id) { const p = this.humans()[0]; st.hostId = p ? p.id : null; }
       this.sync(); return;
     }
-    if (m.t === "settings" && st.phase === "lobby" && st.hostId === c.id) {
+    if (st.hostId !== c.id) return;
+    if (m.t === "settings") {
       if (m.format === "1v1" || m.format === "2v2") st.format = m.format;
       if (["easy", "mid", "hard"].includes(m.level)) st.level = m.level;
       this.balanceTeams(); this.sync(); return;
     }
-    if (m.t === "bots" && st.phase === "lobby" && st.hostId === c.id) {
+    if (m.t === "bots") {
       const used = new Set(this.bots.map(b => b.name));
       while (this.players().length < this.cap()) {
-        const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length;
         const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name);
-        this.bots.push({ id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player", team: a <= b ? "A" : "B", score: 0, hits: 0, ko: 0, combo: 0, hp: 100, tool: "" });
+        const b = { id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player", team: "A" };
+        this.joinTeam(b); this.bots.push(b);
       }
       this.sync(); return;
     }
-    if (m.t === "nobots" && st.phase === "lobby" && st.hostId === c.id) { this.bots = []; this.sync(); return; }
-    if (m.t === "start" && st.phase === "lobby" && st.hostId === c.id) {
-      const ps = this.players(), a = ps.filter(p => p.team === "A").length, b = ps.filter(p => p.team === "B").length;
-      if (a < 1 || b < 1) { this.send(c, { t: "error", msg: "Es fehlen noch Mitspieler im anderen Team." }); return; }
-      st.phase = "live"; st.round++; st.seed = Math.floor(Math.random() * 1e9);
-      st.startAt = now + COUNTDOWN_MS; st.endsAt = st.startAt + DUEL_MS; st.results = null;
-      ps.forEach(p => { p.score = 0; p.hits = 0; p.ko = 0; p.combo = 0; p.hp = 100; p.tool = ""; });
-      clearTimeout(this.finishTimer);
-      this.finishTimer = setTimeout(() => this.finish(), st.endsAt - now + 1800);
-      this.startBots();
-      this.sync(); return;
-    }
-    if ((m.t === "score" || m.t === "final") && st.phase === "live" && c.role === "player") {
-      const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
-      c.score = n(m.score, 300000); c.hits = n(m.hits, 5000); c.ko = n(m.ko, 500); c.combo = n(m.combo, 999); c.hp = n(m.hp, 999);
-      c.tool = String(m.tool || "").slice(0, 20);
-      if (m.t === "final" || now - c.lastLive > 200) { c.lastLive = now; this.broadcast({ t: "live", p: this.pub(c) }); }
+    if (m.t === "nobots") { this.bots = []; this.sync(); return; }
+    if (m.t === "start") {
+      const ps = this.players();
+      if (!ps.some(p => p.team === "A") || !ps.some(p => p.team === "B")) { this.send(c, { t: "error", msg: "Im anderen Team fehlt noch jemand." }); return; }
+      const pool = [...TOOL_IDS].sort(() => Math.random() - .5);
+      this.g = SIM.newGame({ players: ps.map(p => ({ id: p.id, team: p.team, name: p.name, bot: !!p.isBot, level: st.level })), towers: { A: pool.slice(0, 3), B: pool.slice(3, 6) } });
+      st.towers = SIM.towerInfo(this.g);
+      st.phase = "live"; st.round++; st.startAt = now + COUNTDOWN_MS;
+      this.sync();
+      this.run();
       return;
     }
-    if (m.t === "attack" && st.phase === "live" && c.role === "player" && now - c.lastAtk > 900) {
-      c.lastAtk = now;
-      const kind = ["tomato", "shake", "fusion"].includes(m.kind) ? m.kind : "shake";
-      const s = JSON.stringify({ t: "attack", from: c.name, team: c.team, kind });
-      for (const o of this.conns.values()) if (o.joined && o.role === "player" && o.team !== c.team) { try { o.ws.send(s); } catch (e) {} }
-      this.broadcast({ t: "feed", txt: `${c.name}: ${kind === "fusion" ? "OVERKILL! 💢" : kind === "tomato" ? "Super-Schlag! 🍅" : "Uppercut! 🥊"}` });
-      return;
-    }
-    if (m.t === "react" && REACTIONS.includes(m.e) && now - c.lastReact > 350) {
-      c.lastReact = now; this.broadcast({ t: "react", e: m.e, name: c.name }); return;
-    }
-    if (m.t === "rematch" && st.phase === "results") {
-      st.phase = "lobby"; st.results = null;
-      this.players().forEach(p => { p.score = 0; p.hits = 0; p.ko = 0; p.combo = 0; p.hp = 100; });
-      this.broadcast({ t: "feed", txt: `${c.name} will eine Revanche! ⚔️` });
-      this.sync(); return;
-    }
+  }
+
+  run() {
+    clearInterval(this.tick);
+    let last = Date.now();
+    this.tick = setInterval(() => {
+      const now = Date.now(), g = this.g;
+      if (!g || this.st.phase !== "live") { clearInterval(this.tick); return; }
+      let dt = Math.min(.5, (now - last) / 1000); last = now;
+      if (now < this.st.startAt) return;
+      while (dt > 1e-4 && g.phase === "play") {
+        const h = Math.min(1 / 30, dt); dt -= h;
+        for (const p of Object.values(g.players)) if (p.bot) SIM.bot(g, p.id, h);
+        SIM.step(g, h);
+      }
+      this.broadcast({ t: "snap", s: SIM.snap(g) });
+      g.ev = [];
+      if (g.phase === "over") { clearInterval(this.tick); this.finish(); }
+    }, TICK_MS);
+  }
+
+  async finish() {
+    const g = this.g, st = this.st;
+    st.phase = "results"; this.sync();
+    try {
+      const db = this.env.DB; if (!db || !g) return;
+      await ensureSchema(db);
+      const stmts = [...this.conns.values()].filter(c => c.joined && g.players[c.id] && !g.players[c.id].bot && c.sid && c.name && c.name !== "Anonym").map(c =>
+        db.prepare("INSERT INTO lb (sid, name, badge, wins, duels, ts) VALUES (?, ?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, wins = wins + excluded.wins, duels = duels + 1, ts = excluded.ts")
+          .bind(c.sid, c.name, c.badge, g.winner === g.players[c.id].team ? 1 : 0, Date.now()));
+      if (stmts.length) await db.batch(stmts);
+    } catch (e) {}
   }
 
   onClose(c) {
     if (!this.conns.has(c.id)) return;
     this.conns.delete(c.id);
-    if (this.st.hostId === c.id) { const p = this.humans()[0]; this.st.hostId = p ? p.id : null; }
-    if (c.joined) { this.broadcast({ t: "feed", txt: `${c.name} hat den Raum verlassen.` }); this.sync(); }
-    if (this.humans().length === 0) { clearTimeout(this.finishTimer); clearInterval(this.botTimer); this.bots = []; this.st.phase = "lobby"; }
-  }
-
-  startBots() {
-    clearInterval(this.botTimer);
-    if (!this.bots.length) return;
-    const L = LVL[this.st.level] || LVL.mid;
-    this.bots.forEach(b => { b.sim = { hp: L.hp, order: [...TOOL_IDS].sort(() => Math.random() - .5), pos: 0, atk: 5 + Math.random() * 5 }; b.tool = b.sim.order[0]; });
-    let last = Date.now();
-    this.botTimer = setInterval(() => {
-      const now = Date.now(), dt = (now - last) / 1000; last = now;
-      if (now < this.st.startAt) return;
-      if (now > this.st.endsAt || this.st.phase !== "live") { clearInterval(this.botTimer); return; }
-      for (const b of this.bots) {
-        const dmg = L.dps * dt * (0.3 + Math.random() * 1.4);
-        b.sim.hp -= dmg; b.score += dmg * 10 * L.mult; b.hits += Math.round(dmg / 8);
-        b.combo = Math.max(0, Math.min(15, b.combo + (Math.random() < .6 ? 1 : -3)));
-        if (b.sim.hp <= 0) { b.ko++; b.sim.hp = L.hp; b.sim.pos++; b.tool = b.sim.order[b.sim.pos % b.sim.order.length]; }
-        b.hp = Math.round(b.sim.hp / L.hp * 100); b.score = Math.round(b.score);
-        this.broadcast({ t: "live", p: this.pub(b) });
-        if (this.st.level !== "easy") { b.sim.atk -= dt; if (b.sim.atk <= 0) { b.sim.atk = 6 + Math.random() * 6;
-          const kind = Math.random() < .5 ? "tomato" : "shake", s = JSON.stringify({ t: "attack", from: b.name, team: b.team, kind });
-          for (const o of this.conns.values()) if (o.joined && o.role === "player" && o.team !== b.team) { try { o.ws.send(s); } catch (e) {} } } }
-      }
-    }, 350);
-  }
-
-  async finish() {
     const st = this.st;
-    clearInterval(this.botTimer);
-    if (st.phase !== "live") return;
-    const ps = this.players();
-    const teamScore = t => {
-      const mem = ps.filter(p => p.team === t);
-      const sum = mem.reduce((a, p) => a + p.score, 0);
-      return { sum, members: mem.length };
-    };
-    const A = teamScore("A"), B = teamScore("B");
-    // Bei ungleich großen Teams zählt der Durchschnitt, damit es fair bleibt
-    const fair = A.members !== B.members;
-    const sa = fair ? Math.round(A.sum / Math.max(1, A.members)) : A.sum;
-    const sb = fair ? Math.round(B.sum / Math.max(1, B.members)) : B.sum;
-    const winner = sa === sb ? "draw" : sa > sb ? "A" : "B";
-    st.results = { winner, A: sa, B: sb, fair, players: ps.map(p => this.pub(p)).sort((x, y) => y.score - x.score) };
-    st.phase = "results";
-    this.sync();
-    // Rangliste aktualisieren
-    try {
-      const db = this.env.DB; if (!db) return;
-      await ensureSchema(db);
-      const stmts = ps.filter(p => !p.isBot && p.sid && p.name && p.name !== "Anonym").map(p =>
-        db.prepare("INSERT INTO lb (sid, name, badge, wins, duels, best_duel, ts) VALUES (?, ?, ?, ?, 1, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, wins = wins + excluded.wins, duels = duels + 1, best_duel = MAX(best_duel, excluded.best_duel), ts = excluded.ts")
-          .bind(p.sid, p.name, p.badge, winner === p.team ? 1 : 0, p.score, Date.now()));
-      if (stmts.length) await db.batch(stmts);
-    } catch (e) {}
+    if (st.hostId === c.id) { const p = this.humans()[0]; st.hostId = p ? p.id : null; }
+    // Wer mitten im Kampf geht, wird von einem Bot ersetzt
+    if (this.g && st.phase === "live" && this.g.players[c.id]) { const p = this.g.players[c.id]; p.bot = true; p.level = st.level; p.name = p.name + " (Bot)"; }
+    if (c.joined) { this.broadcast({ t: "feed", txt: `${c.name} hat den Raum verlassen.` }); this.sync(); }
+    if (this.humans().length === 0 && ![...this.conns.values()].some(x => x.joined)) { clearInterval(this.tick); this.g = null; this.bots = []; st.phase = "lobby"; }
   }
 }
 
@@ -351,13 +317,20 @@ export default {
         const b = await readBody(req);
         const sid = cleanSid(b.sid), name = cleanName(b.name), badge = cleanBadge(b.badge);
         if (!sid || !name) return json({ error: "name" }, 400);
-        if (tooFast("s:" + sid, 3000)) return json({ error: "slow_down" }, 429);
+        if (tooFast("s:" + sid + (b.kind || ""), 2000)) return json({ error: "slow_down" }, 429);
         if (b.kind === "time") {
           const score = Math.max(0, Math.min(60000, Math.floor(Number(b.score) || 0)));
           await db.prepare("INSERT INTO lb (sid, name, badge, best_time, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, best_time = MAX(best_time, excluded.best_time), ts = excluded.ts")
             .bind(sid, name, badge, score, Date.now()).run();
         } else if (b.kind === "boss") {
           await db.prepare("INSERT INTO lb (sid, name, badge, boss, ts) VALUES (?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, boss = boss + 1, ts = excluded.ts")
+            .bind(sid, name, badge, Date.now()).run();
+        } else if (b.kind === "trophies") {
+          const score = Math.max(0, Math.min(100000, Math.floor(Number(b.score) || 0)));
+          await db.prepare("INSERT INTO lb (sid, name, badge, trophies, ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, trophies = excluded.trophies, ts = excluded.ts")
+            .bind(sid, name, badge, score, Date.now()).run();
+        } else if (b.kind === "botwin") {
+          await db.prepare("INSERT INTO lb (sid, name, badge, botwins, ts) VALUES (?, ?, ?, 1, ?) ON CONFLICT(sid) DO UPDATE SET name = excluded.name, badge = excluded.badge, botwins = botwins + 1, ts = excluded.ts")
             .bind(sid, name, badge, Date.now()).run();
         } else if (b.kind === "profile") {
           await db.prepare("UPDATE lb SET name = ?, badge = ? WHERE sid = ?").bind(name, badge, sid).run();
@@ -367,8 +340,8 @@ export default {
 
       if (path === "/api/leaderboard" && req.method === "GET") {
         const q = (col, extra) => db.prepare(`SELECT name, badge, ${col} AS v FROM lb WHERE ${col} > 0 ${extra || ""} ORDER BY ${col} DESC, ts ASC LIMIT 15`).all().then(r => r.results || []);
-        const [wins, duel, time, boss] = await Promise.all([q("wins"), q("best_duel"), q("best_time"), q("boss")]);
-        return json({ wins, duel, time, boss });
+        const [tro, wins, bot] = await Promise.all([q("trophies"), q("wins"), q("botwins")]);
+        return json({ tro, wins, bot });
       }
 
       if (path === "/api/recap" && req.method === "GET") {
