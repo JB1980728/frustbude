@@ -42,7 +42,8 @@ function cleanText(t, max) {
     .slice(0, max || 200);
 }
 function cleanName(n) {
-  const t = cleanText(n, 16).replace(/\n/g, " ");
+  // Spitznamen: nur Buchstaben (plus Leerzeichen und Bindestrich), max. 12 Zeichen
+  const t = String(n || "").normalize("NFC").replace(/[^\p{L} \-]/gu, "").replace(/\s+/g, " ").replace(/^[ \-]+|[ \-]+$/g, "").slice(0, 12).trim();
   if (t.length < 2 || isBlocked(t)) return "";
   return t;
 }
@@ -127,6 +128,15 @@ export class Room extends DurableObject {
   broadcast(obj) { const s = JSON.stringify(obj); for (const c of this.conns.values()) if (c.joined) { try { c.ws.send(s); } catch (e) {} } }
   humans() { return [...this.conns.values()].filter(c => c.joined && c.role === "player"); }
   players() { return [...this.humans(), ...this.bots]; }
+  fillBots() {
+    const used = new Set(this.bots.map(b => b.name)), added = [];
+    while (this.players().length < this.cap()) {
+      const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name);
+      const b = { id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player", team: "A" };
+      this.joinTeam(b); this.bots.push(b); added.push(name);
+    }
+    return added;
+  }
   cap() { return this.st.format === "2v2" ? 4 : 2; }
   dropBot() { if (!this.bots.length) return; const a = this.players().filter(p => p.team === "A").length, b = this.players().filter(p => p.team === "B").length; const team = a >= b ? "A" : "B"; let i = this.bots.findIndex(x => x.team === team); if (i < 0) i = 0; this.bots.splice(i, 1); }
   pub(c) { return { id: c.id, isBot: !!c.isBot, name: c.name, badge: c.badge, role: c.role, team: c.team }; }
@@ -204,17 +214,14 @@ export class Room extends DurableObject {
       if (["easy", "hard"].includes(m.level)) st.level = m.level;
       this.balanceTeams(); this.sync(); return;
     }
-    if (m.t === "bots") {
-      const used = new Set(this.bots.map(b => b.name));
-      while (this.players().length < this.cap()) {
-        const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name);
-        const b = { id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player", team: "A" };
-        this.joinTeam(b); this.bots.push(b);
-      }
-      this.sync(); return;
-    }
+    if (m.t === "bots") { this.fillBots(); this.sync(); return; }
     if (m.t === "nobots") { this.bots = []; this.sync(); return; }
     if (m.t === "start") {
+      // 2 gegen 2 mit weniger als 4 Leuten: freie Plätze übernimmt ein Bot
+      if (st.format === "2v2" && this.players().length >= 2 && this.players().length < 4) {
+        const added = this.fillBots();
+        if (added.length) { this.broadcast({ t: "feed", txt: `🤖 ${added.join(" und ")} ${added.length > 1 ? "springen" : "springt"} ein, damit es 2 gegen 2 wird.` }); this.sync(); }
+      }
       const ps = this.players();
       if (!ps.some(p => p.team === "A") || !ps.some(p => p.team === "B")) { this.send(c, { t: "error", msg: "Im anderen Team fehlt noch jemand." }); return; }
       if (!st.tool) st.tool = TOOL_IDS[(Math.random() * TOOL_IDS.length) | 0];

@@ -686,7 +686,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <button class="x" data-close="profile">✕</button>
   <div class="mid">DEIN PROFIL</div>
   <div class="sub" style="margin:8px 0 10px">Dein Spitzname erscheint in Duellen und Ranglisten. Frei erfunden ist völlig okay.</div>
-  <input class="field" id="nameInput" maxlength="16" placeholder="Spitzname, z. B. Tomaten-Toni" autocomplete="off">
+  <input class="field" id="nameInput" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
   <div class="nametag" id="profTag" style="align-self:center"></div>
   <div class="seglbl">Abzeichen am Namen – tippe auf eines, um es zu tragen</div>
   <div class="scroll"><div class="badges" id="badgeList"></div></div>
@@ -719,7 +719,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="online mkonly" id="duelOnline" style="margin-bottom:10px"></div>
     <div class="seglbl mkonly">Offene Duelle – sofort mitmachen</div>
     <div id="openRooms" class="mkonly"></div>
-    <input class="field" id="duelName" maxlength="16" placeholder="Dein Spitzname" autocomplete="off">
+    <input class="field" id="duelName" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
     <div class="seglbl mkonly">Jemanden herausfordern</div>
     <div class="seg mkonly" id="fmtSeg"><button data-f="1v1" class="on">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
     <button class="cta red mkonly" id="createRoom">RAUM ERSTELLEN &amp; LINK TEILEN ⚔️</button>
@@ -783,7 +783,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin:6px 0 8px">Für alle aus dem Kurs. Nachrichten bleiben <b>23 Stunden</b>, danach ist alles weg.</div>
   <div class="clist scroll" id="gList"></div>
   <div class="cnote" id="gNote"></div>
-  <div class="cin" id="gNameRow" style="display:none"><input class="field" id="gName" maxlength="16" placeholder="Erst Spitznamen wählen …" autocomplete="off"><button id="gNameOk">OK</button></div>
+  <div class="cin" id="gNameRow" style="display:none"><input class="field" id="gName" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off"><button id="gNameOk">OK</button></div>
   <div class="cin" id="gMsgRow"><input class="field" id="gIn" maxlength="140" placeholder="Schreib was …" autocomplete="off"><button id="gSend">➤</button></div>
 </div></div>
 
@@ -924,6 +924,8 @@ const rand = (a,b) => a + Math.random()*(b-a);
 const pick = arr => arr[(Math.random()*arr.length)|0];
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const fmt = n => Math.round(n||0).toLocaleString("de-DE");
+// Spitznamen: nur Buchstaben (plus Leerzeichen und Bindestrich), max. 12 Zeichen – hält die Online-Liste kurz
+const nick = s => String(s||"").normalize("NFC").replace(/[^\p{L} \-]/gu,"").replace(/\s+/g," ").replace(/^[ \-]+|[ \-]+$/g,"").slice(0,12).trim();
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function hexRgb(h){h=h.replace("#","");return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
 function mix(h,t,a){const c=hexRgb(h),d=hexRgb(t);return `rgb(${c.map((v,i)=>Math.round(v+(d[i]-v)*a)).join(",")})`}
@@ -1883,7 +1885,7 @@ function renderProfile(){
     el.onclick=()=>{ if(!has){ toast(`🔒 ${b.d}`); return; } profBadge=profBadge===b.id?"":b.id; renderProfile(); sfx.pop(); }; box.appendChild(el); });
 }
 function saveProfile(){
-  const n=$("nameInput").value.trim().slice(0,16);
+  const n=nick($("nameInput").value);
   if(n && n.length<2){ toast("Mindestens 2 Zeichen, bitte."); return; }
   saved.name=n; saved.badge=profBadge; persist(); hide("profile"); toast("✓ Gespeichert!"); renderHome();
   if(n) api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:n,badge:myBadge(),kind:"profile"})}).catch(()=>{});
@@ -1894,8 +1896,8 @@ const R={local:false,botState:null,ws:null,code:"",you:null,role:null,st:null,of
 function setDuelUI(on){ document.body.classList.toggle("duel",!!on); $("duelBar").style.display=on?"flex":"none"; resize(); }
 function serverNow(){ return Date.now()+R.off; }
 function genCode(){ const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<5;i++) s+=a[(Math.random()*a.length)|0]; return s; }
-function needName(){ const n=$("duelName").value.trim(); if(n.length<2){ toast("Bitte erst einen Spitznamen eingeben (mind. 2 Zeichen)."); $("duelName").focus(); return null; }
-  if(n!==saved.name){ saved.name=n.slice(0,16); persist(); api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:saved.name,badge:myBadge(),kind:"profile"})}).catch(()=>{}); } return saved.name; }
+function needName(){ const n=nick($("duelName").value); if(n.length<2){ toast("Bitte erst einen Spitznamen eingeben (mind. 2 Zeichen)."); $("duelName").focus(); return null; }
+  if(n!==saved.name){ saved.name=n; persist(); api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:saved.name,badge:myBadge(),kind:"profile"})}).catch(()=>{}); } return saved.name; }
 function openDuel(prefill){
   $("duelName").value=saved.name||""; $("duelEntry").style.display="block"; $("duelLobby").style.display="none"; $("duelX").style.display=""; $("duelEntry").classList.toggle("joinonly",!!prefill);
   $("joinLbl").textContent=prefill?"Du wurdest zum Duell eingeladen!":"Oder mit Code beitreten";
@@ -1959,12 +1961,12 @@ function renderLobby(){
   $("hostCtl").style.display=isHost?"grid":"none";
   document.querySelectorAll("#lobbyFmt button").forEach(b=>b.classList.toggle("on",b.dataset.f===st.format));
   document.querySelectorAll("#lobbyLv button").forEach(b=>b.classList.toggle("on",b.dataset.lv===st.level));
-  $("lobbyInfo").textContent=(st.format==="2v2"?"2 gegen 2: Eure Treffer zählen zusammen.":"1 gegen 1")+" · Wer zuerst 2 Runden gewinnt, hat gewonnen."+(isHost?"":" Der Host startet.");
+  $("lobbyInfo").textContent=(st.format==="2v2"?"2 gegen 2: Alle hauen gleichzeitig, eure Treffer zählen zusammen. Fehlt jemand, springt ein Bot ein.":"1 gegen 1")+" · Wer zuerst 2 Runden gewinnt, hat gewonnen."+(isHost?"":" Der Host startet.");
   $("teamBtns").style.display=(st.format==="2v2"&&mine&&mine.role==="player")?"grid":"none";
   const ps=st.people.filter(p=>p.role==="player"), ok=ps.some(p=>p.team==="A")&&ps.some(p=>p.team==="B");
   const cap=st.format==="2v2"?4:2, hasBots=st.people.some(p=>p.isBot), full=ps.length>=cap;
   $("botFill").style.display=isHost&&(!full||hasBots)?"block":"none"; $("botFill").textContent=hasBots?"🤖 BOTS ENTFERNEN":"🤖 FREIE PLÄTZE MIT BOTS FÜLLEN";
-  $("startDuel").style.display=isHost?"block":"none"; $("startDuel").disabled=!ok; $("startDuel").textContent=ok?"KAMPF STARTEN! 🔔":"WARTE AUF GEGNER …";
+  $("startDuel").style.display=isHost?"block":"none"; const fill=st.format==="2v2"&&ps.length>=2&&ps.length<4, go=ok||fill; $("startDuel").disabled=!go; $("startDuel").textContent=!go?"WARTE AUF GEGNER …":fill?`KAMPF STARTEN! 🔔 (+${4-ps.length} 🤖)`:"KAMPF STARTEN! 🔔";
   $("waitLine").style.display=!isHost?"block":"none";
   $("challengeAll").style.display=isHost?"block":"none"; $("challengeAll").parentNode.style.gridTemplateColumns=isHost?"1fr 1fr":"1fr"; lbAnnounce();
   $("swapRole").textContent=mine&&mine.role==="player"?"👀 Nur zuschauen":"🥊 Mitspielen";
@@ -2077,7 +2079,7 @@ let chatNoteT=0;
 function chatNote(msg){ ["gNote","rNote"].forEach(id=>{ const el=$(id); if(el) el.textContent=msg||""; }); clearTimeout(chatNoteT); if(msg) chatNoteT=setTimeout(()=>chatNote(""),4000); if(FT.on&&msg) toast(msg,2400); }
 function chatNeedsName(){ if(saved.name&&saved.name.length>=2) return false; chatNote("Leg erst einen Spitznamen an, dann kannst du chatten."); chatNameUI(); return true; }
 function chatNameUI(){ const need=!(saved.name&&saved.name.length>=2); $("gNameRow").style.display=need?"flex":"none"; $("gMsgRow").style.display=need?"none":"flex"; }
-function saveChatName(){ const n=$("gName").value.trim().slice(0,16); if(n.length<2){ chatNote("Mindestens 2 Zeichen, bitte."); return; }
+function saveChatName(){ const n=nick($("gName").value); if(n.length<2){ chatNote("Mindestens 2 Zeichen, bitte."); return; }
   saved.name=n; persist(); LB.lastKey=""; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:isBusy()}); renderHome();
   api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:n,badge:myBadge(),kind:"profile"})}).catch(()=>{}); chatNote(""); chatNameUI(); setTimeout(()=>$("gIn").focus(),50); }
 function sendGlobal(){ const t=$("gIn").value.trim(); if(!t) return; if(chatNeedsName()) return; if(!LB.ws||LB.ws.readyState!==1){ chatNote("Keine Verbindung – versuch’s gleich nochmal."); if(!LB.ws) lbConnect(); return; } lbSend({t:"chat",text:t}); $("gIn").value=""; }
@@ -2088,6 +2090,8 @@ function onRoomChat(m){ if(m.t==="chatlog") CHAT.r=m.msgs||[]; else { CHAT.r.pus
     if(FT.on){ const box=$("fChat"); const n=chatNode(m); box.appendChild(n); while(box.children.length>3) box.firstChild.remove(); setTimeout(()=>n.remove(),5200); } }
   renderChat("rList",CHAT.r); }
 $("chatBtn").onclick=()=>{ CHAT.unread=0; $("chatBadge").classList.remove("on"); renderChat("gList",CHAT.g); chatNameUI(); chatNote(LB.ws?"":"Verbindung wird gesucht … gleich klappt’s."); show("gchat"); chatBottom($("gList")); };
+["nameInput","duelName","gName"].forEach(id=>$(id).addEventListener("input",e=>{ const el=e.target, v=el.value, f=v.normalize("NFC").replace(/[^\p{L} \-]/gu,"").replace(/ {2,}/g," ").slice(0,12); if(f!==v){ el.value=f; toast("Spitznamen nur aus Buchstaben, bitte – ohne Emojis oder Zahlen."); } }));
+if(saved.name&&nick(saved.name)!==saved.name){ saved.name=nick(saved.name); if(saved.name.length<2) saved.name=""; persist(); }
 $("gNameOk").onclick=saveChatName; $("gName").addEventListener("keydown",e=>{ if(e.key==="Enter") saveChatName(); });
 $("gSend").onclick=sendGlobal; $("gIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendGlobal(); });
 $("rSend").onclick=()=>sendRoom("rIn"); $("rIn").addEventListener("keydown",e=>{ if(e.key==="Enter") sendRoom("rIn"); });
