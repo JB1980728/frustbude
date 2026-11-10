@@ -494,6 +494,20 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 .lcode{cursor:pointer;color:#fff}.lcode .cp{font-size:15px}
 .lcode.ok{border-color:#4ade80;background:rgba(74,222,128,.15)}
+
+/* Spieler-Kärtchen im Duell: wer haut, leuchtet – wer nicht tippt, ist grau */
+.fsub{display:flex;flex-direction:column;gap:3px;margin-top:5px;white-space:normal;overflow:visible}
+.fside.R .fsub{align-items:flex-end}
+.pc{display:inline-flex;align-items:baseline;gap:5px;max-width:100%;padding:3px 7px;border-radius:9px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.12);transition:opacity .25s,filter .25s,background .25s}
+.pc b{font-size:11.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pc i{font-style:normal;font-size:10.5px;font-weight:800;color:#fde047;white-space:nowrap}
+.fside.L .pc.on{background:rgba(167,139,250,.28);border-color:#a78bfa}
+.fside.R .pc.on{background:rgba(251,146,60,.28);border-color:#fb923c}
+.pc.idle{opacity:.42;filter:grayscale(1)}.pc.idle i{color:#cbd5e1}
+.pc.ice{background:rgba(125,211,252,.22);border-color:#7dd3fc}.pc.ice i{color:#bae6fd}
+.pc.me{box-shadow:0 0 0 2px #ffd23f}.pc.me b{color:#ffd23f}
+#fSpecNote{display:none;margin:8px;padding:12px;border-radius:16px;text-align:center;font-weight:900;color:#cbd5e1;background:rgba(255,255,255,.06);border:1.5px dashed rgba(255,255,255,.2)}
+#fight.spec #fSpecNote{display:block}
 </style>
 </head>
 <body>
@@ -753,6 +767,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="iconbtn muteToggle" id="fMute" aria-label="Ton aus">🔊</button>
     <button id="fFlip">🔄 Andere Seite ansehen</button>
     <button class="iconbtn" id="fExit" aria-label="Hauptmenü">🏠</button></div>
+  <div id="fSpecNote">👀 Du schaust zu – die anderen hauen gerade</div>
   <div id="fCtl"><button id="fTap">👊 HAU DRAUF! <small>so schnell du kannst – oder überall aufs Bild tippen</small></button></div>
   <div id="fReacts" class="reacts"></div>
   <div class="cin" id="fChatRow"><input class="field" id="fIn" maxlength="140" placeholder="Anfeuern …" autocomplete="off"><button id="fSend">➤</button></div>
@@ -881,7 +896,7 @@ const W_BY = {}; WEAPONS.forEach(w=>W_BY[w.id]=w);
 const LV = {
   easy:{label:"Leicht",emoji:"😌",hp:70, swing:.7, lock:true, thr:null, dodge:0, stun:0, bossHP:300,hearts:5,bossThrow:1.35,bossSpeed:.8, mult:.8},
   mid: {label:"Mittel",emoji:"😤",hp:110,swing:1.05,lock:false,thr:{base:[4.2,6],k:.45,min:1.3,dur:1.45},dodge:1.3,stun:1.3, bossHP:430,hearts:3,bossThrow:.95,bossSpeed:1.05,mult:1.15},
-  hard:{label:"Schwer",emoji:"🔥",hp:150,swing:1.25,lock:false,thr:{base:[2.6,3.6],k:1,min:.45,dur:1.15},dodge:2.5,stun:1.7, bossHP:580,hearts:2,bossThrow:.72,bossSpeed:1.3,mult:1.5},
+  hard:{label:"Schwer",emoji:"🔥",hp:150,swing:1.25,lock:false,thr:{base:[2.6,3.6],k:1,min:.45,dur:1.15},dodge:2.5,stun:1.7, bossHP:520,hearts:3,bossThrow:.72,bossSpeed:1.3,mult:1.5},
 };
 const BADGES = [
   {id:"first",e:"🥊",t:"Erster Schlag",d:"Ersten Treffer gelandet",f:s=>s.hitsAll>=1},
@@ -2087,6 +2102,7 @@ const otherT=t=>t==="A"?"B":"A";
 const teamOf=s=>s==="L"?FT.myTeam:otherT(FT.myTeam);
 const sideOf=t=>t===FT.myTeam?"L":"R";
 function teamNames(team){ const pl=FT.v?Object.values(FT.v.players).filter(p=>p.team===team):[]; return pl.map(p=>(p.bot?"🤖 ":"")+p.name); }
+function teamMates(){ const v=FT.v; return Object.values(v.players).filter(p=>p.team===FT.myTeam&&p.id!==FT.myId).map(p=>(p.bot?"🤖 ":"")+p.name).join(", ")||"–"; }
 function teamTitle(team){ const n=teamNames(team); if(FT.format==="2v2"||n.length>1) return (team==="A"?"TEAM LILA":"TEAM GELB"); return n[0]||(team==="A"?"Lila":"Gelb"); }
 function openFight(o){
   Object.assign(FT,{on:true,local:o.local,myTeam:o.myTeam||"A",spec:!!o.spec,myId:o.myId||"me",format:o.format||"1v1",level:o.level||"easy",fx:[],words:[],gloves:[],items:[],banner:"",bannerT:0,lastPhase:"",lastRound:0,ended:false,dp:0,swing:0,swingV:0,stun:0,itemT:3});
@@ -2151,8 +2167,14 @@ function fRates(force){
   if(!force&&now-(FT.rateT||0)<300) return; FT.rateT=now;
   ["L","R"].forEach(s=>{ const t=teamOf(s), ps=Object.values(v.players).filter(p=>p.team===t);
     const txt=ps.map(p=>{ const h=FT.hist[p.id]||[]; let r=0; if(h.length>1){ const a=h[0],b=h[h.length-1]; r=b[0]>a[0]?(b[1]-a[1])/((b[0]-a[0])/1000):0; } if(v.phase!=="fight") r=0;
-      return `${ps.length>1?(p.bot?"🤖 ":"")+p.name+" ":""}👆 ${r.toFixed(1).replace(".",",")}/s`; }).join(" · ");
-    if($("fSub"+s).textContent!==txt) $("fSub"+s).textContent=txt; });
+      return {p,r}; });
+    // Pro Person ein Kärtchen: wer gerade haut, leuchtet – wer nicht tippt, ist ausgegraut
+    const fr=(v.frozen&&v.frozen[t])>0, live=v.phase==="fight";
+    const html=txt.map(({p,r})=>{ const me=!FT.spec&&p.id===FT.myId, idle=live&&!fr&&r<.5;
+      const st=fr?"❄️ eingefroren":!live?"bereit":idle?"💤 tippt nicht":`👆 ${r.toFixed(1).replace(".",",")}/s`;
+      return `<span class="pc${me?" me":""}${idle?" idle":""}${fr?" ice":""}${live&&!idle&&!fr?" on":""}"><b>${me?"DU":(p.bot?"🤖 ":"")+esc(p.name)}</b><i>${st}</i></span>`; }).join("");
+    const key=html;
+    if(FT.subTxt?.[s]!==key){ (FT.subTxt=FT.subTxt||{})[s]=key; $("fSub"+s).innerHTML=html; } });
 }
 function fHud(){
   const v=FT.v; if(!v) return; fRates(false);
@@ -2171,7 +2193,7 @@ function fLoop(dt){
   const v=FT.v;
   if(v){
     if(v.phase!==FT.lastPhase||v.round!==FT.lastRound){
-      if(v.phase==="intro") fBanner(`RUNDE ${v.round}`,v.round===1?`${teamTitle(FT.myTeam)}  vs  ${teamTitle(otherT(FT.myTeam))}`:"",1.5);
+      if(v.phase==="intro") fBanner(`RUNDE ${v.round}`,Object.keys(v.players).length>2?(FT.spec?"Alle 4 hauen gleichzeitig!":`Alle 4 hauen gleichzeitig! Du + ${teamMates()}`):(v.round===1?`${teamTitle(FT.myTeam)}  vs  ${teamTitle(otherT(FT.myTeam))}`:""),Object.keys(v.players).length>2?2.2:1.5);
       if(v.phase==="fight"&&FT.lastPhase==="intro"){ fBanner("LOS!","",.7); sfx.ding(); }
       if(FT.lastPhase===""||v.round!==FT.lastRound) fHudNames();
       FT.lastPhase=v.phase; FT.lastRound=v.round;
