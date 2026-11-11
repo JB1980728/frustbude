@@ -441,7 +441,13 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .onlrow{display:flex;gap:6px;align-items:stretch;margin-bottom:4px}.onlrow .online{flex:1;margin:0}
 .chatbtn{position:relative;font-weight:900;font-size:12.5px;background:rgba(168,85,247,.25);border:1px solid var(--purple);border-radius:12px;padding:5px 10px;white-space:nowrap}
 .chatbtn b{position:absolute;top:-7px;right:-6px;background:#ef4444;color:#fff;font-size:10px;border-radius:999px;padding:1px 6px;display:none}.chatbtn b.on{display:block}
-#gchat .card{height:calc(var(--vh,100dvh) - 28px)}
+#gchat .card{height:calc(var(--vh,100dvh) - 20px);min-height:0!important;display:flex;flex-direction:column}
+#gchat #gList{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#gchat .cin,#gchat .cnote{flex:none}
+/* Tastatur offen: Kopf ausblenden, damit Verlauf und Eingabe Platz haben */
+.kb #gchat .pg-logo,.kb #gchat .mid,.kb #gchat .sub{display:none}
+.kb #gchat .card{padding-top:52px}
+.kb .overlay.page{padding-top:6px;padding-bottom:6px}
 .clist{display:flex;flex-direction:column;gap:5px;padding:4px 2px;min-height:60px}
 .cmsg{max-width:85%;align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:6px 10px;font-weight:800;font-size:13.5px;line-height:1.35;overflow-wrap:anywhere;text-align:left}
 .cmsg b{display:block;font-size:11px;color:var(--yellow)}
@@ -1142,6 +1148,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   const vv=window.visualViewport, root=document.documentElement;
   function fit(){
     const h=vv?vv.height:window.innerHeight, t=vv?Math.max(0,vv.offsetTop):0;
+    fit.max=Math.max(fit.max||0,h); if(!vv||vv.scale<=1.01) root.classList.toggle("kb",h<fit.max*.75&&/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||""));
     root.style.setProperty("--vh",Math.round(h)+"px"); root.classList.toggle("h-short",h<840); root.classList.toggle("h-tiny",h<640); root.style.setProperty("--vt",Math.round(t)+"px");
     if(window.scrollY||window.scrollX) window.scrollTo(0,0);
   }
@@ -2446,6 +2453,8 @@ function renderChat(listId,arr){ const el=$(listId); if(!el) return; el.innerHTM
   if(!arr.length){ const d=document.createElement("div"); d.className="cmsg sys"; d.textContent=listId==="gList"?"Noch ruhig hier. Sag Hallo! 👋":"Noch keine Nachrichten 😉"; el.appendChild(d); }
   arr.forEach(m=>el.appendChild(chatNode(m))); chatBottom(el); }
 // immer zur neuesten Nachricht nach unten scrollen
+(window.visualViewport||window).addEventListener("resize",()=>{ const g=document.getElementById("gchat"); if(g&&!g.classList.contains("hidden")) setTimeout(()=>chatBottom(document.getElementById("gList")),60); });
+["gIn","gName"].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener("focus",()=>{ [120,350,700].forEach(t=>setTimeout(()=>{ window.dispatchEvent(new Event("resize")); chatBottom(document.getElementById("gList")); },t)); }); });
 function chatBottom(el){ el.scrollTop=el.scrollHeight; requestAnimationFrame(()=>{ el.scrollTop=el.scrollHeight; setTimeout(()=>{ el.scrollTop=el.scrollHeight; },320); }); }
 let chatNoteT=0;
 function chatNote(msg){ ["gNote","rNote"].forEach(id=>{ const el=$(id); if(el) el.textContent=msg||""; }); clearTimeout(chatNoteT); if(msg) chatNoteT=setTimeout(()=>chatNote(""),4000); if(FT.on&&msg) toast(msg,2400); }
