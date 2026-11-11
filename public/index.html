@@ -742,6 +742,14 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 .tc.back .bkl{position:absolute;left:8%;right:8%;top:50%;width:84%;transform:translateY(-50%) rotate(-8deg)}
 .cdeck .dn{white-space:nowrap;bottom:-22px}
+
+/* Zahl und Tool-Symbol vollständig im weißen Oval */
+.tc .ov{left:9%;right:9%;top:9%;bottom:15%}
+.tc .num{top:23%;font-size:calc(var(--cw) * .4);line-height:1}
+.tc .num svg{width:calc(var(--cw) * .34);height:calc(var(--cw) * .34)}
+.tc .app{top:55%;width:calc(var(--cw) * .3);height:calc(var(--cw) * .3);font-size:calc(var(--cw) * .17)}
+.tc .tl{bottom:4%}
+.tc.w .num:not(:empty)+.app{top:56%;width:calc(var(--cw) * .3);height:calc(var(--cw) * .3);font-size:calc(var(--cw) * .17)}
 </style>
 </head>
 <body>
