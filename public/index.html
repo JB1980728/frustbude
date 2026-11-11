@@ -704,6 +704,22 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .ghost{color:#c4b5fd}
 
 #modeIntro .card{max-height:calc(var(--vh,100dvh) - 24px)}#miL{overflow-y:auto;min-height:0;flex:1 1 auto;-webkit-overflow-scrolling:touch}#miGo,#miBack{flex:none}
+
+/* Logo auf allen Seiten wie auf der Startseite */
+.pg-logo{display:block;height:clamp(44px,calc(var(--vh,700px) * .075),64px);width:auto;margin:0 auto 4px;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.overlay.page>.card>.x{top:6px}
+.overlay.page .mid{text-align:center;padding:2px 0 0;font-size:clamp(26px,7.5vw,34px)}
+.overlay.page .sub{text-align:center}
+.ctitle{display:flex;align-items:center;justify-content:center;gap:8px}
+.ctitle img{height:34px;width:auto}.ctitle span{font-family:var(--comic);font-size:17px;letter-spacing:1px;color:#99f6e4}
+/* Knöpfe wie auf der Startseite: Pillenform, kräftige Schrift in Großbuchstaben */
+.cta{border-radius:999px;font-family:Nunito,system-ui;font-weight:900;font-size:16px;letter-spacing:1px;text-transform:uppercase;padding:14px 18px;color:#2a0b45}
+.cta.sm{font-size:14.5px;padding:12px 14px}
+.cta.alt,.cta.red,.cta.tap{color:#fff}
+#cards .cta,.cpickbox .cta{font-size:15px}
+.ghost{font-weight:900}
+
+#help h3{text-align:center}
 </style>
 </head>
 <body>
@@ -807,6 +823,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Anleitung -->
 <div class="overlay page hidden" id="help"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" id="helpX">✕</button>
   <div class="helpcard" id="helpBody"></div>
   <div class="dots" id="helpDots"></div>
@@ -866,6 +883,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Statistik & Ranglisten -->
 <div class="overlay page hidden" id="stats"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" data-close="stats">✕</button>
   <div class="mid" id="statsTitle">RANGLISTEN</div>
   <div class="tabs" style="margin-top:12px" id="statsMain"><button data-m="rank" class="on">🏆 Ranglisten</button><button data-m="hate">🔥 Meistgehasst</button></div>
@@ -876,6 +894,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Frust-Wand -->
 <div class="overlay page hidden" id="wall"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" data-close="wall">✕</button>
   <div class="mid">FRUST-WAND</div>
   <div class="sub" style="margin:8px 0 12px">Schreib’s dir von der Seele. <b>100 % anonym</b>: Niemand sieht, wer was schreibt, auch nicht die Person, die das Spiel gebaut hat.</div>
@@ -888,6 +907,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Profil -->
 <div class="overlay page hidden" id="profile"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" data-close="profile">✕</button>
   <div class="mid">DEIN PROFIL</div>
   <div class="sub" style="margin:8px 0 10px">Dein Spitzname erscheint in Duellen und Ranglisten. Frei erfunden ist völlig okay.</div>
@@ -901,6 +921,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Rückblick -->
 <div class="overlay page hidden" id="recap"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" data-close="recap">✕</button>
   <div class="mid">KLASSEN-RÜCKBLICK</div>
   <div class="sub" style="margin:8px 0 10px" id="recapSub">So viel Frust hat die Klasse schon abgebaut:</div>
@@ -909,6 +930,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Eigenes Tool -->
 <div class="overlay page hidden" id="custom"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <div class="mid">EIGENES TOOL</div>
   <div class="sub">Welches Tool (oder welcher Fehler) soll in den Ring?</div>
   <input class="field" id="customInput" maxlength="24" placeholder="z. B. Google Tag Manager" autocomplete="off">
@@ -918,6 +940,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Mehrspieler: Einstieg & Lobby -->
 <div class="overlay page hidden" id="duel"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" id="duelX">✕</button>
   <div id="duelEntry">
     <div class="mid">DUELL</div>
@@ -964,6 +987,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 <!-- Duell: Tauziehen -->
 <!-- ===================== Tool-Karten: Menü und Tisch ===================== -->
 <div class="overlay page hidden" id="cardsMenu"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" id="cmX">✕</button>
   <div id="cmEntry">
     <div class="mid" style="font-size:clamp(26px,8.5vw,40px);padding:0 34px">TOOL-KARTEN</div>
@@ -991,7 +1015,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 </div></div>
 
 <div id="cards" class="hidden">
-  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle">🃏 TOOL-KARTEN</div><button class="cbtn ctip" id="cTip" aria-label="Tipps">💡</button><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
+  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle"><img src="/logo.webp" alt="Frustbude"><span>Tool-Karten</span></div><button class="cbtn ctip" id="cTip" aria-label="Tipps">💡</button><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
   <div id="cSeats"></div>
   <div class="ctable">
     <div class="cfelt"></div>
@@ -1034,6 +1058,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <!-- Chat für alle -->
 <div class="overlay page hidden" id="gchat"><div class="card">
+  <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" data-close="gchat">✕</button>
   <div class="mid">💬 CHAT</div>
   <div class="sub" style="margin:6px 0 8px">Für alle aus dem Kurs. Nachrichten bleiben <b>23 Stunden</b>, danach ist alles weg.</div>
