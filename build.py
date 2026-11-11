@@ -16,7 +16,7 @@ og = base64.b64encode((root / "public" / "og.jpg").read_bytes()).decode()
 icon = base64.b64encode((root / "public" / "icon.png").read_bytes()).decode()
 assert tpl.count("__OG__") == 1 and tpl.count("__ICON__") == 1
 tpl = tpl.replace("__OG__", og, 1).replace("__ICON__", icon, 1)
-assets = {"/logo.webp": ["image/webp", "logo.webp"], "/lilita.woff2": ["font/woff2", "lilita.woff2"]}
+assets = {"/logo.webp": ["image/webp", "logo.webp"], "/lilita.woff2": ["font/woff2", "lilita.woff2"], "/luckiest.woff2": ["font/woff2", "luckiest.woff2"]}
 assets = {k: [t, base64.b64encode((root / "public" / f).read_bytes()).decode()] for k, (t, f) in assets.items()}
 assert tpl.count("__ASSETS__") == 1
 tpl = tpl.replace("__ASSETS__", json.dumps(assets), 1)

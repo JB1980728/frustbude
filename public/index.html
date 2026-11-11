@@ -24,6 +24,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥊</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="/luckiest.woff2" as="font" type="font/woff2" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -720,6 +721,18 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .ghost{font-weight:900}
 
 #help h3{text-align:center}
+
+/* Titel im Stil des Logos: gleiche Schrift, Gelb-Orange-Verlauf, dicke lila Kontur, 3D-Kante */
+@font-face{font-family:"Luckiest Guy";src:url(/luckiest.woff2) format("woff2");font-display:swap}
+.mid,.big,#help h3,.overlay.page .mid{font-family:"Luckiest Guy",var(--comic);font-weight:400;letter-spacing:1px;line-height:1.05;
+  background:linear-gradient(180deg,#fff7c2 0%,#ffe14d 34%,#ffb31a 66%,#ff7b1c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;text-shadow:none;
+  filter:drop-shadow(1.6px 0 0 #5b1aa8) drop-shadow(-1.6px 0 0 #5b1aa8) drop-shadow(0 1.6px 0 #5b1aa8) drop-shadow(0 -1.6px 0 #5b1aa8) drop-shadow(0 4px 0 #2a0752);
+  padding:4px 6px 6px}
+.mid{font-size:clamp(28px,8vw,36px)}
+#help h3{font-size:clamp(22px,6.5vw,28px);display:block;text-transform:uppercase}
+
+.mid .em,.big .em{-webkit-text-fill-color:initial;color:initial}
+#help .hem{text-align:center;font-size:34px;line-height:1;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -869,7 +882,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="ghost" id="zenSkip">Überspringen</button>
   </div>
   <div id="zenQuote" style="display:none">
-    <div class="mid">FRUST: 0 % 🧘</div>
+    <div class="mid">FRUST: 0 % <span class="em">🧘</span></div>
     <div class="quote" id="quoteTxt"></div>
     <div class="stats" id="zenStats" style="display:none">
       <div class="stat"><b id="sHits">0</b><span>Treffer</span></div>
@@ -1060,7 +1073,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 <div class="overlay page hidden" id="gchat"><div class="card">
   <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" data-close="gchat">✕</button>
-  <div class="mid">💬 CHAT</div>
+  <div class="mid"><span class="em">💬</span> CHAT</div>
   <div class="sub" style="margin:6px 0 8px">Für alle aus dem Kurs. Nachrichten bleiben <b>23 Stunden</b>, danach ist alles weg.</div>
   <div class="clist scroll" id="gList"></div>
   <div class="cnote" id="gNote"></div>
@@ -1224,8 +1237,8 @@ let saved = {qDeck:[],qPos:0,allKO:0,best:0,unlocked:[],hate:{},timeBest:0,bossW
   level:"easy",name:"",badge:"",badges:[],hitsAll:0,w:{},mv:{},zen:0,duelWins:0,wall:0,teamGames:0,seenHelp:false,recapSeen:false};
 try{ const old=JSON.parse(localStorage.getItem("frustbude3")||localStorage.getItem("frustbude2")||"{}"); Object.assign(saved,old); }catch(e){}
 // Kompletter Neustart (Ranglisten, Punkte, Abzeichen, Rekorde): Einstellungen und Spitzname bleiben
-const RESET_EPOCH="2026-11-10b";
-if(saved.epoch!==RESET_EPOCH){ const keep={}; ["sid","name","level","seenHelp","hintsSeen","muted","qDeck","qPos"].forEach(k=>{ if(saved[k]!==undefined) keep[k]=saved[k]; });
+const RESET_EPOCH="2026-11-11a";
+if(saved.epoch!==RESET_EPOCH){ const keep={}; ["sid","name","level","seenHelp","hintsSeen","muted","qDeck","qPos","cardTips"].forEach(k=>{ if(saved[k]!==undefined) keep[k]=saved[k]; });
   saved={qDeck:[],qPos:0,allKO:0,best:0,unlocked:[],hate:{},timeBest:0,bossWins:0,bossHard:0,bossOpen:false,sid:"",reported:[],samed:[],
     level:"easy",name:"",badge:"",badges:[],hitsAll:0,w:{},mv:{},zen:0,duelWins:0,wall:0,teamGames:0,seenHelp:false,recapSeen:false};
   Object.assign(saved,keep); saved.epoch=RESET_EPOCH; }
@@ -2090,16 +2103,16 @@ function startFrom(fn){ ensureAudio(); enableMotion(); hide("home"); hide("modeI
 
 /* ===================== Anleitung ===================== */
 const HELP=[
-  ()=>`<h3>🥊 Willkommen in der Frustbude!</h3><p>Tools nerven? Hier darfst du Dampf ablassen. Jede Boxbirne ist ein Tool aus dem Kurs.</p>
+  ()=>`<div class="hem">🥊</div><h3>Willkommen in der Frustbude!</h3><p>Tools nerven? Hier darfst du Dampf ablassen. Jede Boxbirne ist ein Tool aus dem Kurs.</p>
    <ul><li><span class="e">🎯</span><span>Ziel: Hau die Boxbirne K.O. und bring deinen Frust auf 0 %.</span></li>
    <li><span class="e">👑</span><span>Nach jeweils 3 besiegten Tools wartet der Endgegner.</span></li>
    <li><span class="e">🌍</span><span>Jeder Treffer zählt im Klassen-Zähler mit – komplett anonym.</span></li></ul>`,
-  ()=>`<h3>🍅 Waffen & OVERKILL</h3><ul>
+  ()=>`<div class="hem">🍅</div><h3>Waffen & OVERKILL</h3><ul>
    <li><span class="e">👇</span><span>Unten eine Waffe wählen, dann auf die Boxbirne ${touchDev?"tippen":"klicken"}.</span></li>
    <li><span class="e">🔓</span><span>🙌🏻 🚀 ❤️ schaltest du durch K.O.s und Combos frei.</span></li>
    <li><span class="e">💢</span><span>OVERKILL-Meter voll? ${touchDev?"Unten rechts auf 💢 tippen":"<kbd>Leertaste</kbd> drücken oder 💢 klicken"} – dann regnet es alles auf einmal!</span></li>
    <li><span class="e">🛡️</span><span>Fliegt etwas auf dich zu? Schnell wegtippen! Trifft es dich, bist du kurz <b>Overloaded</b> und kannst nicht schlagen.</span></li></ul>`,
-  ()=>`<h3>⚔️ Modi & Level</h3><ul>
+  ()=>`<div class="hem">⚔️</div><h3>Modi & Level</h3><ul>
    <li><span class="e">👊</span><span><b>Einfach draufhauen:</b> nur tippen, keine Gegenwehr, keine Regeln.</span></li>
    <li><span class="e">🥊</span><span><b>Freies Spiel:</b> Tool aussuchen, 3 K.O.s, dann der Endgegner. Jedes Tool kämpft anders!</span></li>
    <li><span class="e">⏱️</span><span><b>30 Sekunden:</b> so viele K.O.s wie möglich – mit Rangliste.</span></li>

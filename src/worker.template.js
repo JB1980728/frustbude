@@ -355,7 +355,8 @@ export class Table extends DurableObject {
 export class Lobby extends DurableObject {
   constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; this.chat = []; this.loaded = false; }
   // Chat für alle: bleibt 23 Stunden gespeichert, danach verschwindet er
-  fresh() { const cut = Date.now() - 23 * 3600000; this.chat = this.chat.filter(x => x.ts > cut); return this.chat; }
+  // Kompletter Neustart am 11.11.2026: älterer Chat wird verworfen
+  fresh() { const cut = Math.max(Date.now() - 23 * 3600000, 1794384789882); this.chat = this.chat.filter(x => x.ts > cut); return this.chat; }
   async fetch(req) {
     if (!this.loaded) { this.loaded = true; try { this.chat = (await this.ctx.storage.get("chat")) || []; } catch (e) { this.chat = []; } this.fresh(); }
     if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
