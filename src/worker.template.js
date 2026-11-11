@@ -276,6 +276,80 @@ export class Room extends DurableObject {
   }
 }
 
+/* ======================= Tool-Karten-Tisch (Kartenspiel, bis zu 4 Spieler) ======================= */
+__CARDS__
+const TURN_MS = 30000;
+export class Table extends DurableObject {
+  constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.bots = []; this.st = { code: "", phase: "lobby", hostId: null, round: 0 }; this.g = null; this.botT = null; this.turnT = null; }
+  async fetch(req) {
+    const url = new URL(req.url);
+    if (!this.st.code) this.st.code = (url.searchParams.get("code") || "").toUpperCase().slice(0, 8);
+    if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
+    if (this.conns.size >= 16) return new Response("Tisch voll", { status: 429 });
+    const pair = new WebSocketPair(); const [client, server] = Object.values(pair); server.accept();
+    const c = { id: crypto.randomUUID().slice(0, 8), ws: server, name: "", badge: "", sid: "", role: "spectator", joined: false, msgs: 0, msgWin: Date.now() };
+    this.conns.set(c.id, c);
+    server.addEventListener("message", e => this.onMsg(c, e.data));
+    server.addEventListener("close", () => this.onClose(c)); server.addEventListener("error", () => this.onClose(c));
+    return new Response(null, { status: 101, webSocket: client });
+  }
+  send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
+  humans() { return [...this.conns.values()].filter(c => c.joined && c.role === "player"); }
+  players() { return [...this.humans(), ...this.bots]; }
+  sync() {
+    const people = [...[...this.conns.values()].filter(c => c.joined), ...this.bots].map(p => ({ id: p.id, name: p.name, badge: p.badge, role: p.role, isBot: !!p.isBot }));
+    for (const c of this.conns.values()) if (c.joined) this.send(c, { t: "state", code: this.st.code, phase: this.st.phase, hostId: this.st.hostId, you: c.id, people, game: this.g ? CARDS.view(this.g, c.id) : null, ev: this.g ? this.g.ev : [] });
+    if (this.g) this.g.ev = [];
+  }
+  fill() { const used = new Set(this.bots.map(b => b.name)); while (this.players().length < 4) { const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name); this.bots.push({ id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player" }); } }
+  onMsg(c, raw) {
+    if (typeof raw !== "string" || raw.length > 400) return;
+    const now = Date.now(); if (now - c.msgWin > 1000) { c.msgWin = now; c.msgs = 0; } if (++c.msgs > 20) return;
+    let m; try { m = JSON.parse(raw); } catch (e) { return; }
+    const st = this.st;
+    if (m.t === "join" && !c.joined) {
+      c.name = cleanName(m.name) || "Anonym"; c.badge = cleanBadge(m.badge); c.sid = cleanSid(m.sid); c.joined = true;
+      if (st.phase === "lobby" && this.players().length >= 4 && this.bots.length) this.bots.pop();
+      if (st.phase === "lobby" && this.players().length < 4) { c.role = "player"; if (!st.hostId || !this.conns.has(st.hostId)) st.hostId = c.id; }
+      this.send(c, { t: "welcome", you: c.id, role: c.role }); this.sync(); return;
+    }
+    if (!c.joined) return;
+    if (m.t === "act" && st.phase === "play" && this.g && c.role === "player") {
+      const a = { t: String(m.a || ""), cid: Math.floor(Number(m.cid)), color: m.color, call: !!m.call };
+      if (CARDS.act(this.g, c.id, a)) this.after();
+      return;
+    }
+    if (m.t === "again" && st.phase === "over") { st.phase = "lobby"; this.g = null; this.sync(); return; }
+    if (st.phase !== "lobby" || st.hostId !== c.id) return;
+    if (m.t === "bots") { if (this.bots.length && this.players().length >= 4) this.bots = []; else this.fill(); this.sync(); return; }
+    if (m.t === "start") {
+      if (this.players().length < 2) this.fill();
+      const ps = this.players().slice(0, 4);
+      this.g = CARDS.newGame(ps.map(p => ({ id: p.id, name: p.name, bot: !!p.isBot })));
+      st.phase = "play"; st.round++; this.after(); return;
+    }
+  }
+  // Nach jedem Zug: allen den neuen Stand schicken, Bots ziehen lassen, Zeitlimit stellen
+  after() {
+    const g = this.g; clearTimeout(this.botT); clearTimeout(this.turnT);
+    if (g.phase === "over") { this.st.phase = "over"; this.sync(); return; }
+    this.sync();
+    const id = CARDS.cur(g);
+    if (g.bots[id]) { this.botT = setTimeout(() => { if (this.g === g && CARDS.cur(g) === id && g.phase === "play") { CARDS.act(g, id, CARDS.botMove(g, id)); this.after(); } }, 900 + Math.random() * 700); return; }
+    // Wer 30 Sekunden nichts tut, für den spielt kurz der Bot (damit niemand ewig wartet)
+    this.turnT = setTimeout(() => { if (this.g === g && CARDS.cur(g) === id && g.phase === "play") { g.ev.push({ k: "slow", id, s: ++g.seq }); CARDS.act(g, id, CARDS.botMove(g, id)); this.after(); } }, TURN_MS);
+  }
+  onClose(c) {
+    if (!this.conns.has(c.id)) return; this.conns.delete(c.id);
+    const st = this.st;
+    if (st.hostId === c.id) { const p = this.humans()[0]; st.hostId = p ? p.id : null; }
+    // Wer mitten im Spiel geht, wird von einem Bot ersetzt
+    if (this.g && st.phase === "play" && this.g.hands[c.id]) { this.g.bots[c.id] = true; this.g.names[c.id] += " (Bot)"; if (CARDS.cur(this.g) === c.id) this.after(); }
+    if (![...this.conns.values()].some(x => x.joined)) { clearTimeout(this.botT); clearTimeout(this.turnT); this.g = null; this.bots = []; st.phase = "lobby"; return; }
+    this.sync();
+  }
+}
+
 /* ======================= Treffpunkt: Wer ist online, offene Duelle, Herausforderungen ======================= */
 export class Lobby extends DurableObject {
   constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.rooms = new Map(); this.syncT = null; this.chat = []; this.loaded = false; }
@@ -313,10 +387,10 @@ export class Lobby extends DurableObject {
     if (m.t === "chat") { const r = chatCheck(c, m.text); if (r.err !== undefined) { if (r.err) this.send(c, { t: "chatErr", msg: r.err }); return; }
       this.fresh(); this.chat.push(r.msg); if (this.chat.length > 150) this.chat.shift(); this.ctx.storage.put("chat", this.chat).catch(() => {}); const s = JSON.stringify(r.msg); for (const o of this.conns.values()) { try { o.ws.send(s); } catch (e) {} } return; }
     if (m.t === "open" && code.length >= 4) {
-      const cap = m.format === "2v2" ? 4 : 2, count = Math.max(1, Math.min(cap, Math.floor(Number(m.count) || 1)));
+      const fmt = m.format === "2v2" || m.format === "cards" ? m.format : "1v1", cap = fmt === "1v1" ? 2 : 4, count = Math.max(1, Math.min(cap, Math.floor(Number(m.count) || 1)));
       const r = this.rooms.get(code); if (r && r.by !== c.id) return;
       if (!r && [...this.rooms.values()].filter(x => x.by === c.id).length >= 2) return;
-      this.rooms.set(code, { code, by: c.id, name: c.name || "Jemand", format: m.format === "2v2" ? "2v2" : "1v1", count, cap, ts: now, ch: m.live ? 0 : (r ? r.ch : 0), live: !!m.live, title: m.live ? cleanText(m.title, 70).replace(/\n/g, " ") : "" }); this.sync(); return;
+      this.rooms.set(code, { code, by: c.id, name: c.name || "Jemand", format: fmt, count, cap, ts: now, ch: m.live ? 0 : (r ? r.ch : 0), live: !!m.live, title: m.live ? cleanText(m.title, 70).replace(/\n/g, " ") : "" }); this.sync(); return;
     }
     if (m.t === "close" && code) { const r = this.rooms.get(code); if (r && r.by === c.id) { this.rooms.delete(code); this.sync(); } return; }
     if (m.t === "challenge" && code && now - c.lastCh > 20000) {
@@ -347,6 +421,14 @@ export default {
     if (path === "/api/lobby") {
       if (!env.LOBBY) return json({ error: "no_lobby" }, 503);
       return env.LOBBY.get(env.LOBBY.idFromName("main")).fetch(req);
+    }
+
+    // Tool-Karten-Tisch (WebSocket)
+    const tb = path.match(/^\/api\/table\/([A-Z0-9]{4,8})$/);
+    if (tb) {
+      if (!env.TABLES) return json({ error: "no_tables" }, 503);
+      const u = new URL(req.url); u.searchParams.set("code", tb[1]);
+      return env.TABLES.get(env.TABLES.idFromName(tb[1])).fetch(new Request(u.toString(), req));
     }
 
     // Mehrspieler-Raum (WebSocket)

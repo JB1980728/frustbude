@@ -5,6 +5,10 @@ root = pathlib.Path(__file__).parent
 html = (root / "public" / "index.html").read_text(encoding="utf-8")
 tpl = (root / "src" / "worker.template.js").read_text(encoding="utf-8")
 fight = (root / "src" / "fight.js").read_text(encoding="utf-8")
+cards = (root / "src" / "cards.js").read_text(encoding="utf-8")
+assert html.count("/*__CARDS__*/") == 1 and tpl.count("__CARDS__") == 1
+html = html.replace("/*__CARDS__*/", cards, 1)
+tpl = tpl.replace("__CARDS__", cards, 1)
 assert html.count("/*__FIGHT__*/") == 1 and tpl.count("__FIGHT__") == 1
 html = html.replace("/*__FIGHT__*/", fight, 1)
 import base64

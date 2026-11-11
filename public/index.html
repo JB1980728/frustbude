@@ -518,6 +518,73 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .oroom.live .dot{width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 0 rgba(239,68,68,.6);animation:livePulse 1.4s infinite;flex:none;margin:0 3px}
 .oroom.live small{color:#fca5a5}
 @keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}70%{box-shadow:0 0 0 8px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+
+/* ===================== Tool-Karten ===================== */
+.m-cards{background:linear-gradient(180deg,#5eead4,#0d9488);border-color:#115e59;color:#fff}
+.cmjoin{display:flex;gap:8px;margin-top:12px}.cmjoin .cta{width:auto;padding:10px 16px;font-size:16px}#cmEntry .cta,#cmLobby .cta{margin-top:8px}#cmLobby .lhead{display:flex;gap:6px;margin-top:12px;align-items:stretch;flex-wrap:wrap;justify-content:center}#cmLobby .lhead .cta{width:auto;flex:1;font-size:14px;padding:9px 8px;margin:0}.cmjoin input{flex:1;min-width:0;margin:0;text-align:center;letter-spacing:6px;font-weight:900;font-size:18px;text-transform:uppercase}
+#cmSeats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0 8px}
+.cseat{display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);font-weight:900;font-size:14px;min-width:0}
+.cseat span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cseat.empty{border-style:dashed;color:var(--muted);font-weight:700}.cseat.me{border-color:#ffd23f}
+#cards{position:fixed;left:0;top:var(--vt,0px);width:100%;height:var(--vh,100%);z-index:15;display:flex;flex-direction:column;overflow:hidden;
+  background:radial-gradient(120% 70% at 50% 45%,#134e4a 0%,#0f2a3a 45%,#12061f 100%);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);user-select:none;-webkit-user-select:none}
+#cards.hidden{display:none}
+.ctop{display:flex;align-items:center;gap:8px;padding:8px 10px 2px}.ctitle{flex:1;text-align:center;font-family:Bungee,Nunito,system-ui;font-size:17px;letter-spacing:1px;color:#99f6e4}
+.cbtn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:16px;flex:none}
+#cSeats{display:flex;justify-content:center;gap:8px;padding:6px 10px 0}
+.oppo{flex:1 1 0;max-width:150px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 6px 8px;border-radius:16px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);transition:all .3s;position:relative}
+.oppo .nm{font-weight:900;font-size:12.5px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oppo .mini{display:flex;height:26px;align-items:flex-end}.oppo .mini i{width:15px;height:22px;border-radius:3px;margin-left:-8px;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:1px solid rgba(255,255,255,.35);box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.oppo .mini i:first-child{margin-left:0}.oppo .cnt{font-size:11px;font-weight:900;color:var(--muted)}
+.oppo.turn{border-color:#5eead4;background:rgba(94,234,212,.14);box-shadow:0 0 18px rgba(94,234,212,.35);transform:translateY(2px)}
+.oppo .last{position:absolute;top:-8px;right:-4px;background:#ef4444;color:#fff;font-size:9.5px;font-weight:900;padding:2px 6px;border-radius:8px;transform:rotate(6deg)}
+.ctable{flex:1;position:relative;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cfelt{position:absolute;left:4%;right:4%;top:6%;bottom:6%;border-radius:50%;background:radial-gradient(closest-side,rgba(20,184,166,.22),rgba(20,184,166,.05) 70%,transparent);border:2px solid rgba(153,246,228,.08)}
+.ccenter{position:relative;display:flex;align-items:center;gap:clamp(22px,8vw,46px)}
+.cdeck{position:relative;width:var(--cw2);height:var(--ch2);cursor:pointer}
+.cdeck .tc{position:absolute;left:0;top:0;width:100%;height:100%}.cdeck .tc:nth-child(1){transform:translate(4px,4px)}.cdeck .tc:nth-child(2){transform:translate(2px,2px)}
+.cdeck.can{animation:deckPulse 1.4s infinite}.cdeck .dn{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:var(--muted)}
+@keyframes deckPulse{50%{filter:drop-shadow(0 0 12px rgba(94,234,212,.9))}}
+.cpilewrap{position:relative;width:var(--cw2);height:var(--ch2)}#cPile{position:absolute;inset:0}#cPile .tc{position:absolute;inset:0;width:100%;height:100%}
+.cdir{position:absolute;right:-30px;top:-22px;font-size:26px;color:#99f6e4;opacity:.75;transition:transform .5s}.cdir.ccw{transform:scaleX(-1)}
+.ccolor{margin-top:28px;padding:5px 14px;border-radius:999px;font-weight:900;font-size:13px;color:#fff;box-shadow:0 0 22px currentColor;transition:background .4s}
+.cmsg{position:absolute;left:50%;top:8%;transform:translate(-50%,0) scale(.9);opacity:0;background:rgba(15,23,42,.92);border:1.5px solid rgba(255,255,255,.18);color:#fff;font-weight:900;font-size:14px;padding:8px 14px;border-radius:14px;width:max-content;max-width:90%;text-align:center;line-height:1.3;transition:all .25s;pointer-events:none;z-index:3}
+.cmsg.on{opacity:1;transform:translate(-50%,0) scale(1)}
+.cstatus{text-align:center;font-weight:900;font-size:14.5px;color:#e2e8f0;padding:2px 12px 0;min-height:22px}.cstatus.me{color:#5eead4}
+.ctimer{height:4px;margin:5px auto 0;width:min(240px,60%);border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;visibility:hidden}.ctimer.on{visibility:visible}.ctimer i{display:block;height:100%;background:#5eead4;width:100%}
+.cact{display:none;justify-content:center;gap:8px;padding:6px 0 0}.cact.on{display:flex}.cact .cta{width:auto;margin:0;padding:9px 18px;font-size:16px}.cact .ghost{margin:0}
+#cCall{display:none;align-self:center;margin:6px 0 0;padding:8px 18px;border-radius:999px;border:2px solid #fbbf24;background:rgba(251,191,36,.12);color:#fde047;font-weight:900;font-size:14px;letter-spacing:.5px}
+#cCall.on{display:block}#cCall.armed{background:linear-gradient(180deg,#fde047,#f59e0b);color:#3b1d00;animation:callPulse .8s infinite}
+@keyframes callPulse{50%{box-shadow:0 0 0 6px rgba(251,191,36,.25)}}
+#cHand{position:relative;height:calc(var(--ch) * 1.25 + 14px);margin:4px 0 calc(8px + env(safe-area-inset-bottom));flex:none}
+#cHand.two{height:calc(var(--ch) * 2 + 18px)}
+#cHand .tc{position:absolute;top:12px;transition:transform .25s,opacity .25s,filter .25s,box-shadow .25s}
+#cHand .tc.dim{filter:brightness(.55) saturate(.6)}#cHand .tc.ok{box-shadow:0 0 0 2px #5eead4,0 8px 18px rgba(0,0,0,.5)}
+#cHand .tc.new{animation:cardIn .45s ease-out}
+@keyframes cardIn{from{opacity:0;translate:0 40px}}
+#cHand .tc.nope{animation:nope .3s}@keyframes nope{25%{translate:-6px 0}75%{translate:6px 0}}
+:root{--cw:62px;--ch:92px;--cw2:86px;--ch2:128px}
+@media (max-width:360px){:root{--cw:56px;--ch:83px;--cw2:76px;--ch2:113px}}
+@media (min-width:700px){:root{--cw:78px;--ch:116px;--cw2:104px;--ch2:154px}}
+.tc{width:var(--cw);height:var(--ch);border-radius:11px;position:relative;background:var(--cc);border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.45);overflow:hidden;color:#fff;font-family:Nunito,system-ui;flex:none}
+.tc .ov{position:absolute;left:12%;right:12%;top:20%;bottom:20%;background:#fff;border-radius:50%;transform:rotate(-24deg);opacity:.95}
+.tc .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:calc(var(--cw) * .44);color:var(--cc);text-shadow:0 1px 0 rgba(0,0,0,.15);z-index:1;letter-spacing:-1px}
+.tc .cn{position:absolute;top:2px;left:5px;font-weight:900;font-size:calc(var(--cw) * .2);line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.4);z-index:1}
+.tc .cn.b{top:auto;left:auto;bottom:2px;right:5px;transform:rotate(180deg)}
+.tc .tl{position:absolute;left:0;right:0;bottom:calc(var(--ch) * .15);text-align:center;font-size:calc(var(--cw) * .135);font-weight:900;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.tc .ti{position:absolute;right:4px;top:3px;font-size:calc(var(--cw) * .2);z-index:2}
+.tc.w{background:conic-gradient(from 45deg,#3b82f6 0 25%,#d946ef 0 50%,#22c55e 0 75%,#f59e0b 0)}
+.tc.w .ov{background:#1e1b2e}.tc.w .big{color:#fff}
+.tc.back{background:repeating-linear-gradient(45deg,#5b21b6 0 8px,#4c1d95 8px 16px);border-color:#ede9fe}
+.tc.back .bk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Bungee,Nunito,system-ui;font-size:calc(var(--cw2) * .15);line-height:1.1;color:#fde047;text-shadow:0 2px 0 #3b0764}
+.cpilewrap .tc{--cw:var(--cw2);--ch:var(--ch2)}
+#cPick,#cOver{position:absolute;inset:0;background:rgba(5,10,20,.72);display:flex;align-items:center;justify-content:center;z-index:5;padding:20px}
+#cPick.hidden,#cOver.hidden{display:none}
+.cpickbox{width:min(340px,100%);background:linear-gradient(180deg,#123a3c,#0f1d2e);border:1.5px solid rgba(94,234,212,.35);border-radius:22px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:10px}
+.cpickbox b{font-size:17px}.cpickbox small{color:var(--muted);font-weight:700}
+#cPickBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#cPickBtns button{padding:14px 6px;border-radius:14px;border:2px solid rgba(255,255,255,.8);color:#fff;font-weight:900;font-size:15px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+#cPickBtns button small{display:block;font-size:10.5px;opacity:.9;color:#fff}
+.cwin{font-size:56px;line-height:1}
 </style>
 </head>
 <body>
@@ -584,6 +651,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <button class="mode m-time" id="timeBtn"><span class="me">⏱️</span><span class="mt"><b>30 Sekunden</b><small>So viele K.O.s wie möglich.</small></span></button>
     <button class="mode m-boss" id="bossBtn"><span class="me" id="bossE">👑</span><span class="mt"><b>Endgegner</b><small id="bossSub">Mega-Bug rennt weg und wirft.</small></span></button>
     <button class="mode m-duel" id="duelBtn"><span class="me">⚔️</span><span class="mt"><b>Duell</b><small>Zwei Tools boxen gegeneinander.</small></span></button>
+    <button class="mode m-cards" id="cardsBtn"><span class="me">🃏</span><span class="mt"><b>Tool-Karten</b><small>Zum Entspannen: Karten legen wie bei Uno.</small></span></button>
   </div>
   <div class="seglbl">Level (nicht bei „Draufhauen“)</div>
   <div class="seg" id="levelSeg">
@@ -698,6 +766,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin:8px 0 10px">Dein Spitzname erscheint in Duellen und Ranglisten. Frei erfunden ist völlig okay.</div>
   <input class="field" id="nameInput" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
   <div class="nametag" id="profTag" style="align-self:center"></div>
+  <div class="modehint" id="profCards" style="text-align:center;margin-top:6px"></div>
   <div class="seglbl">Abzeichen am Namen – tippe auf eines, um es zu tragen</div>
   <div class="scroll"><div class="badges" id="badgeList"></div></div>
   <button class="cta sm" id="profSave" style="margin-top:12px">SPEICHERN ✓</button>
@@ -766,6 +835,54 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 </div></div>
 
 <!-- Duell: Tauziehen -->
+<!-- ===================== Tool-Karten: Menü und Tisch ===================== -->
+<div class="overlay hidden" id="cardsMenu"><div class="card">
+  <button class="x" id="cmX">✕</button>
+  <div id="cmEntry">
+    <div class="mid" style="font-size:clamp(26px,8.5vw,40px);padding:0 34px">TOOL-KARTEN</div>
+    <div class="sub" style="margin-bottom:12px">Entspannt Karten legen – wie Uno, nur mit deinen Tools.</div>
+    <div class="seglbl">Gegen Bots spielen</div>
+    <div class="seg" id="cmBots"><button data-n="1">1 Bot</button><button data-n="2">2 Bots</button><button data-n="3">3 Bots</button></div>
+    <button class="cta" id="cmSolo">LOSLEGEN 🃏</button>
+    <div class="seglbl" style="margin-top:14px">Mit anderen aus dem Kurs</div>
+    <div id="cmOpen"></div>
+    <button class="cta alt sm" id="cmCreate">TISCH ERSTELLEN &amp; EINLADEN</button>
+    <div class="cmjoin"><input class="field" id="cmCode" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="cta sm" id="cmJoin">Beitreten</button></div>
+  </div>
+  <div id="cmLobby" style="display:none">
+    <div class="mid" style="font-size:clamp(26px,8.5vw,40px);padding:0 34px">DEIN TISCH</div>
+    <div class="lhead"><button class="lcode" id="cmCodeBox" aria-label="Code kopieren"><small>Code</small><b id="cmCodeTxt">-----</b><span class="cp" id="cmCp">📋</span></button>
+      <button class="cta sm" id="cmShare">🔗 Teilen</button><button class="cta sm" id="cmInvite">📣 Alle einladen</button></div>
+    <div id="cmSeats"></div>
+    <div class="modehint" id="cmHint"></div>
+    <button class="cta alt sm" id="cmBotFill">🤖 Freie Plätze mit Bots füllen</button>
+    <button class="cta" id="cmStart">SPIEL STARTEN 🃏</button>
+    <button class="ghost" id="cmLeave">Tisch verlassen</button>
+  </div>
+</div></div>
+
+<div id="cards" class="hidden">
+  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle">🃏 TOOL-KARTEN</div><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
+  <div id="cSeats"></div>
+  <div class="ctable">
+    <div class="cfelt"></div>
+    <div class="ccenter">
+      <div class="cdeck" id="cDeck"><div class="tc back"></div><div class="tc back"></div><div class="tc back"><span class="bk">FRUST<br>·BUDE</span></div><span class="dn" id="cDeckN"></span></div>
+      <div class="cpilewrap"><div id="cPile"></div><div class="cdir" id="cDir">↻</div></div>
+    </div>
+    <div class="ccolor" id="cColor"></div>
+    <div class="cmsg" id="cMsg"></div>
+  </div>
+  <div class="cstatus"><span id="cStatus"></span><div class="ctimer"><i id="cTimer"></i></div></div>
+  <div class="cact" id="cAct">
+    <button class="cta sm" id="cPlayDrawn">Ausspielen</button><button class="ghost" id="cKeep">Behalten</button>
+  </div>
+  <button id="cCall">📣 LETZTE KARTE!</button>
+  <div id="cHand"></div>
+  <div id="cPick" class="hidden"><div class="cpickbox"><b>Welche Farbe wünschst du dir?</b><div id="cPickBtns"></div><button class="ghost" id="cPickX">Abbrechen</button></div></div>
+  <div id="cOver" class="hidden"><div class="cpickbox"><div class="cwin" id="cWinE">🏆</div><b id="cWinT"></b><small id="cWinS"></small><button class="cta" id="cAgain">NOCHMAL 🃏</button><button class="ghost" id="cBack">Zurück zur Startseite</button></div></div>
+</div>
+
 <div id="fight" class="hidden">
   <div class="fbar">
     <div class="fside L"><div class="fn"><small id="fYouTag">DU</small><span id="fNameL"></span></div><span class="pips" id="fPipsL"></span><div class="fsub" id="fSubL"></div><div class="fpow" id="fPowL"></div></div>
@@ -836,6 +953,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 <script>
 /*__FIGHT__*/
+/*__CARDS__*/
 (function(){
   const vv=window.visualViewport, root=document.documentElement;
   function fit(){
@@ -1892,6 +2010,7 @@ async function sendWall(){
 let profBadge="";
 function openProfile(){ $("nameInput").value=saved.name||""; profBadge=saved.badge; renderProfile(); show("profile"); }
 function renderProfile(){
+  $("profCards").textContent=saved.cardsWins?`🃏 Tool-Karten gewonnen: ${saved.cardsWins}×`:"";
   const tag=$("profTag"); const nm=$("nameInput").value.trim()||"Dein Spitzname"; const bo=BADGES.find(b=>b.id===profBadge);
   tag.innerHTML=""; tag.append(document.createTextNode(nm+" ")); if(bo){ const sm=document.createElement("small"); sm.textContent=`${bo.e} ${bo.t}`; tag.appendChild(sm); }
   const box=$("badgeList"); box.innerHTML="";
@@ -2003,6 +2122,8 @@ function modeInfo(kind,o){
       l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🎯","Grüne Zielscheibe? Triff sie – dreifacher Schaden!"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
+    cards:{e:"🃏",t:"TOOL-KARTEN",g:"Zum Entspannen: Leg deine Karten ab wie bei Uno. Wer zuerst keine Karten mehr hat, gewinnt.",
+      l:[["🎨","4 Farben = 4 Tool-Gruppen: Kommunikation (blau), Design (pink), KI (grün), Analyse (orange)"],["🃏","Du darfst eine Karte legen, wenn Farbe oder Zahl/Zeichen zur obersten Karte passt. Passende Karten leuchten"],["📥","Nichts passt? Tipp auf den Stapel und zieh eine Karte. Passt sie, darfst du sie gleich legen"],["⊘","Aussetzen · ⇄ Richtung drehen · +2 der Nächste zieht 2 und setzt aus"],["🌈","Farbwahl: Du bestimmst die nächste Farbe · 👑 Mega-Bug +4: Farbe wählen, der Nächste zieht 4"],["📣","Hast du nur noch 2 Karten, tipp vor dem Legen auf „Letzte Karte!“ – sonst ziehst du 2 Strafkarten"],["👥","Allein gegen 1–3 Bots oder mit anderen am Tisch (Code teilen). Online hat jeder 30 Sekunden pro Zug"]]},
     fight:{e:"⚔️",t:"DUELL: TAUZIEHEN",g:"Eine Boxbirne hängt zwischen euch. Hau drauf, so schnell du kannst – jeder Treffer schiebt sie zum Gegner. Erreicht sie deine Seite, verlierst du die Runde.",
       l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⚡","Superkräfte tauchen am Rand auf, weit weg von der Boxbirne – wer sie zuerst trifft, bekommt sie: ⚡ Turbo (doppelt schieben), 🧊 Einfrieren (Gegner kurz lahm), 💥 Mega-Schlag (großer Schubs)"],["🔥","Endspurt: In den letzten 10 Sekunden zählt jeder Treffer doppelt – Aufholen geht immer!"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
         .concat((o&&o.level||saved.level)==="hard"?[["🛡️","Schwer: Die Boxbirne wirft Sachen nach dir – antippen, sonst bist du kurz „Overloaded“"]]:[]).concat(touchDev?[]:[["⌨️","Am Computer: Leertaste oder jede Buchstabentaste"]])},
@@ -2022,14 +2143,14 @@ $("miBack").onclick=()=>{ hide("modeIntro"); miGo=null; if(R.ws||R.st) leaveRoom
 /* ===================== Treffpunkt: wer ist online, offene Duelle, Herausforderungen ===================== */
 const LB={ws:null,people:[],rooms:[],retry:1000,queue:null,lastKey:"",ann:""};
 function lbSend(o){ if(LB.ws&&LB.ws.readyState===1) LB.ws.send(JSON.stringify(o)); }
-function isBusy(){ return FT.on||gameRunning(); }
+function isBusy(){ return FT.on||CT.on||gameRunning(); }
 function lbConnect(){
   let ws; try{ ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/lobby"); }catch(e){ return; }
   LB.ws=ws;
   ws.onopen=()=>{ LB.retry=1000; LB.lastKey=""; ws.send(JSON.stringify({t:"hello",name:saved.name,sid:saved.sid,busy:isBusy()})); LB.ann=""; if(R.st) renderLobby(); };
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
-    if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; LB.roomsAt=Date.now(); renderOnline(); renderOpenRooms(); checkChallenges(); }
-    else if(m.t==="challenge"){ if(R.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws) showChallenge(); }
+    if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; LB.roomsAt=Date.now(); renderOnline(); renderOpenRooms(); renderCardTables(); checkChallenges(); }
+    else if(m.t==="challenge"){ if(R.code===m.code||CT.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws&&!CT.ws) showChallenge(); }
     else if(m.t==="chat"||m.t==="chatlog") onLobbyChat(m);
     else if(m.t==="chatErr") chatNote(m.msg);
     else if(m.t==="challenged"){ toast(m.n>0?`📣 ${m.n} ${m.n===1?"Person wurde":"Leute wurden"} eingeladen!`:"Gerade ist sonst niemand online – teil den Link in Slack.",2600); } };
@@ -2044,7 +2165,7 @@ function renderOnline(){
 }
 function renderOpenRooms(){
   const box=$("openRooms"); if(!box) return; box.innerHTML="";
-  const rooms=LB.rooms.filter(r=>r.code!==R.code&&r.count<r.cap&&!r.live), live=LB.rooms.filter(r=>r.code!==R.code&&r.live);
+  const rooms=LB.rooms.filter(r=>r.format!=="cards"&&r.code!==R.code&&r.count<r.cap&&!r.live), live=LB.rooms.filter(r=>r.format!=="cards"&&r.code!==R.code&&r.live);
   live.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · ${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} läuft gerade</small></span><button>👀 Zuschauen</button>`;
     d.querySelector(".nm").textContent=r.title||`${r.name} kämpft`; d.querySelector("button").onclick=()=>watchOpen(r.code); box.appendChild(d); });
   if(!rooms.length&&live.length) return;
@@ -2054,7 +2175,7 @@ function renderOpenRooms(){
 }
 function watchOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Zuschauen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"spectator"); }
 function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Mitboxen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
-function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; $("chBox").classList.add("on"); sfx.ding(); clearTimeout(LB.chT); }
+function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=c.format==="cards"?`🃏 ${c.name} sucht Mitspieler für Tool-Karten`:`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; LB.chFmt=c.format; $("chGo").textContent=c.format==="cards"?"🃏 Mitspielen":"⚔️ Mitmachen"; $("chBox").classList.add("on"); sfx.ding(); clearTimeout(LB.chT); }
 function hideChallenge(){ $("chBox").classList.remove("on"); }
 LB.dismissed=new Set();
 function checkChallenges(){
@@ -2062,10 +2183,10 @@ function checkChallenges(){
   const open=LB.rooms.filter(r=>!r.live&&r.ch!==null&&r.ch!==undefined&&age(r)<600&&r.code!==R.code&&r.count<r.cap&&!LB.dismissed.has(r.code)).sort((a,b)=>age(a)-age(b));
   const shown=$("chBox").classList.contains("on");
   if(shown&&!open.some(r=>r.code===LB.chCode)){ hideChallenge(); return; } // Gegner gefunden oder Raum zu
-  if(shown||isBusy()||R.ws||!open.length) return;
+  if(shown||isBusy()||R.ws||CT.ws||!open.length) return;
   const r=open[0]; LB.queue={code:r.code,name:r.name,format:r.format,until:now+60000}; showChallenge();
 }
-$("chGo").onclick=()=>joinOpen(LB.chCode);
+$("chGo").onclick=()=>LB.chFmt==="cards"?joinTable(LB.chCode):joinOpen(LB.chCode);
 $("chX").onclick=()=>{ if(LB.chCode) LB.dismissed.add(LB.chCode); hideChallenge(); };
 // Raum im Treffpunkt anmelden, solange Plätze frei sind
 function lbAnnounce(){
@@ -2074,13 +2195,14 @@ function lbAnnounce(){
   // Laufende Kämpfe auch melden, damit andere zuschauen können
   else if(st&&st.phase!=="lobby"&&st.hostId===R.you){ const ps=st.people.filter(p=>p.role==="player"), nm=t=>ps.filter(p=>p.team===t).map(p=>(p.isBot?"🤖 ":"")+p.name).join(" & ")||"?";
     key=`${st.code}|${st.format}|${ps.filter(p=>!p.isBot).length}|live|${nm("A")} vs ${nm("B")}`; }
+  if(!key&&CT.ws&&CT.st&&CT.st.hostId===CT.you&&CT.st.phase==="lobby"){ const n=CT.st.people.filter(p=>p.role==="player"&&!p.isBot).length; if(n<4&&!CT.st.people.some(p=>p.isBot)) key=`${CT.st.code}|cards|${n}`; }
   if(key===LB.ann) return;
   if(LB.ann&&!key) lbSend({t:"close",code:LB.ann.split("|")[0]});
   if(key){ const [code,format,count,live,title]=key.split("|"); lbSend({t:"open",code,format,count:+count,live:!!live,title:title||""}); }
   LB.ann=key;
 }
 setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
-  if(!b&&!R.ws&&LB.queue) showChallenge(); checkChallenges(); lbAnnounce(); },1000);
+  if(!b&&!R.ws&&!CT.ws&&LB.queue) showChallenge(); checkChallenges(); lbAnnounce(); },1000);
 // Echtzeit: Lebenszeichen alle 8 Sekunden; Seite im Hintergrund = offline, wieder sichtbar = sofort online
 setInterval(()=>lbSend({t:"ping"}),8000);
 document.addEventListener("visibilitychange",()=>{ if(document.hidden){ if(LB.ws){ const w=LB.ws; LB.ws=null; try{ w.close(); }catch(e){} } } else if(!LB.ws){ LB.retry=1000; lbConnect(); } });
@@ -2627,7 +2749,213 @@ resize(); renderWeapons(); renderChips(); updateHUD(); updateRage(); renderLevel
 state="idle"; dropY=0;
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>drawBg());
 loadStats();
+/* ===================== Tool-Karten: Spiel im Browser (allein gegen Bots oder online am Tisch) ===================== */
+const CT={on:false,local:false,g:null,ws:null,st:null,you:null,code:"",view:null,armed:false,lastHand:new Set(),botT:null,quitT:0,retry:0,nBots:3,picked:null};
+const CSHORT={ga:"Analytics",onepage:"Onepage",wix:"Wix",miro:"Miro",slack:"Slack",meet:"Meet",classroom:"Classroom",coda:"Coda",posthog:"PostHog",clarity:"Clarity",mixpanel:"Mixpanel",amplitude:"Amplitude",umami:"Umami",contentsquare:"Contentsq.",chatgpt:"ChatGPT",gemini:"Gemini",stitch:"Stitch",figma:"Figma",claude:"Claude",joker:"Farbwahl",boss:"Mega-Bug"};
+const CICON=id=>id==="joker"?"🌈":id==="boss"?"👑":(NAMES[id]&&NAMES[id].ic)||"🃏";
+const CBIG={skip:"⊘",rev:"⇄",d2:"+2",wild:"🌈",w4:"+4"};
+const CLBL={skip:"⊘",rev:"⇄",d2:"+2",wild:"★",w4:"+4"};
+const cgrp=c=>CARDS.GROUPS[c];
+function cardEl(card){
+  const d=document.createElement("div"), w=card.c==="w";
+  d.className="tc"+(w?" w":""); if(!w) d.style.setProperty("--cc",cgrp(card.c).color);
+  const big=CBIG[card.v]||card.v, lbl=CLBL[card.v]||card.v;
+  d.innerHTML=`<span class="ov"></span><span class="big">${big}</span><span class="cn">${lbl}</span><span class="cn b">${lbl}</span><span class="ti">${CICON(card.tool)}</span><span class="tl">${CSHORT[card.tool]||""}</span>`;
+  return d;
+}
+function cName(id){ const p=CT.view&&CT.view.players.find(x=>x.id===id); return id===CT.you?"Du":(p?p.name:"?"); }
+let cMsgT=0;
+function cMsg(t,ms){ const m=$("cMsg"); m.textContent=t; m.classList.add("on"); clearTimeout(cMsgT); cMsgT=setTimeout(()=>m.classList.remove("on"),ms||1700); }
+const cSnd={ card(){ noise(.12,"bandpass",1800,600,.22,1.2); tone(.06,"sine",520,700,.08); }, draw(){ noise(.1,"highpass",2500,1500,.12); }, turn(){ [660,880].forEach((f,i)=>tone(.18,"sine",f,f,.1,i*.09)); }, soft(){ tone(.2,"sine",440,330,.12); } };
+
+// ---------- Ereignisse (Karte gelegt, ausgesetzt …) als kurze Meldung + Ton ----------
+function cEvents(ev){
+  if(!ev||!ev.length) return;
+  for(let i=0;i<ev.length;i++){ const e=ev[i], nx=ev[i+1];
+    if(e.k==="play"){ cSnd.card(); const v=e.card.v, victim=nx&&nx.k==="draw"?ev.find((x,j)=>j>i&&x.k==="skip"):null;
+      CT.fly={id:e.id,cid:e.card.id};
+      if(v==="wild") cMsg(`🌈 ${cName(e.id)} ${e.id===CT.you?"wünschst":"wünscht sich"} ${cgrp(e.color).name}`);
+      else if(v==="w4"){ const s=ev.find((x,j)=>j>i&&x.k==="skip"); cMsg(`👑 Mega-Bug! ${s?cName(s.id):"?"} ${s&&s.id===CT.you?"ziehst":"zieht"} 4 – Farbe: ${cgrp(e.color).name}`,2200); }
+      else if(v==="d2"){ const s=ev.find((x,j)=>j>i&&x.k==="skip"); cMsg(`+2 von ${CSHORT[e.card.tool]}: ${s?cName(s.id):"?"} ${s&&s.id===CT.you?"ziehst":"zieht"} 2`,2000); }
+      else if(v==="skip"){ const s=ev.find((x,j)=>j>i&&x.k==="skip"); cMsg(`⊘ ${CSHORT[e.card.tool]}: ${s?cName(s.id):"?"} ${s&&s.id===CT.you?"setzt":"setzt"} aus`); }
+      else if(v==="rev") cMsg("⇄ Richtung gedreht"); }
+    else if(e.k==="draw"&&e.id===CT.you) cSnd.draw();
+    else if(e.k==="call"){ cMsg(`📣 ${cName(e.id)}: „Letzte Karte!“`,1800); }
+    else if(e.k==="forgot"){ cMsg(`😅 ${cName(e.id)} ${e.id===CT.you?"hast":"hat"} „Letzte Karte!“ vergessen: +2`,2400); cSnd.soft(); }
+    else if(e.k==="slow"){ cMsg(`⏰ ${cName(e.id)} war zu langsam – der Bot hat gespielt`,2400); }
+  }
+}
+
+// ---------- Darstellung ----------
+function cRender(){
+  const v=CT.view; if(!v) return;
+  const me=CT.you, my=v.turn===me&&v.phase==="play", n=v.players.length, mi=v.players.findIndex(p=>p.id===me);
+  // Gegner im Uhrzeigersinn nach dir
+  const others=[]; for(let k=1;k<n;k++) others.push(v.players[(mi+k)%n]);
+  $("cSeats").innerHTML=others.map(p=>`<div class="oppo${p.id===v.turn?" turn":""}" data-id="${p.id}"><span class="nm">${p.bot?"🤖 ":""}${esc(p.name)}</span><span class="mini">${"<i></i>".repeat(Math.min(p.n,8))}</span><span class="cnt">${p.n} ${p.n===1?"Karte":"Karten"}</span>${p.n===1?'<span class="last">LETZTE!</span>':""}</div>`).join("");
+  // Ablagestapel
+  const pile=$("cPile"); pile.innerHTML="";
+  v.under.forEach((c,i)=>{ const el=cardEl(c); el.style.transform=`rotate(${((c.id*37)%24)-12}deg)`; pile.appendChild(el); });
+  const topEl=cardEl(v.top); topEl.style.transform=`rotate(${((v.top.id*37)%16)-8}deg)`; pile.appendChild(topEl);
+  if(CT.fly&&CT.fly.cid===v.top.id){ const src=CT.fly.id===me?CT.flyFrom:document.querySelector(`.oppo[data-id="${CT.fly.id}"]`)?.getBoundingClientRect(), dst=topEl.getBoundingClientRect();
+    if(src&&topEl.animate){ const dx=src.left+src.width/2-(dst.left+dst.width/2), dy=src.top+src.height/2-(dst.top+dst.height/2);
+      topEl.animate([{transform:`translate(${dx}px,${dy}px) scale(.55) rotate(-20deg)`,opacity:.6},{transform:topEl.style.transform}],{duration:380,easing:"cubic-bezier(.2,.8,.3,1)"}); } }
+  CT.fly=null; CT.flyFrom=null;
+  $("cDeckN").textContent=`${v.deck} Karten`;
+  $("cDir").classList.toggle("ccw",v.dir<0);
+  const g=cgrp(v.color); $("cColor").textContent=`Farbe: ${g.name}`; $("cColor").style.background=g.color; $("cColor").style.color=g.color; $("cColor").innerHTML=`<span style="color:#fff">Farbe: ${g.name}</span>`;
+  // Status
+  const cur=v.players.find(p=>p.id===v.turn);
+  $("cStatus").textContent=v.phase!=="play"?"":my?(v.pending!=null?"Gezogene Karte passt – ausspielen oder behalten?":v.playable.length?"Du bist dran – leg eine passende Karte":"Nichts passt – tipp auf den Stapel und zieh eine Karte"):`${cur?(cur.bot?"🤖 ":"")+cur.name:"?"} ist dran …`;
+  $("cStatus").parentElement.classList.toggle("me",my);
+  $("cDeck").classList.toggle("can",my&&v.pending==null&&!v.playable.length);
+  $("cAct").classList.toggle("on",my&&v.pending!=null);
+  // „Letzte Karte!“-Knopf: nur wenn du gleich auf eine Karte runtergehst
+  const hand=v.hand||[], callOn=my&&hand.length===2&&v.playable.length>0;
+  if(!callOn) CT.armed=false;
+  $("cCall").classList.toggle("on",callOn); $("cCall").classList.toggle("armed",CT.armed);
+  // Eigene Hand als Fächer
+  const H=$("cHand"), W=H.clientWidth||innerWidth, cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cw"))||62, chh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ch"))||92;
+  const order=["komm","design","ki","daten","w"], vo=c=>({skip:10,rev:11,d2:12,wild:13,w4:14}[c.v]??+c.v);
+  const sorted=[...hand].sort((a,b)=>order.indexOf(a.c)-order.indexOf(b.c)||vo(a)-vo(b));
+  const rows=sorted.length>11?2:1; H.classList.toggle("two",rows===2); H.innerHTML="";
+  const per=Math.ceil(sorted.length/rows), ok=new Set(v.playable);
+  sorted.forEach((c,i)=>{ const r=rows===2?(i<per?0:1):0, k=rows===2?(r?sorted.length-per:per):sorted.length, j=r?i-per:i;
+    const step=Math.min(cw+6,(W-24-cw)/Math.max(1,k-1)), total=step*(k-1)+cw, x=(W-total)/2+j*step, mid=(k-1)/2, ang=k>1?(j-mid)*Math.min(3.2,26/k):0, lift=Math.abs(j-mid)*Math.min(3,18/k);
+    const el=cardEl(c); el.dataset.cid=c.id; const can=ok.has(c.id);
+    el.classList.toggle("ok",can); el.classList.toggle("dim",my&&!can);
+    if(!CT.lastHand.has(c.id)&&CT.lastHand.size) el.classList.add("new");
+    el.style.left=x+"px"; el.style.top=(12+r*(chh*.62))+"px"; el.style.zIndex=1+i;
+    el.style.transform=`translateY(${lift-(can?12:0)}px) rotate(${ang}deg)`;
+    el.onclick=()=>cTapCard(c,el); H.appendChild(el); });
+  CT.lastHand=new Set(hand.map(c=>c.id));
+  // Ende
+  if(v.phase==="over") cShowOver(); else $("cOver").classList.add("hidden");
+}
+// Zeitbalken für den Spieler, der dran ist (nur online)
+setInterval(()=>{ const v=CT.view, t=$("cTimer"); if(!CT.on||!v||CT.local||v.phase!=="play"){ t.parentElement.classList.remove("on"); return; }
+  const p=v.players.find(x=>x.id===v.turn); if(!p||p.bot){ t.parentElement.classList.remove("on"); return; }
+  const left=Math.max(0,1-(Date.now()-v.turnAt-(CT.skew||0))/30000); t.parentElement.classList.add("on"); t.style.width=(left*100)+"%"; t.style.background=left<.25?"#f87171":"#5eead4"; },250);
+
+// ---------- Aktionen ----------
+function cSend(a){
+  if(CT.local){ if(CARDS.act(CT.g,"me",a)) cLocalStep(); return; }
+  if(CT.ws&&CT.ws.readyState===1) CT.ws.send(JSON.stringify({t:"act",a:a.t,cid:a.cid,color:a.color,call:a.call}));
+}
+function cTapCard(c,el){
+  const v=CT.view; if(!v||v.turn!==CT.you||v.phase!=="play") return;
+  if(!v.playable.includes(c.id)){ el.classList.remove("nope"); void el.offsetWidth; el.classList.add("nope"); return; }
+  CT.flyFrom=el.getBoundingClientRect();
+  if(c.c==="w"){ CT.picked=c; $("cPick").classList.remove("hidden"); return; }
+  cSend({t:"play",cid:c.id,call:CT.armed}); CT.armed=false;
+}
+$("cPickBtns").innerHTML=CARDS.COLORS.map(k=>{ const g=CARDS.GROUPS[k]; return `<button data-c="${k}" style="background:${g.color}">${g.name}<small>${g.tools.slice(0,3).map(t=>CICON(t)).join(" ")}</small></button>`; }).join("");
+$("cPickBtns").querySelectorAll("button").forEach(b=>b.onclick=()=>{ const c=CT.picked; $("cPick").classList.add("hidden"); if(!c) return; CT.picked=null; cSend({t:"play",cid:c.id,color:b.dataset.c,call:CT.armed}); CT.armed=false; });
+$("cPickX").onclick=()=>{ CT.picked=null; $("cPick").classList.add("hidden"); };
+$("cDeck").onclick=()=>{ const v=CT.view; if(!v||v.turn!==CT.you||v.phase!=="play"||v.pending!=null) return; if(v.playable.length){ cMsg("Du hast eine passende Karte – leg sie!"); return; } cSend({t:"draw"}); };
+$("cPlayDrawn").onclick=()=>{ const v=CT.view; if(!v||v.pending==null) return; const c=(v.hand||[]).find(x=>x.id===v.pending); const el=document.querySelector(`#cHand .tc[data-cid="${v.pending}"]`); if(c) cTapCard(c,el||$("cDeck")); };
+$("cKeep").onclick=()=>cSend({t:"keep"});
+$("cCall").onclick=()=>{ CT.armed=!CT.armed; $("cCall").classList.toggle("armed",CT.armed); if(CT.armed){ sfx.pop(); buzz(15); } };
+$("cX").onclick=()=>{ const v=CT.view; if(v&&v.phase==="play"&&Date.now()-CT.quitT>2500){ CT.quitT=Date.now(); cMsg(CT.local?"Nochmal tippen zum Beenden":"Nochmal tippen – ein Bot spielt dann für dich weiter",2400); return; } cQuit(); };
+$("cBack").onclick=()=>cQuit();
+$("cAgain").onclick=()=>{ if(CT.local){ cStartLocal(CT.nBots); return; } if(CT.st&&CT.st.hostId===CT.you){ ctSend({t:"again"}); ctSend({t:"start"}); } else { ctSend({t:"again"}); $("cAgain").disabled=true; $("cAgain").textContent="Warte auf Neustart …"; } };
+
+function cShowOver(){
+  const v=CT.view, win=v.winner===CT.you, p=v.players.find(x=>x.id===v.winner);
+  if(!$("cOver").classList.contains("hidden")) return;
+  $("cWinE").textContent=win?"🏆":"🃏"; $("cWinT").textContent=win?"Du hast gewonnen!":`${p?p.name:"Jemand"} hat gewonnen`;
+  $("cWinS").textContent=win?"Alle Karten weg – schön entspannt.":"Macht nichts – nächste Runde?";
+  const host=CT.local||(CT.st&&CT.st.hostId===CT.you); $("cAgain").disabled=false; $("cAgain").textContent=host?"NOCHMAL 🃏":"NOCHMAL (wenn alle wollen)";
+  $("cOver").classList.remove("hidden");
+  if(win){ sfx.ding(); saved.cardsWins=(saved.cardsWins||0)+1; persist(); } else cSnd.soft();
+}
+
+// ---------- Allein gegen Bots (läuft komplett im Browser) ----------
+function cStartLocal(nBots){
+  CT.nBots=nBots; CT.local=true; CT.you="me"; CT.lastHand=new Set();
+  const names=[...BOT_NAMES_C].sort(()=>Math.random()-.5).slice(0,nBots);
+  CT.g=CARDS.newGame([{id:"me",name:saved.name||"Du"},...names.map((n,i)=>({id:"b"+i,name:n,bot:true}))]);
+  cOpenTable(); cLocalStep();
+}
+const BOT_NAMES_C=["Bot Bernd","Bot Lotte","Bot Kalle","Bot Frieda","Bot Ronny","Bot Uschi"];
+function cLocalStep(){
+  const g=CT.g; clearTimeout(CT.botT); const ev=g.ev; g.ev=[];
+  const prevTurn=CT.view&&CT.view.turn; CT.view=CARDS.view(g,"me"); cEvents(ev); cRender();
+  if(g.phase!=="play") return;
+  const id=CARDS.cur(g);
+  if(id==="me"){ if(prevTurn!=="me") cSnd.turn(); return; }
+  CT.botT=setTimeout(()=>{ if(CT.g!==g||!CT.on) return; CARDS.act(g,id,CARDS.botMove(g,id)); cLocalStep(); },850+Math.random()*650);
+}
+
+// ---------- Online-Tisch ----------
+function ctSend(o){ if(CT.ws&&CT.ws.readyState===1) CT.ws.send(JSON.stringify(o)); }
+function ctConnect(code){
+  if(!saved.name||saved.name.length<2){ toast("Erst einen Spitznamen festlegen (oben im Profil oder im Duell)."); return; }
+  ctClose(); CT.code=code; CT.local=false; CT.st=null; CT.view=null; CT.lastHand=new Set();
+  let ws; try{ ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/table/"+code); }catch(e){ toast("Verbindung klappt gerade nicht."); return; }
+  CT.ws=ws;
+  ws.onopen=()=>{ ws.send(JSON.stringify({t:"join",name:saved.name,badge:saved.badge||"",sid:saved.sid})); };
+  ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
+    if(m.t==="welcome"){ CT.you=m.you; if(m.role!=="player") toast("Der Tisch ist schon voll oder das Spiel läuft – du schaust zu."); }
+    if(m.t==="state"){ CT.st=m; CT.you=m.you;
+      if(m.game){ const prev=CT.view&&CT.view.turn; if(m.game.turnAt) CT.skew=0; CT.view=m.game; if(!CT.on) cOpenTable(); cEvents(m.ev); cRender(); if(m.game.turn===CT.you&&prev!==CT.you&&m.game.phase==="play") { cSnd.turn(); buzz(20); } }
+      else { if(CT.on){ CT.on=false; hide("cards"); } CT.view=null; cRenderLobby(); }
+      lbAnnounce(); }
+  };
+  ws.onclose=()=>{ if(CT.ws!==ws) return; CT.ws=null; if(CT.code&&!CT.leaving){ toast("Verbindung zum Tisch weg – versuche es neu …"); setTimeout(()=>{ if(CT.code&&!CT.ws&&!CT.leaving) ctConnect(CT.code); },1500); } };
+}
+function ctClose(){ if(CT.ws){ CT.leaving=true; try{ CT.ws.close(); }catch(e){} CT.ws=null; } CT.leaving=false; }
+function cRenderLobby(){
+  const st=CT.st; if(!st) return;
+  $("cmEntry").style.display="none"; $("cmLobby").style.display="block"; show("cardsMenu");
+  $("cmCodeTxt").textContent=st.code;
+  const ps=st.people.filter(p=>p.role==="player"), host=st.hostId===CT.you;
+  let h=""; for(let i=0;i<4;i++){ const p=ps[i]; h+=p?`<div class="cseat${p.id===CT.you?" me":""}">${p.isBot?"🤖":p.id===st.hostId?"👑":"🙂"} <span>${esc(p.name)}${p.id===CT.you?" (du)":""}</span></div>`:`<div class="cseat empty">Platz frei …</div>`; }
+  $("cmSeats").innerHTML=h;
+  const watch=st.people.filter(p=>p.role!=="player").length;
+  $("cmHint").textContent=host?(ps.length<2?"Lad Leute ein – oder füll mit Bots auf. Zu zweit geht’s auch.":`${ps.length} von 4 am Tisch. Freie Plätze bleiben beim Start einfach leer.`)+(watch?` · ${watch} schaut zu`:""):"Warte, bis der Gastgeber startet …";
+  $("cmBotFill").style.display=host?"":"none"; $("cmBotFill").textContent=ps.some(p=>p.isBot)&&ps.length>=4?"🤖 Bots wieder entfernen":"🤖 Freie Plätze mit Bots füllen";
+  $("cmStart").style.display=host?"":"none"; $("cmStart").textContent=ps.length<2?"STARTEN (mit Bot) 🃏":"SPIEL STARTEN 🃏";
+  $("cmInvite").style.display=host?"":"none";
+}
+function cOpenTable(){ CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); lbSend({t:"status",name:saved.name,sid:saved.sid,busy:true}); }
+function cQuit(){
+  clearTimeout(CT.botT); CT.on=false; CT.g=null; CT.view=null; hide("cards"); $("cOver").classList.add("hidden");
+  if(!CT.local){ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); }
+  CT.local=false; openHome(); lbSend({t:"status",name:saved.name,sid:saved.sid,busy:false});
+}
+function openCardsMenu(){
+  $("cmEntry").style.display="block"; $("cmLobby").style.display="none"; hide("home");
+  $("cmBots").querySelectorAll("button").forEach(b=>b.classList.toggle("on",+b.dataset.n===CT.nBots));
+  renderCardTables(); show("cardsMenu");
+}
+function renderCardTables(){
+  const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code);
+  box.innerHTML=t.length?"":'<div class="oempty">Gerade wartet kein Tisch. Erstell einen und lad alle ein.</div>';
+  t.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>🃏</span><span class="t"><span class="nm"></span><small>Tool-Karten · ${r.count}/4 am Tisch</small></span><button>Mitspielen</button>`;
+    d.querySelector(".nm").textContent=`${r.name} sucht Mitspieler`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
+}
+function joinTable(code){ ensureAudio(); hideChallenge(); ["home","pick","results","help","stats","wall","profile","recap","zen","duel"].forEach(hide); show("cardsMenu"); ctConnect(code); }
+$("cardsBtn").onclick=()=>{ ensureAudio(); modeIntro("cards",openCardsMenu); };
+$("cmX").onclick=()=>{ if(CT.code){ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); } hide("cardsMenu"); openHome(); };
+$("cmBots").querySelectorAll("button").forEach(b=>b.onclick=()=>{ CT.nBots=+b.dataset.n; $("cmBots").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); sfx.pop(); });
+$("cmSolo").onclick=()=>{ ensureAudio(); cStartLocal(CT.nBots); };
+$("cmCreate").onclick=()=>{ if(!needCardName()) return; ctConnect(genCode()); };
+$("cmJoin").onclick=()=>{ if(!needCardName()) return; const c=$("cmCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(c.length<4){ toast("Bitte den Tisch-Code eingeben."); return; } ctConnect(c); };
+function needCardName(){ if(saved.name&&saved.name.length>=2) return true; toast("Erst einen Spitznamen festlegen – im Profil oder im Chat.",2600); return false; }
+$("cmBotFill").onclick=()=>{ ctSend({t:"bots"}); sfx.pop(); };
+$("cmStart").onclick=()=>{ ensureAudio(); ctSend({t:"start"}); };
+$("cmLeave").onclick=()=>{ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); openCardsMenu(); };
+$("cmInvite").onclick=()=>{ lbSend({t:"challenge",code:CT.code}); toast("📣 Alle, die online sind, bekommen eine Einladung."); sfx.pop(); };
+$("cmShare").onclick=async()=>{ const url=`${location.origin}${location.pathname}?table=${CT.code}`, text=`🃏 Tool-Karten in der Frustbude! Tisch-Code: ${CT.code}`;
+  try{ if(navigator.share){ await navigator.share({title:"Frustbude – Tool-Karten",text,url}); return; } }catch(e){ if(e&&e.name==="AbortError") return; }
+  const ok=await copyText(`${text}\n${url}`); toast(ok?"📋 Einladung kopiert!":`Code: ${CT.code}`,3000); };
+$("cmCodeBox").onclick=async()=>{ if(!CT.code) return; const ok=await copyText(CT.code); $("cmCp").textContent=ok?"✅":"📋"; $("cmCodeBox").classList.toggle("ok",ok); toast(ok?"Code kopiert – einfach einfügen und teilen!":`Code: ${CT.code}`); setTimeout(()=>{ $("cmCp").textContent="📋"; $("cmCodeBox").classList.remove("ok"); },2000); };
+addEventListener("resize",()=>{ if(CT.on) cRender(); });
+
 const roomParam=new URLSearchParams(location.search).get("room");
+const tableParam=new URLSearchParams(location.search).get("table");
+if(tableParam&&!roomParam){ const code=tableParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); hide("home"); if(saved.name&&saved.name.length>=2) joinTable(code); else { openCardsMenu(); $("cmCode").value=code; toast("Erst Spitznamen festlegen (Profil), dann „Beitreten“.",3000); } }
 if(roomParam){ hide("home"); const code=roomParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); openDuel(code); if(saved.name&&saved.name.length>=2) connect(code,"player"); }
 else if(!saved.seenHelp) openHelp();
 if(COURSE_END && !saved.recapSeen && new Date()>=new Date(COURSE_END)){ saved.recapSeen=true; persist(); openRecap(); }
