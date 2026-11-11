@@ -2,9 +2,9 @@
 const CARDS = (() => {
   // 4 Farben = 4 Tool-Gruppen
   const GROUPS = {
-    komm:   { name: "Kommunikation", short: "Komm.",  color: "#3b82f6", tools: ["slack", "meet", "classroom", "coda"] },
-    design: { name: "Design",        short: "Design", color: "#d946ef", tools: ["figma", "miro", "stitch", "wix", "onepage"] },
-    ki:     { name: "KI",            short: "KI",     color: "#22c55e", tools: ["chatgpt", "claude", "gemini"] },
+    komm:   { name: "Kommunikation", short: "Komm.",  color: "#2563eb", tools: ["slack", "meet", "classroom", "coda"] },
+    design: { name: "Design",        short: "Design", color: "#e11d48", tools: ["figma", "miro", "stitch", "wix", "onepage"] },
+    ki:     { name: "KI",            short: "KI",     color: "#059669", tools: ["chatgpt", "claude", "gemini"] },
     daten:  { name: "Analyse",       short: "Analyse",color: "#f59e0b", tools: ["ga", "posthog", "clarity", "mixpanel", "amplitude", "umami", "contentsquare"] },
   };
   const COLORS = Object.keys(GROUPS);

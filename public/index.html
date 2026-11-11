@@ -542,7 +542,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .ccenter{position:relative;display:flex;align-items:center;gap:clamp(22px,8vw,46px)}
 .cdeck{position:relative;width:var(--cw2);height:var(--ch2);cursor:pointer}
 .cdeck .tc{position:absolute;left:0;top:0;width:100%;height:100%}.cdeck .tc:nth-child(1){transform:translate(4px,4px)}.cdeck .tc:nth-child(2){transform:translate(2px,2px)}
-.cdeck.can{animation:deckPulse 1.4s infinite}.cdeck .dn{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:var(--muted)}
+.cdeck .dn{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:var(--muted)}
 @keyframes deckPulse{50%{filter:drop-shadow(0 0 12px rgba(94,234,212,.9))}}
 .cpilewrap{position:relative;width:var(--cw2);height:var(--ch2)}#cPile{position:absolute;inset:0}#cPile .tc{position:absolute;inset:0;width:100%;height:100%}
 .cdir{position:absolute;right:-30px;top:-22px;font-size:26px;color:#99f6e4;opacity:.75;transition:transform .5s}.cdir.ccw{transform:scaleX(-1)}
@@ -558,24 +558,33 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #cHand{position:relative;height:calc(var(--ch) * 1.25 + 14px);margin:4px 0 calc(8px + env(safe-area-inset-bottom));flex:none}
 #cHand.two{height:calc(var(--ch) * 2 + 18px)}
 #cHand .tc{position:absolute;top:12px;transition:transform .25s,opacity .25s,filter .25s,box-shadow .25s}
-#cHand .tc.dim{filter:brightness(.55) saturate(.6)}#cHand .tc.ok{box-shadow:0 0 0 2px #5eead4,0 8px 18px rgba(0,0,0,.5)}
+#cHand .tc.hint{animation:hintBlink 1.6s ease-in-out 2}
+@keyframes hintBlink{0%,100%{box-shadow:0 6px 14px rgba(0,0,0,.42)}50%{box-shadow:0 0 0 2px rgba(255,255,255,.85),0 0 22px rgba(255,210,63,.55);translate:0 -6px}}
+.cdeck.hint{animation:deckPulse 1.6s ease-in-out 2}
+.ctip{opacity:.45}.ctip.on{opacity:1}
 #cHand .tc.new{animation:cardIn .45s ease-out}
 @keyframes cardIn{from{opacity:0;translate:0 40px}}
 #cHand .tc.nope{animation:nope .3s}@keyframes nope{25%{translate:-6px 0}75%{translate:6px 0}}
 :root{--cw:62px;--ch:92px;--cw2:86px;--ch2:128px}
 @media (max-width:360px){:root{--cw:56px;--ch:83px;--cw2:76px;--ch2:113px}}
 @media (min-width:700px){:root{--cw:78px;--ch:116px;--cw2:104px;--ch2:154px}}
-.tc{width:var(--cw);height:var(--ch);border-radius:11px;position:relative;background:var(--cc);border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.45);overflow:hidden;color:#fff;font-family:Nunito,system-ui;flex:none}
-.tc .ov{position:absolute;left:12%;right:12%;top:20%;bottom:20%;background:#fff;border-radius:50%;transform:rotate(-24deg);opacity:.95}
-.tc .big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:calc(var(--cw) * .44);color:var(--cc);text-shadow:0 1px 0 rgba(0,0,0,.15);z-index:1;letter-spacing:-1px}
-.tc .cn{position:absolute;top:2px;left:5px;font-weight:900;font-size:calc(var(--cw) * .2);line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.4);z-index:1}
-.tc .cn.b{top:auto;left:auto;bottom:2px;right:5px;transform:rotate(180deg)}
-.tc .tl{position:absolute;left:0;right:0;bottom:calc(var(--ch) * .15);text-align:center;font-size:calc(var(--cw) * .135);font-weight:900;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
-.tc .ti{position:absolute;right:4px;top:3px;font-size:calc(var(--cw) * .2);z-index:2}
-.tc.w{background:conic-gradient(from 45deg,#3b82f6 0 25%,#d946ef 0 50%,#22c55e 0 75%,#f59e0b 0)}
-.tc.w .ov{background:#1e1b2e}.tc.w .big{color:#fff}
-.tc.back{background:repeating-linear-gradient(45deg,#5b21b6 0 8px,#4c1d95 8px 16px);border-color:#ede9fe}
-.tc.back .bk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Bungee,Nunito,system-ui;font-size:calc(var(--cw2) * .15);line-height:1.1;color:#fde047;text-shadow:0 2px 0 #3b0764}
+.tc{width:var(--cw);height:var(--ch);border-radius:calc(var(--cw) * .2);position:relative;background:linear-gradient(155deg,var(--c1),var(--c2));border:2px solid rgba(255,255,255,.6);
+  box-shadow:0 6px 14px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.45),inset 0 -10px 18px rgba(0,0,0,.12);overflow:hidden;color:#fff;font-family:Nunito,system-ui;flex:none}
+.tc::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 60% at 20% 0%,rgba(255,255,255,.28),transparent 55%);pointer-events:none;z-index:3}
+.tc .ov{position:absolute;left:11%;right:11%;top:13%;bottom:13%;border-radius:50%;transform:rotate(-28deg);background:linear-gradient(170deg,#fff,rgba(255,255,255,.86));box-shadow:inset 0 -3px 8px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.12)}
+.tc .big{position:absolute;left:0;right:0;top:15%;text-align:center;font-family:var(--comic);font-size:calc(var(--cw) * .5);line-height:1;letter-spacing:1px;color:var(--c2);text-shadow:2px 2px 0 var(--c3);z-index:1}
+.tc .big svg{width:calc(var(--cw) * .42);height:calc(var(--cw) * .42);margin-top:calc(var(--cw) * .05);filter:drop-shadow(2px 2px 0 var(--c3))}
+.tc .app{position:absolute;left:50%;top:56%;transform:translateX(-50%);width:calc(var(--cw) * .36);height:calc(var(--cw) * .36);border-radius:28%;background:linear-gradient(150deg,var(--b1),var(--b2));display:flex;align-items:center;justify-content:center;font-size:calc(var(--cw) * .2);box-shadow:0 2px 5px rgba(0,0,0,.25),inset 0 0 0 1.5px rgba(255,255,255,.55);z-index:1}
+.tc .cn{position:absolute;top:4%;left:7%;font-family:var(--comic);font-size:calc(var(--cw) * .22);line-height:1;letter-spacing:.5px;color:#fff;text-shadow:1px 1px 0 var(--c3);z-index:2}
+.tc .cn svg{width:calc(var(--cw) * .17);height:calc(var(--cw) * .17)}
+.tc .cn.b{top:auto;left:auto;bottom:4%;right:7%;transform:rotate(180deg)}
+.tc .tl{position:absolute;left:0;right:0;bottom:6%;text-align:center;font-size:calc(var(--cw) * .135);font-weight:900;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 5%;color:#fff;text-shadow:0 1px 2px var(--c3)}
+.tc.w{--c1:#4c1d95;--c2:#1e0b3a;--c3:#0b0418}
+.tc.w .ov{background:conic-gradient(from 200deg,#2563eb 0 25%,#e11d48 0 50%,#059669 0 75%,#f59e0b 0);box-shadow:inset 0 0 0 3px rgba(255,255,255,.75)}
+.tc.w .big{color:#fff;text-shadow:2px 2px 0 #3b0764}
+.tc.w .app{top:50%;transform:translate(-50%,-50%);width:calc(var(--cw) * .44);height:calc(var(--cw) * .44);font-size:calc(var(--cw) * .26)}.tc.w .big:not(:empty)+.app{top:58%;transform:translateX(-50%);width:calc(var(--cw) * .34);height:calc(var(--cw) * .34);font-size:calc(var(--cw) * .19)}
+.tc.back{--c1:#6d28d9;--c2:#3b0764;background:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 7px,transparent 7px 14px),linear-gradient(155deg,#7c3aed,#3b0764);border-color:rgba(237,233,254,.7)}
+.tc.back .bk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--comic);font-size:calc(var(--cw2) * .2);letter-spacing:1px;line-height:1.05;color:#ffd23f;text-shadow:2px 2px 0 #3b0764}
 .cpilewrap .tc{--cw:var(--cw2);--ch:var(--ch2)}
 #cPick,#cOver{position:absolute;inset:0;background:rgba(5,10,20,.72);display:flex;align-items:center;justify-content:center;z-index:5;padding:20px}
 #cPick.hidden,#cOver.hidden{display:none}
@@ -843,6 +852,8 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="sub" style="margin-bottom:12px">Entspannt Karten legen – wie Uno, nur mit deinen Tools.</div>
     <div class="seglbl">Gegen Bots spielen</div>
     <div class="seg" id="cmBots"><button data-n="1">1 Bot</button><button data-n="2">2 Bots</button><button data-n="3">3 Bots</button></div>
+    <div class="seglbl" style="margin-top:10px">Tipps (passende Karten blinken kurz, wenn du überlegst)</div>
+    <div class="seg" id="cmTips"><button data-t="1">💡 Mit Tipps</button><button data-t="0">Ohne Tipps</button></div>
     <button class="cta" id="cmSolo">LOSLEGEN 🃏</button>
     <div class="seglbl" style="margin-top:14px">Mit anderen aus dem Kurs</div>
     <div id="cmOpen"></div>
@@ -862,7 +873,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 </div></div>
 
 <div id="cards" class="hidden">
-  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle">🃏 TOOL-KARTEN</div><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
+  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle">🃏 TOOL-KARTEN</div><button class="cbtn ctip" id="cTip" aria-label="Tipps">💡</button><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
   <div id="cSeats"></div>
   <div class="ctable">
     <div class="cfelt"></div>
@@ -2123,7 +2134,7 @@ function modeInfo(kind,o){
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
     cards:{e:"🃏",t:"TOOL-KARTEN",g:"Zum Entspannen: Leg deine Karten ab wie bei Uno. Wer zuerst keine Karten mehr hat, gewinnt.",
-      l:[["🎨","4 Farben = 4 Tool-Gruppen: Kommunikation (blau), Design (pink), KI (grün), Analyse (orange)"],["🃏","Du darfst eine Karte legen, wenn Farbe oder Zahl/Zeichen zur obersten Karte passt. Passende Karten leuchten"],["📥","Nichts passt? Tipp auf den Stapel und zieh eine Karte. Passt sie, darfst du sie gleich legen"],["⊘","Aussetzen · ⇄ Richtung drehen · +2 der Nächste zieht 2 und setzt aus"],["🌈","Farbwahl: Du bestimmst die nächste Farbe · 👑 Mega-Bug +4: Farbe wählen, der Nächste zieht 4"],["📣","Hast du nur noch 2 Karten, tipp vor dem Legen auf „Letzte Karte!“ – sonst ziehst du 2 Strafkarten"],["👥","Allein gegen 1–3 Bots oder mit anderen am Tisch (Code teilen). Online hat jeder 30 Sekunden pro Zug"]]},
+      l:[["🎨","4 Farben = 4 Tool-Gruppen: Kommunikation (blau), Design (rot), KI (grün), Analyse (gelb)"],["🃏","Du darfst eine Karte legen, wenn Farbe oder Zahl/Zeichen zur obersten Karte passt"],["📥","Nichts passt? Tipp auf den Stapel und zieh eine Karte. Passt sie, darfst du sie gleich legen"],["💡","Überlegst du länger, blinken passende Karten kurz auf. Abschalten: 💡 oben im Spiel"],["⊘","Aussetzen · ⇄ Richtung drehen · +2 der Nächste zieht 2 und setzt aus"],["🌈","Farbwahl: Du bestimmst die nächste Farbe · 👑 Mega-Bug +4: Farbe wählen, der Nächste zieht 4"],["📣","Hast du nur noch 2 Karten, tipp vor dem Legen auf „Letzte Karte!“ – sonst ziehst du 2 Strafkarten"],["👥","Allein gegen 1–3 Bots oder mit anderen am Tisch (Code teilen). Online hat jeder 30 Sekunden pro Zug"]]},
     fight:{e:"⚔️",t:"DUELL: TAUZIEHEN",g:"Eine Boxbirne hängt zwischen euch. Hau drauf, so schnell du kannst – jeder Treffer schiebt sie zum Gegner. Erreicht sie deine Seite, verlierst du die Runde.",
       l:[["👆",`${tap} irgendwohin oder auf den gelben Knopf – jeder ${touchDev?"Tipp":"Klick"} ist ein Treffer`],["⬅️","Du stehst immer links, der Gegner rechts"],["🏆","Wer zuerst 2 Runden gewinnt, hat gewonnen"],["⚡","Superkräfte tauchen am Rand auf, weit weg von der Boxbirne – wer sie zuerst trifft, bekommt sie: ⚡ Turbo (doppelt schieben), 🧊 Einfrieren (Gegner kurz lahm), 💥 Mega-Schlag (großer Schubs)"],["🔥","Endspurt: In den letzten 10 Sekunden zählt jeder Treffer doppelt – Aufholen geht immer!"],["⏱️","Nach 30 Sekunden gewinnt, wer die Boxbirne weiter weggeschoben hat"]]
         .concat((o&&o.level||saved.level)==="hard"?[["🛡️","Schwer: Die Boxbirne wirft Sachen nach dir – antippen, sonst bist du kurz „Overloaded“"]]:[]).concat(touchDev?[]:[["⌨️","Am Computer: Leertaste oder jede Buchstabentaste"]])},
@@ -2756,11 +2767,17 @@ const CICON=id=>id==="joker"?"🌈":id==="boss"?"👑":(NAMES[id]&&NAMES[id].ic)
 const CBIG={skip:"⊘",rev:"⇄",d2:"+2",wild:"🌈",w4:"+4"};
 const CLBL={skip:"⊘",rev:"⇄",d2:"+2",wild:"★",w4:"+4"};
 const cgrp=c=>CARDS.GROUPS[c];
+const CPAL={komm:["#60a5fa","#2563eb","#1e3a8a"],design:["#fb7185","#e11d48","#881337"],ki:["#34d399","#059669","#064e3b"],daten:["#fcd34d","#f59e0b","#92400e"]};
+const SV_SKIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M6.5 17.5l11-11"/></svg>';
+const SV_REV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13l-4-4M20 15H7l4 4"/></svg>';
 function cardEl(card){
   const d=document.createElement("div"), w=card.c==="w";
-  d.className="tc"+(w?" w":""); if(!w) d.style.setProperty("--cc",cgrp(card.c).color);
-  const big=CBIG[card.v]||card.v, lbl=CLBL[card.v]||card.v;
-  d.innerHTML=`<span class="ov"></span><span class="big">${big}</span><span class="cn">${lbl}</span><span class="cn b">${lbl}</span><span class="ti">${CICON(card.tool)}</span><span class="tl">${CSHORT[card.tool]||""}</span>`;
+  d.className="tc"+(w?" w":"");
+  if(!w){ const [a,b,c]=CPAL[card.c]; d.style.setProperty("--c1",a); d.style.setProperty("--c2",b); d.style.setProperty("--c3",c); }
+  const t=NAMES[card.tool]; const b1=card.tool==="joker"?"#a855f7":card.tool==="boss"?"#ef4444":(t&&t.color)||"#a855f7", b2=card.tool==="joker"?"#ec4899":card.tool==="boss"?"#7f1d1d":(t&&(t.color2||t.color))||b1;
+  d.style.setProperty("--b1",b1); d.style.setProperty("--b2",b2);
+  const sym={skip:SV_SKIP,rev:SV_REV,d2:"+2",wild:"",w4:"+4"}, big=card.v in sym?sym[card.v]:card.v, lbl=card.v==="wild"?"★":big;
+  d.innerHTML=`<span class="ov"></span><span class="big">${big}</span><span class="app">${CICON(card.tool)}</span><span class="cn">${lbl}</span><span class="tl">${CSHORT[card.tool]||""}</span>`;
   return d;
 }
 function cName(id){ const p=CT.view&&CT.view.players.find(x=>x.id===id); return id===CT.you?"Du":(p?p.name:"?"); }
@@ -2806,9 +2823,9 @@ function cRender(){
   const g=cgrp(v.color); $("cColor").textContent=`Farbe: ${g.name}`; $("cColor").style.background=g.color; $("cColor").style.color=g.color; $("cColor").innerHTML=`<span style="color:#fff">Farbe: ${g.name}</span>`;
   // Status
   const cur=v.players.find(p=>p.id===v.turn);
-  $("cStatus").textContent=v.phase!=="play"?"":my?(v.pending!=null?"Gezogene Karte passt – ausspielen oder behalten?":v.playable.length?"Du bist dran – leg eine passende Karte":"Nichts passt – tipp auf den Stapel und zieh eine Karte"):`${cur?(cur.bot?"🤖 ":"")+cur.name:"?"} ist dran …`;
+  $("cStatus").textContent=v.phase!=="play"?"":my?(v.pending!=null?"Gezogene Karte passt – ausspielen oder behalten?":"Du bist dran"):`${cur?(cur.bot?"🤖 ":"")+cur.name:"?"} ist dran …`;
   $("cStatus").parentElement.classList.toggle("me",my);
-  $("cDeck").classList.toggle("can",my&&v.pending==null&&!v.playable.length);
+  cHintArm(my&&v.pending==null);
   $("cAct").classList.toggle("on",my&&v.pending!=null);
   // „Letzte Karte!“-Knopf: nur wenn du gleich auf eine Karte runtergehst
   const hand=v.hand||[], callOn=my&&hand.length===2&&v.playable.length>0;
@@ -2823,10 +2840,10 @@ function cRender(){
   sorted.forEach((c,i)=>{ const r=rows===2?(i<per?0:1):0, k=rows===2?(r?sorted.length-per:per):sorted.length, j=r?i-per:i;
     const step=Math.min(cw+6,(W-24-cw)/Math.max(1,k-1)), total=step*(k-1)+cw, x=(W-total)/2+j*step, mid=(k-1)/2, ang=k>1?(j-mid)*Math.min(3.2,26/k):0, lift=Math.abs(j-mid)*Math.min(3,18/k);
     const el=cardEl(c); el.dataset.cid=c.id; const can=ok.has(c.id);
-    el.classList.toggle("ok",can); el.classList.toggle("dim",my&&!can);
+    if(can) el.classList.add("ok");
     if(!CT.lastHand.has(c.id)&&CT.lastHand.size) el.classList.add("new");
     el.style.left=x+"px"; el.style.top=(12+r*(chh*.62))+"px"; el.style.zIndex=1+i;
-    el.style.transform=`translateY(${lift-(can?12:0)}px) rotate(${ang}deg)`;
+    el.style.transform=`translateY(${lift}px) rotate(${ang}deg)`;
     el.onclick=()=>cTapCard(c,el); H.appendChild(el); });
   CT.lastHand=new Set(hand.map(c=>c.id));
   // Ende
@@ -2852,7 +2869,21 @@ function cTapCard(c,el){
 $("cPickBtns").innerHTML=CARDS.COLORS.map(k=>{ const g=CARDS.GROUPS[k]; return `<button data-c="${k}" style="background:${g.color}">${g.name}<small>${g.tools.slice(0,3).map(t=>CICON(t)).join(" ")}</small></button>`; }).join("");
 $("cPickBtns").querySelectorAll("button").forEach(b=>b.onclick=()=>{ const c=CT.picked; $("cPick").classList.add("hidden"); if(!c) return; CT.picked=null; cSend({t:"play",cid:c.id,color:b.dataset.c,call:CT.armed}); CT.armed=false; });
 $("cPickX").onclick=()=>{ CT.picked=null; $("cPick").classList.add("hidden"); };
-$("cDeck").onclick=()=>{ const v=CT.view; if(!v||v.turn!==CT.you||v.phase!=="play"||v.pending!=null) return; if(v.playable.length){ cMsg("Du hast eine passende Karte – leg sie!"); return; } cSend({t:"draw"}); };
+$("cDeck").onclick=()=>{ const v=CT.view; if(!v||v.turn!==CT.you||v.phase!=="play"||v.pending!=null) return; cSend({t:"draw"}); };
+// Tipp erst nach kurzem Überlegen (6 Sek.), und nur wenn Tipps an sind
+let cHintT=0, cHintKey="";
+function cHintArm(on){
+  const v=CT.view, key=on&&v?`${v.top.id}|${(v.hand||[]).length}|${v.turn}`:"";
+  if(key===cHintKey) return; cHintKey=key; clearTimeout(cHintT);
+  document.querySelectorAll("#cHand .tc.hint,#cDeck.hint").forEach(e=>e.classList.remove("hint"));
+  if(!on||saved.cardTips===false) return;
+  cHintT=setTimeout(()=>{ const w=CT.view; if(!w||w.turn!==CT.you||saved.cardTips===false) return;
+    const ok=document.querySelectorAll("#cHand .tc.ok"); if(ok.length) ok.forEach(e=>{ e.classList.remove("hint"); void e.offsetWidth; e.classList.add("hint"); }); else { const d=$("cDeck"); d.classList.remove("hint"); void d.offsetWidth; d.classList.add("hint"); } },6000);
+}
+function cTipsUI(){ const on=saved.cardTips!==false; $("cTip").classList.toggle("on",on); $("cmTips").querySelectorAll("button").forEach(b=>b.classList.toggle("on",(b.dataset.t==="1")===on)); }
+function cSetTips(on){ saved.cardTips=on; persist(); cTipsUI(); cHintKey=""; if(CT.view) cRender(); }
+$("cTip").onclick=()=>{ const on=saved.cardTips===false; cSetTips(on); cMsg(on?"💡 Tipps an: Passende Karten blinken, wenn du kurz überlegst":"Tipps aus",1800); sfx.pop(); };
+$("cmTips").querySelectorAll("button").forEach(b=>b.onclick=()=>{ cSetTips(b.dataset.t==="1"); sfx.pop(); });
 $("cPlayDrawn").onclick=()=>{ const v=CT.view; if(!v||v.pending==null) return; const c=(v.hand||[]).find(x=>x.id===v.pending); const el=document.querySelector(`#cHand .tc[data-cid="${v.pending}"]`); if(c) cTapCard(c,el||$("cDeck")); };
 $("cKeep").onclick=()=>cSend({t:"keep"});
 $("cCall").onclick=()=>{ CT.armed=!CT.armed; $("cCall").classList.toggle("armed",CT.armed); if(CT.armed){ sfx.pop(); buzz(15); } };
@@ -2918,7 +2949,7 @@ function cRenderLobby(){
   $("cmStart").style.display=host?"":"none"; $("cmStart").textContent=ps.length<2?"STARTEN (mit Bot) 🃏":"SPIEL STARTEN 🃏";
   $("cmInvite").style.display=host?"":"none";
 }
-function cOpenTable(){ CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); lbSend({t:"status",name:saved.name,sid:saved.sid,busy:true}); }
+function cOpenTable(){ cTipsUI(); CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); lbSend({t:"status",name:saved.name,sid:saved.sid,busy:true}); }
 function cQuit(){
   clearTimeout(CT.botT); CT.on=false; CT.g=null; CT.view=null; hide("cards"); $("cOver").classList.add("hidden");
   if(!CT.local){ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); }
@@ -2927,7 +2958,7 @@ function cQuit(){
 function openCardsMenu(){
   $("cmEntry").style.display="block"; $("cmLobby").style.display="none"; hide("home");
   $("cmBots").querySelectorAll("button").forEach(b=>b.classList.toggle("on",+b.dataset.n===CT.nBots));
-  renderCardTables(); show("cardsMenu");
+  renderCardTables(); cTipsUI(); show("cardsMenu");
 }
 function renderCardTables(){
   const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code);
