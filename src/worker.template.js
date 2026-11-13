@@ -280,6 +280,7 @@ export class Room extends DurableObject {
 /* ======================= Tool-Karten-Tisch (Kartenspiel, bis zu 4 Spieler) ======================= */
 __CARDS__
 const TURN_MS = 30000;
+const CARD_REACTS = ["😂","😱","🔥","👏","🍅","😤","🙈","❤️"];
 export class Table extends DurableObject {
   constructor(ctx, env) { super(ctx, env); this.conns = new Map(); this.bots = []; this.st = { code: "", phase: "lobby", hostId: null, round: 0 }; this.g = null; this.botT = null; this.turnT = null; }
   async fetch(req) {
@@ -315,12 +316,24 @@ export class Table extends DurableObject {
       this.send(c, { t: "welcome", you: c.id, role: c.role }); this.sync(); return;
     }
     if (!c.joined) return;
+    // Emoji-Reaktionen am Tisch (auch Zuschauer), höchstens ~3 pro Sekunde
+    if (m.t === "react" && CARD_REACTS.includes(m.e)) {
+      if (now - (c.lastReact || 0) < 300) return; c.lastReact = now;
+      const o = JSON.stringify({ t: "react", id: c.id, name: c.name, e: m.e });
+      for (const x of this.conns.values()) if (x.joined) { try { x.ws.send(o); } catch (e) {} }
+      return;
+    }
     if (m.t === "act" && st.phase === "play" && this.g && c.role === "player") {
       const a = { t: String(m.a || ""), cid: Math.floor(Number(m.cid)), color: m.color, call: !!m.call };
       if (CARDS.act(this.g, c.id, a)) this.after();
       return;
     }
-    if (m.t === "again" && st.phase === "over") { st.phase = "lobby"; this.g = null; this.sync(); return; }
+    if (m.t === "again" && st.phase === "over") {
+      st.phase = "lobby"; this.g = null;
+      // Zuschauer dürfen in der nächsten Runde mitspielen (Bots machen Platz)
+      for (const x of this.conns.values()) if (x.joined && x.role !== "player") { if (this.players().length >= 4 && this.bots.length) this.bots.pop(); if (this.players().length < 4) x.role = "player"; }
+      this.sync(); return;
+    }
     if (st.phase !== "lobby" || st.hostId !== c.id) return;
     if (m.t === "bots") { if (this.bots.length && this.players().length >= 4) this.bots = []; else this.fill(); this.sync(); return; }
     if (m.t === "start") {

@@ -756,6 +756,26 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .tc .app{top:55%;width:calc(var(--cw) * .3);height:calc(var(--cw) * .3);font-size:calc(var(--cw) * .17)}
 .tc .tl{bottom:4%}
 .tc.w .num:not(:empty)+.app{top:56%;width:calc(var(--cw) * .3);height:calc(var(--cw) * .3);font-size:calc(var(--cw) * .17)}
+
+/* Emoji-Reaktionen am Kartentisch */
+.creact{display:flex;justify-content:center;gap:4px;padding:6px 8px 0;flex-wrap:nowrap}
+.creact button{width:38px;height:34px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:18px;line-height:1;flex:none}
+.creact button:active{transform:scale(.88);background:rgba(255,255,255,.14)}
+.cfloat{position:fixed;z-index:40;pointer-events:none;font-size:34px;line-height:1;animation:cFloat 1.6s ease-out forwards;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.cfloat small{display:block;text-align:center;font-family:Nunito,system-ui;font-size:10px;font-weight:900;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:1px 5px;margin-top:2px}
+@keyframes cFloat{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+
+#cards.spec #cCall,#cards.spec #cAct{display:none!important}#cards.spec #cHand{height:16px}
+
+/* Spieler-Level */
+.hx-av{position:relative}
+.hx-lvb{position:absolute;right:-5px;bottom:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#7c3aed;border:2px solid #0d0618;color:#fff;font-style:normal;font-family:Nunito,system-ui;font-size:10px;font-weight:900;line-height:14px;text-align:center}
+.hx-xp{display:block;height:4px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:4px;overflow:hidden;max-width:160px}
+.hx-xp i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,#a78bfa,#ffd23f);transition:width .6s}
+.proflv{margin:12px 0 4px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center;font-weight:800;font-size:14px}
+.proflv b{color:#ffd23f}.proflv small{display:block;color:var(--muted);font-size:11.5px;margin-top:6px}
+.proflv .xpbar{display:block;height:8px;border-radius:5px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
+.proflv .xpbar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#a78bfa,#ffd23f)}
 </style>
 </head>
 <body>
@@ -810,7 +830,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 <!-- Hauptmenü -->
 <div class="overlay" id="home"><div class="card hx">
   <div class="hx-top">
-    <button class="hx-me" id="homeTag" aria-label="Profil"><span class="hx-av" id="homeAv">?</span><span class="hx-who"><b id="homeName">Profil anlegen</b><small id="homeBadge">Spitzname &amp; Abzeichen</small></span></button>
+    <button class="hx-me" id="homeTag" aria-label="Profil"><span class="hx-av" id="homeAv">?<i class="hx-lvb" id="homeLv">1</i></span><span class="hx-who"><b id="homeName">Profil anlegen</b><small id="homeBadge">Spitzname &amp; Abzeichen</small><span class="hx-xp"><i id="homeXp"></i></span></span></button>
     <button class="hx-ic" id="chatBtn" aria-label="Chat">💬<b id="chatBadge"></b></button>
     <button class="hx-ic muteToggle" aria-label="Ton aus">🔊</button>
   </div>
@@ -949,6 +969,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <div class="sub" style="margin:8px 0 10px">Dein Spitzname erscheint in Duellen und Ranglisten. Frei erfunden ist völlig okay.</div>
   <input class="field" id="nameInput" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
   <div class="nametag" id="profTag" style="align-self:center"></div>
+  <div class="proflv" id="profLv"></div>
   <div class="modehint" id="profCards" style="text-align:center;margin-top:6px"></div>
   <div class="seglbl">Abzeichen am Namen – tippe auf eines, um es zu tragen</div>
   <div class="scroll"><div class="badges" id="badgeList"></div></div>
@@ -982,6 +1003,8 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="mid">DUELL</div>
     <div class="sub" style="margin:8px 0 10px">Tauziehen mit der Boxbirne: Wer schneller haut, schiebt sie zum Gegner. 1 gegen 1 oder 2 gegen 2.</div>
     <div class="online mkonly" id="duelOnline" style="margin-bottom:10px"></div>
+    <button class="cta mkonly" id="quickDuel">⚡ Schnelles Duell</button>
+    <div class="modehint mkonly" style="margin:-2px 0 10px;text-align:center">Wartet jemand, kämpfst du sofort gegen ihn. Sonst wird ein Raum eröffnet und alle Online-Spieler eingeladen.</div>
     <div class="seglbl mkonly">Duelle – mitmachen oder zuschauen</div>
     <div id="openRooms" class="mkonly"></div>
     <input class="field" id="duelName" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
@@ -1034,6 +1057,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="seg" id="cmTips"><button data-t="1">💡 Mit Tipps</button><button data-t="0">Ohne Tipps</button></div>
     <button class="cta" id="cmSolo">LOSLEGEN 🃏</button>
     <div class="seglbl" style="margin-top:14px">Mit anderen aus dem Kurs</div>
+    <button class="cta" id="cmQuick">⚡ Schnellstart – freien Platz finden</button>
     <div id="cmOpen"></div>
     <button class="cta alt sm" id="cmCreate">TISCH ERSTELLEN &amp; EINLADEN</button>
     <div class="cmjoin"><input class="field" id="cmCode" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="cta sm" id="cmJoin">Beitreten</button></div>
@@ -1063,6 +1087,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="cbubble" id="cMsg"></div>
   </div>
   <div class="cstatus"><span id="cStatus"></span><div class="ctimer"><i id="cTimer"></i></div></div>
+  <div class="creact" id="cReact"></div>
   <div class="cact" id="cAct">
     <button class="cta sm" id="cPlayDrawn">Ausspielen</button><button class="ghost" id="cKeep">Behalten</button>
   </div>
@@ -1757,6 +1782,7 @@ function applyBagDmg(dmg,lx,ly,x,y,w,mv,delayed){
   updateHUD(); duelPush();
 }
 function ko(){
+  addXP(chill?5:10,"ko");
   state="ko"; koT=0; items=[]; pops=[]; if(mode==="free"){ defeated.add(cur.id); koRound++; if(!chill) runKO++; } saved.allKO++; addHate("_ko"); persist();
   if(mode==="time"||mode==="duel") tKO++;
   const [cx,cy]=toWorld(0,G.chain+G.bh/2), col=cur.color, col2=cur.color2||mix(col,"#000000",.3);
@@ -1972,7 +1998,7 @@ function updateBoss(dt){
       B.throwT=[rand(2.1,2.9),rand(1.5,2.1),rand(1,1.4)][B.phase]*lv.bossThrow; if(Math.random()<.25&&performance.now()-lastSpeech>2500) say(pick(BOSS_LINES)); } }
 }
 function bossDefeated(){
-  state="bossDead"; items=[]; saved.bossWins++; if(saved.level==="hard") saved.bossHard++;
+  state="bossDead"; items=[]; saved.bossWins++; if(saved.level==="hard") saved.bossHard++; addXP(saved.level==="hard"?250:150);
   const hard=saved.level==="hard", ms=Math.round(B.time*1000), bb=saved.bossBest||(saved.bossBest={}), key=hard?"hard":"easy", rec=!bb[key]||ms<bb[key]; if(rec) bb[key]=ms;
   persist(); addHate("_boss"); postScore(hard?"bossTimeHard":"bossTime",ms); // zählt auch den Sieg mit
   setTimeout(()=>word(`⏱️ ${fmtTime(ms)}${rec?" BESTZEIT!":""}`,W/2,H*.47,clamp(W*.08,26,46),rec?"#4ade80":"#fff",2.4),1600);
@@ -2056,7 +2082,7 @@ function openZen(final){
 function showQuote(){
   clearInterval(zenTimer); $("zenBreath").style.display="none"; $("zenQuote").style.display="block"; $("quoteTxt").textContent=nextQuote();
   $("sHits").textContent=fmt(hits); $("sCombo").textContent="×"+bestCombo; const fav=Object.entries(wUse).sort((a,b)=>b[1]-a[1])[0]; $("sFav").textContent=fav?W_BY[fav[0]].emoji:"🍅";
-  saved.zen++; persist(); addHate("_zen"); checkBadges(true); sfx.chime();
+  saved.zen++; persist(); addHate("_zen"); checkBadges(true); sfx.chime(); addXP(5);
 }
 
 /* ===================== HUD & Leisten ===================== */
@@ -2113,9 +2139,9 @@ function hide(id){ $(id).classList.add("hidden"); }
 function anyOpen(){ return OVERLAYS.some(id=>!$(id).classList.contains("hidden")); }
 function renderHome(){
   const bo=myBadgeObj();
-  $("homeAv").textContent=saved.name?saved.name[0].toUpperCase():"?";
+  $("homeAv").firstChild.nodeValue=saved.name?saved.name[0].toUpperCase():"?"; const li=lvInfo(saved.xp);
   $("homeName").textContent=saved.name||"Profil anlegen";
-  $("homeBadge").textContent=saved.name?(bo?`${bo.e} ${bo.t}`:"Abzeichen wählen"):"Spitzname & Abzeichen";
+  $("homeBadge").textContent=saved.name?`Level ${li.L} · ${li.t}${bo?` · ${bo.e}`:""}`:"Spitzname & Abzeichen"; renderXP();
   const el=$("homeClass"); if(!NET.online){ el.innerHTML="<span>👊 Klassen-Zähler lädt …</span>"; }
   else { const t=topTool(NET.per); el.innerHTML=`<span>👊 <b>${fmt(NET.total)}</b> Treffer${t?` · 🔥 <b>${esc(NAMES[t].name)}</b>`:""}</span>`; el.title=t?`Die Klasse hat ${fmt(NET.total)}× zugeschlagen. Meistgehasst: ${NAMES[t].name}`:""; }
   $("bossE").textContent = saved.bossOpen ? "👑" : "🔒"; $("bossSub").textContent = saved.bossOpen ? "Mega-Bug rennt weg" : "Erst 3 Tools K.O. hauen";
@@ -2244,7 +2270,22 @@ async function sendWall(){
 /* ===================== Profil ===================== */
 let profBadge="";
 function openProfile(){ $("nameInput").value=saved.name||""; profBadge=saved.badge; renderProfile(); show("profile"); }
-function renderProfile(){
+
+// ---------- Spieler-Level: Erfahrungspunkte aus allen Modi ----------
+const LV_TITLES=[[1,"Praktikant"],[3,"Junior PM"],[5,"Produktmanager"],[8,"Senior PM"],[12,"Head of Frust"],[16,"Chief Frust Officer"],[22,"Frust-Legende"]];
+const xpNeed=L=>50*L*(L+1);          // Gesamt-XP, die man für Level L+1 braucht
+function lvInfo(x){ x=x||0; let L=1; while(x>=xpNeed(L)) L++; const lo=L>1?xpNeed(L-1):0, hi=xpNeed(L); let t=LV_TITLES[0][1]; LV_TITLES.forEach(([l,n])=>{ if(L>=l) t=n; }); return {L,t,x,pct:Math.min(1,(x-lo)/(hi-lo)),toNext:hi-x}; }
+function addXP(n,why){
+  if(!n) return; const before=lvInfo(saved.xp).L; saved.xp=(saved.xp||0)+Math.round(n); persist();
+  const now=lvInfo(saved.xp); renderXP();
+  if(now.L>before){ setTimeout(()=>{ toast(`⬆️ Level ${now.L} erreicht – ${now.t}!`,3200); sfx.unlock(); },why==="ko"?900:400); }
+}
+function renderXP(){
+  const i=lvInfo(saved.xp), lvl=$("homeLv"), bar=$("homeXp");
+  if(lvl){ lvl.textContent=i.L; bar.style.width=(i.pct*100)+"%"; }
+  const pl=$("profLv"); if(pl){ pl.innerHTML=`<b>Level ${i.L}</b> · ${i.t}<span class="xpbar"><i style="width:${i.pct*100}%"></i></span><small>${fmt(i.x)} XP · noch ${fmt(i.toNext)} XP bis Level ${i.L+1}</small>`; }
+}
+function renderProfile(){ renderXP();
   $("profCards").textContent=saved.cardsWins?`🃏 Tool-Karten gewonnen: ${saved.cardsWins}×`:"";
   const tag=$("profTag"); const nm=$("nameInput").value.trim()||"Dein Spitzname"; const bo=BADGES.find(b=>b.id===profBadge);
   tag.innerHTML=""; tag.append(document.createTextNode(nm+" ")); if(bo){ const sm=document.createElement("small"); sm.textContent=`${bo.e} ${bo.t}`; tag.appendChild(sm); }
@@ -2430,7 +2471,9 @@ function lbAnnounce(){
   // Laufende Kämpfe auch melden, damit andere zuschauen können
   else if(st&&st.phase!=="lobby"&&st.hostId===R.you){ const ps=st.people.filter(p=>p.role==="player"), nm=t=>ps.filter(p=>p.team===t).map(p=>(p.isBot?"🤖 ":"")+p.name).join(" & ")||"?";
     key=`${st.code}|${st.format}|${ps.filter(p=>!p.isBot).length}|live|${nm("A")} vs ${nm("B")}`; }
-  if(!key&&CT.ws&&CT.st&&CT.st.hostId===CT.you&&CT.st.phase==="lobby"){ const n=CT.st.people.filter(p=>p.role==="player"&&!p.isBot).length; if(n<4&&!CT.st.people.some(p=>p.isBot)) key=`${CT.st.code}|cards|${n}`; }
+  if(!key&&CT.ws&&CT.st&&CT.st.hostId===CT.you){ const ps=CT.st.people.filter(p=>p.role==="player"), n=ps.filter(p=>!p.isBot).length;
+    if(CT.st.phase==="lobby"){ if(n<4&&!CT.st.people.some(p=>p.isBot)) key=`${CT.st.code}|cards|${n}`; }
+    else key=`${CT.st.code}|cards|${n}|live|${ps.map(p=>(p.isBot?"🤖 ":"")+p.name).join(", ")}`; }
   if(key===LB.ann) return;
   if(LB.ann&&!key) lbSend({t:"close",code:LB.ann.split("|")[0]});
   if(key){ const [code,format,count,live,title]=key.split("|"); lbSend({t:"open",code,format,count:+count,live:!!live,title:title||""}); }
@@ -2677,6 +2720,7 @@ function fResults(){
   const list=$("resList"); list.innerHTML="";
   Object.values(v.players).sort((a,b)=>b.st.hits-a.st.hits).forEach(p=>{ const d=document.createElement("div"); d.className="resrow "+p.team+(p.id===FT.myId&&!FT.spec?" me":"");
     d.innerHTML=`<div>${p.team===w?"🏆":"🥊"}</div><div class="nm"></div><div class="v">${fmt(p.st.hits)} 👊</div>`; d.querySelector(".nm").textContent=`${p.bot?"🤖 ":""}${p.name} · Treffer`; list.appendChild(d); });
+  if(!FT.spec) addXP(w===FT.myTeam?(FT.local?30:60):(FT.local?10:20));
   if(!FT.spec&&w===FT.myTeam){ if(!FT.local){ saved.duelWins=(saved.duelWins||0)+1; } persist(); checkBadges(true); confetti(W/2,H*.5,80); sfx.fanfare(); } else sfx.thud();
   if(FT.format==="2v2"&&!FT.spec){ saved.teamGames=(saved.teamGames||0)+1; persist(); }
   $("rematchBtn").textContent=FT.local?"NOCHMAL! ⚔️":"REVANCHE! ⚔️"; $("resMenu").textContent=FT.local?"🏠 Hauptmenü":"🏠 Raum verlassen & Hauptmenü";
@@ -2964,6 +3008,12 @@ let newFmt="1v1";
 document.querySelectorAll("#fmtSeg button").forEach(b=>b.onclick=()=>{ newFmt=b.dataset.f; document.querySelectorAll("#fmtSeg button").forEach(x=>x.classList.toggle("on",x===b)); });
 $("duelX").onclick=()=>{ if(R.ws) leaveRoom(); else { hide("duel"); openHome(); } };
 $("createRoom").onclick=()=>{ if(!needName()) return; const code=genCode(); connect(code,"player"); const once=setInterval(()=>{ if(R.st&&R.st.hostId===R.you){ clearInterval(once); rsend({t:"settings",format:newFmt,level:saved.level}); } },200); setTimeout(()=>clearInterval(once),5000); };
+// Schnelles Duell: sofort zu jemandem, der wartet – sonst Raum eröffnen und alle einladen
+$("quickDuel").onclick=()=>{ if(!needName()) return; ensureAudio();
+  const r=LB.rooms.filter(x=>x.format!=="cards"&&!x.live&&x.count<x.cap).sort((a,b)=>(b.cap-b.count===1)-(a.cap-a.count===1)||(a.ch==null)-(b.ch==null))[0];
+  if(r){ toast(`⚔️ Du forderst ${r.name} heraus!`); connect(r.code,"player"); return; }
+  const code=genCode(); connect(code,"player"); toast("⚔️ Niemand wartet gerade – Raum eröffnet, alle Online-Spieler werden eingeladen.",3200);
+  let n=0; const t=setInterval(()=>{ n++; if(R.st&&R.st.hostId===R.you&&LB.ann&&LB.ann.startsWith(code)){ clearInterval(t); lbSend({t:"challenge",code}); } if(n>40) clearInterval(t); },250); };
 function joinWith(role){ if(!needName()) return; const code=$("joinCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(code.length<4){ toast("Bitte den Raum-Code eingeben."); return; } connect(code,role); }
 $("joinPlay").onclick=()=>joinWith("player");
 $("botDuel").onclick=()=>{ ensureAudio(); hide("duel"); openPick(id=>modeIntro("fight",()=>startBotFight(id)),"WELCHES TOOL HÄNGT IN DER MITTE?","Diese Boxbirne hängt zwischen dir und dem Bot. Wer sie schneller wegschiebt, gewinnt."); };
@@ -3034,8 +3084,9 @@ function cEvents(ev){
 function cRender(){
   const v=CT.view; if(!v) return;
   const me=CT.you, my=v.turn===me&&v.phase==="play", n=v.players.length, mi=v.players.findIndex(p=>p.id===me);
-  // Gegner im Uhrzeigersinn nach dir
-  const others=[]; for(let k=1;k<n;k++) others.push(v.players[(mi+k)%n]);
+  CT.spec=mi<0; $("cards").classList.toggle("spec",CT.spec);
+  // Gegner im Uhrzeigersinn nach dir (Zuschauer sehen alle)
+  const others=[]; if(CT.spec) others.push(...v.players); else for(let k=1;k<n;k++) others.push(v.players[(mi+k)%n]);
   const prevN=CT.prevN||{}; CT.prevN={}; v.players.forEach(p=>CT.prevN[p.id]=p.n);
   $("cSeats").innerHTML=others.map(p=>`<div class="oppo${p.id===v.turn?" turn":""}${prevN[p.id]!=null&&p.n>prevN[p.id]?" bump":""}" data-id="${p.id}"><span class="nm">${p.bot?"🤖 ":""}${esc(p.name)}</span><span class="mini">${"<i></i>".repeat(Math.min(p.n,8))}</span><span class="cnt">${p.n} ${p.n===1?"Karte":"Karten"}</span>${p.n===1?'<span class="last">LETZTE!</span>':""}</div>`).join("");
   // Ablagestapel
@@ -3050,7 +3101,7 @@ function cRender(){
   const g=cgrp(v.color); $("cColor").textContent=`Farbe: ${g.name}`; $("cColor").style.background=g.color; $("cColor").style.color=g.color; $("cColor").innerHTML=`<span style="color:#fff">Farbe: ${g.name}</span>`;
   // Status
   const cur=v.players.find(p=>p.id===v.turn);
-  $("cStatus").textContent=v.phase!=="play"?"":my?(v.pending!=null?"Gezogene Karte passt – ausspielen oder behalten?":"Du bist dran"):`${cur?(cur.bot?"🤖 ":"")+cur.name:"?"} ist dran …`;
+  $("cStatus").textContent=v.phase!=="play"?"":CT.spec?`👀 Du schaust zu · ${cur?(cur.bot?"🤖 ":"")+cur.name:"?"} ist dran`:my?(v.pending!=null?"Gezogene Karte passt – ausspielen oder behalten?":"Du bist dran"):`${cur?(cur.bot?"🤖 ":"")+cur.name:"?"} ist dran …`;
   $("cStatus").parentElement.classList.toggle("me",my);
   cHintArm(my&&v.pending==null); $("cHand").classList.toggle("myturn",my);
   // 17: Stapel zeigt immer, dass man dort zieht
@@ -3116,7 +3167,7 @@ $("cmTips").querySelectorAll("button").forEach(b=>b.onclick=()=>{ cSetTips(b.dat
 $("cPlayDrawn").onclick=()=>{ const v=CT.view; if(!v||v.pending==null) return; const c=(v.hand||[]).find(x=>x.id===v.pending); const el=document.querySelector(`#cHand .tc[data-cid="${v.pending}"]`); if(c) cTapCard(c,el||$("cDeck")); };
 $("cKeep").onclick=()=>cSend({t:"keep"});
 $("cCall").onclick=()=>{ CT.armed=!CT.armed; $("cCall").classList.toggle("armed",CT.armed); if(CT.armed){ sfx.pop(); buzz(15); } };
-$("cX").onclick=()=>{ const v=CT.view; if(v&&v.phase==="play"&&Date.now()-CT.quitT>2500){ CT.quitT=Date.now(); cMsg(CT.local?"Nochmal tippen zum Beenden":"Nochmal tippen – ein Bot spielt dann für dich weiter",2400); return; } cQuit(); };
+$("cX").onclick=()=>{ const v=CT.view; if(v&&v.phase==="play"&&!CT.spec&&Date.now()-CT.quitT>2500){ CT.quitT=Date.now(); cMsg(CT.local?"Nochmal tippen zum Beenden":"Nochmal tippen – ein Bot spielt dann für dich weiter",2400); return; } cQuit(); };
 $("cBack").onclick=()=>cQuit();
 $("cAgain").onclick=()=>{ if(CT.local){ cStartLocal(CT.nBots); return; } if(CT.st&&CT.st.hostId===CT.you){ ctSend({t:"again"}); ctSend({t:"start"}); } else { ctSend({t:"again"}); $("cAgain").disabled=true; $("cAgain").textContent="Warte auf den Gastgeber …"; } };
 
@@ -3124,14 +3175,38 @@ function cShowOver(){
   const v=CT.view, win=v.winner===CT.you, p=v.players.find(x=>x.id===v.winner);
   if(!$("cOver").classList.contains("hidden")) return;
   $("cWinE").textContent=win?"🏆":"🃏"; $("cWinT").textContent=win?"Du hast gewonnen!":`${p?p.name:"Jemand"} hat gewonnen`;
+  if(CT.spec) $("cWinS").textContent="Nächste Runde kannst du mitspielen, wenn ein Platz frei ist.";
   $("cWinS").textContent=win?"Alle Karten weg – schön entspannt.":"Macht nichts – nächste Runde?";
   const rank=[...v.players].sort((a,b)=>a.n-b.n);
   $("cRank").innerHTML=rank.map((q,i)=>`<li class="${q.id===CT.you?"me":""}"><span>${["🥇","🥈","🥉","4."][i]}</span><span class="n">${q.id===CT.you?"Du":(q.bot?"🤖 ":"")+esc(q.name)}</span><span class="k">${q.n===0?"fertig":q.n+(q.n===1?" Karte":" Karten")}</span></li>`).join("");
-  const host=CT.local||(CT.st&&CT.st.hostId===CT.you); $("cAgain").disabled=false; $("cAgain").textContent=host?"NOCHMAL 🃏":"ZURÜCK AN DEN TISCH";
+  const host=CT.local||(CT.st&&CT.st.hostId===CT.you); $("cAgain").disabled=false; $("cAgain").style.display=CT.spec?"":""; $("cAgain").textContent=host?"NOCHMAL 🃏":"ZURÜCK AN DEN TISCH";
   $("cOver").classList.remove("hidden");
+  if(CT.spec){ $("cAgain").textContent="AN DEN TISCH"; } else addXP(win?(CT.local?40:60):(CT.local?10:20));
   if(win){ sfx.fanfare(); saved.cardsWins=(saved.cardsWins||0)+1; persist(); } else cSnd.soft();
 }
 
+
+// ---------- Emoji-Reaktionen ----------
+const CREACTS=["😂","😱","🔥","👏","🍅","😤","🙈","❤️"];
+$("cReact").innerHTML=CREACTS.map(e=>`<button aria-label="Reaktion ${e}">${e}</button>`).join("");
+let cReactT=0;
+$("cReact").querySelectorAll("button").forEach(b=>b.onclick=()=>{ const now=Date.now(); if(now-cReactT<300) return; cReactT=now; const e=b.textContent;
+  if(CT.local){ cFloat(CT.you,e); sfx.pop(); if(Math.random()<.35) setTimeout(()=>{ const bots=(CT.view?.players||[]).filter(p=>p.bot); if(bots.length) cFloat(bots[(Math.random()*bots.length)|0].id,["😂","😤","🙈","👏"][(Math.random()*4)|0]); },700+Math.random()*900); }
+  else ctSend({t:"react",e}); });
+function cFloat(id,e,name){
+  let r=null; const seat=document.querySelector(`.oppo[data-id="${CSS.escape(String(id))}"]`);
+  if(seat) r=seat.getBoundingClientRect(); else if(id===CT.you) r=$("cHand").getBoundingClientRect(); else r=$("cPile").getBoundingClientRect();
+  const d=document.createElement("div"); d.className="cfloat"; d.textContent=e;
+  if(name&&!seat&&id!==CT.you){ const sm=document.createElement("small"); sm.textContent=name; d.appendChild(sm); }
+  d.style.left=(r.left+r.width/2+(Math.random()*30-15))+"px"; d.style.top=(r.top+(id===CT.you?-10:r.height*.25))+"px";
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1700);
+}
+// Bots reagieren ab und zu auf das Spielgeschehen (nur allein gegen Bots)
+function cBotReact(ev){ if(!CT.local||!ev) return; ev.forEach(e=>{ if(Math.random()>.45) return; let id=null,emo=null;
+  if(e.k==="skip"&&String(e.id).startsWith("b")){ id=e.id; emo=["😤","😱","🙈"][(Math.random()*3)|0]; }
+  else if(e.k==="play"&&String(e.id).startsWith("b")&&(e.card.v==="w4"||e.card.v==="d2")){ id=e.id; emo=["😂","🔥"][(Math.random()*2)|0]; }
+  else if(e.k==="forgot"&&e.id==="me"){ const b=(CT.view?.players||[]).find(p=>p.bot); if(b){ id=b.id; emo="😂"; } }
+  if(id) setTimeout(()=>cFloat(id,emo),500+Math.random()*700); }); }
 // ---------- Allein gegen Bots (läuft komplett im Browser) ----------
 function cStartLocal(nBots){
   CT.nBots=nBots; CT.local=true; CT.you="me"; CT.lastHand=new Set();
@@ -3142,7 +3217,7 @@ function cStartLocal(nBots){
 const BOT_NAMES_C=["Bot Bernd","Bot Lotte","Bot Kalle","Bot Frieda","Bot Ronny","Bot Uschi"];
 function cLocalStep(){
   const g=CT.g; clearTimeout(CT.botT); const ev=g.ev; g.ev=[];
-  const prevTurn=CT.view&&CT.view.turn; CT.view=CARDS.view(g,"me"); cEvents(ev); cRender();
+  const prevTurn=CT.view&&CT.view.turn; CT.view=CARDS.view(g,"me"); cEvents(ev); cRender(); cBotReact(ev);
   if(g.phase!=="play") return;
   const id=CARDS.cur(g);
   if(id==="me"){ if(prevTurn!=="me") cSnd.turn(); return; }
@@ -3158,6 +3233,7 @@ function ctConnect(code){
   CT.ws=ws;
   ws.onopen=()=>{ ws.send(JSON.stringify({t:"join",name:saved.name,badge:saved.badge||"",sid:saved.sid})); };
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
+    if(m.t==="react"){ if(CT.on) cFloat(m.id,m.e,m.name); return; }
     if(m.t==="welcome"){ CT.you=m.you; if(m.role!=="player") toast("Der Tisch ist schon voll oder das Spiel läuft – du schaust zu."); }
     if(m.t==="state"){ CT.st=m; CT.you=m.you;
       if(m.game){ const prev=CT.view&&CT.view.turn; if(m.game.turnAt) CT.skew=0; CT.view=m.game; if(!CT.on){ cOpenTable(); sfx.shuffle(); } cEvents(m.ev); cRender(); if(m.game.turn===CT.you&&prev!==CT.you&&m.game.phase==="play") { cSnd.turn(); buzz(20); } }
@@ -3198,8 +3274,10 @@ function renderModePills(){
   cp.textContent=tables?`${tables} Tisch${tables>1?"e":""} offen`:"";
 }
 function renderCardTables(){ renderModePills();
-  const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code);
-  box.innerHTML=t.length?"":'<div class="oempty">Gerade wartet kein Tisch. Erstell einen und lad alle ein.</div>';
+  const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code), lv=LB.rooms.filter(r=>r.format==="cards"&&r.live&&r.code!==CT.code);
+  box.innerHTML=t.length||lv.length?"":'<div class="oempty">Gerade ist kein Tisch offen. „Schnellstart“ eröffnet einen.</div>';
+  lv.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · Tool-Karten läuft gerade</small></span><button>👀 Zuschauen</button>`;
+    d.querySelector(".nm").textContent=r.title||`${r.name} spielt`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
   t.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>🃏</span><span class="t"><span class="nm"></span><small>Tool-Karten · ${r.count}/4 am Tisch</small></span><button>Mitspielen</button>`;
     d.querySelector(".nm").textContent=`${r.name} sucht Mitspieler`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
 }
@@ -3209,6 +3287,11 @@ $("cmX").onclick=()=>{ if(CT.code){ CT.code=""; ctClose(); CT.st=null; lbAnnounc
 $("cmBots").querySelectorAll("button").forEach(b=>b.onclick=()=>{ CT.nBots=+b.dataset.n; $("cmBots").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); sfx.pop(); });
 $("cmSolo").onclick=()=>{ ensureAudio(); cStartLocal(CT.nBots); };
 $("cmCreate").onclick=()=>{ if(!needCardName()) return; ctConnect(genCode()); };
+// Schnellstart: an den vollsten Tisch mit freiem Platz, sonst neuen Tisch eröffnen
+$("cmQuick").onclick=()=>{ if(!needCardName()) return; ensureAudio();
+  const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap).sort((a,b)=>b.count-a.count)[0];
+  if(t){ toast(`🃏 Du setzt dich zu ${t.name}.`); ctConnect(t.code); }
+  else { toast("🃏 Kein freier Platz – neuer Tisch eröffnet. Andere finden ihn per Schnellstart.",3200); ctConnect(genCode()); } };
 $("cmJoin").onclick=()=>{ if(!needCardName()) return; const c=$("cmCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(c.length<4){ toast("Bitte den Tisch-Code eingeben."); return; } ctConnect(c); };
 function needCardName(){ if(saved.name&&saved.name.length>=2) return true; toast("Erst einen Spitznamen festlegen – im Profil oder im Chat.",2600); return false; }
 $("cmBotFill").onclick=()=>{ ctSend({t:"bots"}); sfx.pop(); };
