@@ -1445,6 +1445,7 @@ const sfx = {
   rev(){ tone(.14,"triangle",400,900,.16,0,.2); tone(.14,"triangle",900,400,.14,.14,.2); },
   wish(){ [523,659,784].forEach((f,i)=>mallet(f*1.5,.16,i*.06,.4)); },
   call(){ tone(.3,"sawtooth",520,880,.06,0,.3); mallet(1175,.25,.05,.4); },
+  doorbell(){ bellTone(659,1.4,.22,0,.5); bellTone(523,1.8,.22,.45,.5); },
 };
 function buzz(p){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} }
 
@@ -2405,8 +2406,30 @@ function midToolBtn(){ const st=R.st, t=NAMES[st.tool]||null, can=st.hostId===R.
   b.querySelector(".dot").style.background=t?toolBg(t):"rgba(255,255,255,.15)"; b.querySelector(".tn").textContent=t?`${t.ic} ${t.name}`:(can?"Tool aussuchen (sonst Zufall)":"Der Host sucht das Tool aus");
   if(can) b.onclick=()=>openPick(id=>{ rsend({t:"tool",tool:id}); show("duel"); },"WELCHES TOOL HÄNGT IN DER MITTE?","Diese Boxbirne hängt zwischen euch. Wer sie schneller wegschiebt, gewinnt.");
   return b; }
+
+// ---------- Türklingel: jemand setzt sich an deinen Tisch / in deinen Raum ----------
+const BELL={seen:{},pending:[],title:document.title,blink:null};
+function bellWatch(kind,code,people,you){
+  const ids=people.filter(p=>!p.isBot&&p.id!==you).map(p=>p.id), key=kind+code, prev=BELL.seen[key];
+  BELL.seen[key]=ids; if(!prev) return;
+  const neu=people.filter(p=>!p.isBot&&p.id!==you&&!prev.includes(p.id));
+  if(neu.length) neu.forEach(p=>ringBell(p.name,kind));
+}
+function ringBell(name,kind){
+  const txt=`${name} hat sich ${kind==="cards"?"an deinen Tisch gesetzt":"in deinen Duell-Raum gestellt"}`;
+  sfx.doorbell(); buzz([60,80,60]);
+  if(document.hidden){ BELL.pending.push(`🔔 ${txt}`); bellTitle(name); } else toast(`🔔 ${txt}!`,3200);
+}
+function bellTitle(name){
+  clearInterval(BELL.blink); let on=false;
+  BELL.blink=setInterval(()=>{ on=!on; document.title=on?`🔔 ${name} ist da!`:BELL.title; },1200);
+}
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) return;
+  clearInterval(BELL.blink); document.title=BELL.title;
+  if(BELL.pending.length){ const t=BELL.pending.splice(0); setTimeout(()=>{ toast(t.length>1?`🔔 ${t.length} Leute sind dazugekommen!`:t[0]+"!",3600); sfx.doorbell(); },400); } });
 function renderLobby(){
   const st=R.st, isHost=st.hostId===R.you, mine=me(); $("roomCode").textContent=st.code; $("duelX").style.display="none";
+  if(isHost&&st.phase==="lobby") bellWatch("duel",st.code,st.people.filter(p=>p.role==="player"),R.you);
   if(R.rulesFor!==st.code){ R.rulesFor=st.code; modeIntro("fight",()=>show("duel"),true,{level:st.level}); }
   ["A","B"].forEach(t=>{ const box=$("team"+t); box.innerHTML=""; const ps=st.people.filter(p=>p.role==="player"&&p.team===t); const cap=st.format==="2v2"?2:1;
     ps.forEach(p=>{ const d=document.createElement("div"); d.className="p"; d.textContent=`${p.isBot?"🤖":(p.badge||"🥊")} ${p.name}${p.id===R.you?" (du)":""}`; if(p.id===st.hostId){ const h=document.createElement("span"); h.className="host"; h.textContent="👑"; d.appendChild(h); } box.appendChild(d); });
@@ -3299,6 +3322,7 @@ function ctConnect(code){
 function ctClose(){ if(CT.ws){ CT.leaving=true; try{ CT.ws.close(); }catch(e){} CT.ws=null; } CT.leaving=false; }
 function cRenderLobby(){
   const st=CT.st; if(!st) return;
+  if(st.hostId===CT.you) bellWatch("cards",st.code,st.people.filter(p=>p.role==="player"),CT.you);
   $("cmEntry").style.display="none"; $("cmLobby").style.display="block"; show("cardsMenu");
   $("cmCodeTxt").textContent=st.code;
   const ps=st.people.filter(p=>p.role==="player"), host=st.hostId===CT.you;
