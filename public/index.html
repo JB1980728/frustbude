@@ -807,6 +807,11 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 
 .cwatch{display:none;margin-left:2px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#e9d5ff;font-family:Nunito,system-ui;font-size:11.5px;font-weight:900}
 .cwatch.on{display:inline-block;animation:cwIn .4s ease-out}@keyframes cwIn{from{transform:scale(.6);opacity:0}}
+
+.cseat{position:relative}.cseat.bot{border-style:dashed}
+.seatx{margin-left:auto;width:24px;height:24px;flex:none;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:900}
+.addbot{justify-content:center;color:#c4b5fd!important;font-weight:900!important;cursor:pointer}
+.oroom .watch{margin-left:6px;width:40px;padding:6px 0}
 </style>
 </head>
 <body>
@@ -3160,6 +3165,7 @@ function cEvents(ev){
     else if(e.k==="draw"&&e.id===CT.you) cSnd.draw();
     else if(e.k==="call"){ sfx.call(); cMsg(`📣 ${cName(e.id)}: „Letzte Karte!“`,1800); }
     else if(e.k==="forgot"){ cMsg(`😅 ${cName(e.id)} ${e.id===CT.you?"hast":"hat"} „Letzte Karte!“ vergessen: +2`,2400); cSnd.soft(); }
+    else if(e.k==="takeover"){ cMsg(e.id===CT.you?`🙋 Du übernimmst den Platz von ${e.old}`:`🙋 ${cName(e.id)} übernimmt für ${e.old}`,2400); sfx.notify(); }
     else if(e.k==="slow"){ cMsg(`⏰ ${cName(e.id)} war zu langsam – der Bot hat gespielt`,2400); }
   }
 }
@@ -3315,7 +3321,7 @@ function ctConnect(code){
   ctClose(); CT.code=code; CT.local=false; CT.st=null; CT.view=null; CT.lastHand=new Set();
   let ws; try{ ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/table/"+code); }catch(e){ toast("Verbindung klappt gerade nicht."); return; }
   CT.ws=ws;
-  ws.onopen=()=>{ ws.send(JSON.stringify({t:"join",name:saved.name,badge:saved.badge||"",sid:saved.sid})); };
+  ws.onopen=()=>{ ws.send(JSON.stringify({t:"join",name:saved.name,badge:saved.badge||"",sid:saved.sid,role:CT.wantRole||"player"})); };
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
     if(m.t==="react"){ if(CT.on) cFloat(m.id,m.e,m.name); return; }
     if(m.t==="welcome"){ CT.you=m.you; if(m.role!=="player") toast("Der Tisch ist schon voll oder das Spiel läuft – du schaust zu."); }
@@ -3334,12 +3340,18 @@ function cRenderLobby(){
   $("cmEntry").style.display="none"; $("cmLobby").style.display="block"; show("cardsMenu");
   $("cmCodeTxt").textContent=st.code;
   const ps=st.people.filter(p=>p.role==="player"), host=st.hostId===CT.you;
-  let h=""; for(let i=0;i<4;i++){ const p=ps[i]; h+=p?`<div class="cseat${p.id===CT.you?" me":""}">${p.isBot?"🤖":p.id===st.hostId?"👑":"🙂"} <span>${esc(p.name)}${p.id===CT.you?" (du)":""}</span></div>`:`<div class="cseat empty">Platz frei …</div>`; }
+  const hostNow=st.hostId===CT.you;
+  let h=""; for(let i=0;i<4;i++){ const p=ps[i];
+    h+=p?`<div class="cseat${p.id===CT.you?" me":""}${p.isBot?" bot":""}">${p.isBot?"🤖":p.id===st.hostId?"👑":"🙂"} <span>${esc(p.name)}${p.id===CT.you?" (du)":""}</span>${p.isBot&&hostNow?`<button class="seatx" data-rm="${p.id}" aria-label="Bot entfernen">✕</button>`:""}</div>`
+       :hostNow?`<button class="cseat empty addbot" data-add="1">＋ Bot dazu</button>`:`<div class="cseat empty">Platz frei …</div>`; }
   $("cmSeats").innerHTML=h;
+  $("cmSeats").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ ctSend({t:"rmBot",id:b.dataset.rm}); sfx.pop(); });
+  $("cmSeats").querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ ctSend({t:"addBot"}); sfx.pop(); });
   const watch=st.people.filter(p=>p.role!=="player").length;
-  $("cmHint").textContent=(host?`${ps.length} von 4 am Tisch. Starte, wann du willst – freie Plätze übernehmen Bots.`:`${ps.length} von 4 am Tisch. Gleich geht’s los – ${(ps.find(p=>p.id===st.hostId)||{}).name||"der Gastgeber"} startet das Spiel.`)+(watch?` · ${watch} schaut zu`:"");
+  const nb=ps.filter(p=>p.isBot).length;
+  $("cmHint").textContent=(host?`${ps.length} von 4 am Tisch${nb?` (davon ${nb} Bot${nb>1?"s":""})`:""}. Leere Plätze bleiben frei – tipp auf „＋ Bot dazu“, wenn du magst. Kommt später jemand dazu, macht ein Bot Platz.`:`${ps.length} von 4 am Tisch. Gleich geht’s los – ${(ps.find(p=>p.id===st.hostId)||{}).name||"der Gastgeber"} startet das Spiel.`)+(watch?` · ${watch} schaut zu`:"");
   $("cmBotFill").style.display="none";
-  $("cmStart").style.display=host?"":"none"; $("cmStart").textContent="SPIEL STARTEN 🃏";
+  $("cmStart").style.display=host?"":"none"; $("cmStart").textContent=ps.length<2?"STARTEN (MIT 1 BOT) 🃏":`SPIEL STARTEN · ${ps.length} SPIELER 🃏`;
   $("cmInvite").style.display=host?"":"none";
 }
 // Zuschauer dezent oben anzeigen (👀 2) – Tipp zeigt die Namen
@@ -3367,23 +3379,26 @@ function renderModePills(cardsN){
 function renderCardTables(){ renderModePills();
   const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code), lv=LB.rooms.filter(r=>r.format==="cards"&&r.live&&r.code!==CT.code);
   box.innerHTML=t.length||lv.length?"":'<div class="oempty">Gerade ist kein Tisch offen. Eröffne einen – die anderen sehen ihn dann hier und können sich dazusetzen.</div>';
-  lv.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · Tool-Karten läuft gerade</small></span><button>👀 Zuschauen</button>`;
-    d.querySelector(".nm").textContent=r.title||`${r.name} spielt`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
+  lv.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; const canJoin=r.bots>0;
+    d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>${canJoin?`LIVE · ${r.bots} Bot${r.bots>1?"s":""} – du kannst übernehmen`:"LIVE · Tisch ist voll"}</small></span>${canJoin?'<button class="take">Mitspielen</button>':""}<button class="watch">👀</button>`;
+    d.querySelector(".nm").textContent=r.title||`${r.name} spielt`;
+    const tb=d.querySelector(".take"); if(tb) tb.onclick=()=>joinTable(r.code,"player");
+    d.querySelector(".watch").onclick=()=>joinTable(r.code,"spectator"); box.appendChild(d); });
   t.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>🃏</span><span class="t"><span class="nm"></span><small>${r.count} von 4 Plätzen besetzt</small></span><button>Dazusetzen</button>`;
     d.querySelector(".nm").textContent=`Tisch von ${r.name}`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
 }
-function joinTable(code){ ensureAudio(); hideChallenge(); ["home","pick","results","help","stats","wall","profile","recap","zen","duel"].forEach(hide); show("cardsMenu"); ctConnect(code); }
+function joinTable(code,role){ CT.wantRole=role||"player"; ensureAudio(); hideChallenge(); ["home","pick","results","help","stats","wall","profile","recap","zen","duel"].forEach(hide); show("cardsMenu"); ctConnect(code); }
 $("cardsBtn").onclick=()=>{ ensureAudio(); modeIntro("cards",openCardsMenu); };
 $("cmX").onclick=()=>{ if(CT.code){ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); } hide("cardsMenu"); openHome(); };
 $("cmBots").querySelectorAll("button").forEach(b=>b.onclick=()=>{ CT.nBots=+b.dataset.n; $("cmBots").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); sfx.pop(); });
 $("cmSolo").onclick=()=>{ ensureAudio(); cStartLocal(CT.nBots); };
-$("cmCreate").onclick=()=>{ if(!needCardName(()=>$("cmCreate").click())) return; ctConnect(genCode()); };
+$("cmCreate").onclick=()=>{ if(!needCardName(()=>$("cmCreate").click())) return; CT.wantRole="player"; ctConnect(genCode()); };
 // Schnellstart: an den vollsten Tisch mit freiem Platz, sonst neuen Tisch eröffnen
 $("cmQuick").onclick=()=>{ if(!needCardName(()=>$("cmQuick").click())) return; ensureAudio();
   const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap).sort((a,b)=>b.count-a.count)[0];
-  if(t){ toast(`🃏 Du setzt dich zu ${t.name}.`); ctConnect(t.code); }
+  if(t){ toast(`🃏 Du setzt dich zu ${t.name}.`); CT.wantRole="player"; ctConnect(t.code); }
   else { toast("🃏 Kein freier Platz – neuer Tisch eröffnet. Andere kommen über „Mitspielen“ dazu.",3200); ctConnect(genCode()); } };
-$("cmJoin").onclick=()=>{ if(!needCardName(()=>$("cmJoin").click())) return; const c=$("cmCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(c.length<4){ toast("Bitte den Tisch-Code eingeben."); return; } ctConnect(c); };
+$("cmJoin").onclick=()=>{ if(!needCardName(()=>$("cmJoin").click())) return; const c=$("cmCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(c.length<4){ toast("Bitte den Tisch-Code eingeben."); return; } CT.wantRole="player"; ctConnect(c); };
 let npNext=null;
 function askName(then){ npNext=then; $("npName").value=""; show("namePrompt"); setTimeout(()=>$("npName").focus(),150); }
 $("npName").addEventListener("input",e=>{ const v=e.target.value, f=v.normalize("NFC").replace(/[^\p{L} \-]/gu,"").replace(/ {2,}/g," ").slice(0,12); if(f!==v) e.target.value=f; });

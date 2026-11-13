@@ -301,7 +301,8 @@ export class Table extends DurableObject {
   report(close) {
     if (!this.env.LOBBY || !this.st.code) return;
     const hum = this.humans(), host = this.conns.get(this.st.hostId);
-    const body = close ? { code: this.st.code, close: true } : { code: this.st.code, name: host ? host.name : (hum[0] ? hum[0].name : ""), count: hum.length, live: this.st.phase !== "lobby", title: this.players().map(p => (p.isBot ? "🤖 " : "") + p.name).join(", ") };
+    const botSeats = this.g && this.st.phase === "play" ? this.g.order.filter(id => this.g.bots[id] && !this.conns.has(id)).length : 0;
+    const body = close ? { code: this.st.code, close: true } : { code: this.st.code, name: host ? host.name : (hum[0] ? hum[0].name : ""), count: hum.length, bots: botSeats, live: this.st.phase !== "lobby", title: this.players().map(p => (p.isBot ? "🤖 " : "") + p.name).join(", ") };
     const key = JSON.stringify(body); if (!close && key === this.lastRep && Date.now() - (this.lastRepT || 0) < 20000) return; this.lastRep = key; this.lastRepT = Date.now();
     try { this.ctx.waitUntil(this.env.LOBBY.get(this.env.LOBBY.idFromName("main")).fetch("https://lobby/report", { method: "POST", body: JSON.stringify(body) }).catch(() => {})); } catch (e) {}
     if (!close && !this.repT) this.repT = setInterval(() => { if (![...this.conns.values()].some(x => x.joined)) { clearInterval(this.repT); this.repT = null; return; } this.lastRepT = 0; this.report(); }, 20000);
@@ -312,7 +313,7 @@ export class Table extends DurableObject {
     for (const c of this.conns.values()) if (c.joined) this.send(c, { t: "state", code: this.st.code, phase: this.st.phase, hostId: this.st.hostId, you: c.id, people, game: this.g ? CARDS.view(this.g, c.id) : null, ev: this.g ? this.g.ev : [] });
     if (this.g) this.g.ev = [];
   }
-  fill() { const used = new Set(this.bots.map(b => b.name)); while (this.players().length < 4) { const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name); this.bots.push({ id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player" }); } }
+  fill(max) { const used = new Set(this.bots.map(b => b.name)); let n = 0; while (this.players().length < 4 && (!max || n++ < max)) { const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; used.add(name); this.bots.push({ id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player" }); } }
   onMsg(c, raw) {
     if (typeof raw !== "string" || raw.length > 400) return;
     const now = Date.now(); if (now - c.msgWin > 1000) { c.msgWin = now; c.msgs = 0; } if (++c.msgs > 20) return;
@@ -320,8 +321,18 @@ export class Table extends DurableObject {
     const st = this.st;
     if (m.t === "join" && !c.joined) {
       c.name = cleanName(m.name) || "Anonym"; c.badge = cleanBadge(m.badge); c.sid = cleanSid(m.sid); c.joined = true;
+      // Echte Mitspieler haben Vorrang: ein Bot macht Platz – im Warteraum und sogar mitten im Spiel
       if (st.phase === "lobby" && this.players().length >= 4 && this.bots.length) this.bots.pop();
       if (st.phase === "lobby" && this.players().length < 4) { c.role = "player"; if (!st.hostId || !this.conns.has(st.hostId)) st.hostId = c.id; }
+      else if (st.phase === "play" && this.g && m.role !== "spectator") {
+        const g = this.g, botId = g.order.find(id => g.bots[id] && !this.conns.has(id));
+        if (botId) {
+          const old = g.names[botId]; this.conns.delete(c.id); c.id = botId; this.conns.set(c.id, c);
+          g.bots[botId] = false; g.names[botId] = c.name; this.bots = this.bots.filter(b => b.id !== botId); c.role = "player";
+          g.ev.push({ k: "takeover", id: botId, old, s: ++g.seq });
+          if (CARDS.cur(g) === botId) { clearTimeout(this.botT); this.after(); }
+        }
+      }
       this.send(c, { t: "welcome", you: c.id, role: c.role }); this.sync(); return;
     }
     if (!c.joined) return;
@@ -345,8 +356,10 @@ export class Table extends DurableObject {
     }
     if (st.phase !== "lobby" || st.hostId !== c.id) return;
     if (m.t === "bots") { if (this.bots.length && this.players().length >= 4) this.bots = []; else this.fill(); this.sync(); return; }
+    if (m.t === "addBot") { if (this.players().length < 4) { const used = new Set(this.bots.map(b => b.name)); const name = BOT_NAMES.find(n => !used.has(n)) || "Bot"; this.bots.push({ id: "bot" + Math.random().toString(36).slice(2, 7), isBot: true, name, badge: "🤖", role: "player" }); } this.sync(); return; }
+    if (m.t === "rmBot") { this.bots = this.bots.filter(b => b.id !== String(m.id || "")); this.sync(); return; }
     if (m.t === "start") {
-      this.fill(); // freie Plätze übernehmen Bots
+      if (this.players().length < 2) this.fill(1); // allein am Tisch: mindestens ein Bot
       const ps = this.players().slice(0, 4);
       this.g = CARDS.newGame(ps.map(p => ({ id: p.id, name: p.name, bot: !!p.isBot })));
       st.phase = "play"; st.round++; this.after(); return;
@@ -387,7 +400,7 @@ export class Lobby extends DurableObject {
       const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
       if (code.length >= 4) {
         if (m.close) this.rooms.delete(code);
-        else { const r = this.rooms.get(code); this.rooms.set(code, { code, by: "srv", name: cleanName(m.name) || "Jemand", format: "cards", count: Math.max(0, Math.min(4, m.count | 0)), cap: 4, ts: Date.now(), ch: m.live ? 0 : (r ? r.ch : 0), live: !!m.live, title: cleanText(m.title || "", 70).replace(/\n/g, " ") }); }
+        else { const r = this.rooms.get(code); this.rooms.set(code, { code, by: "srv", name: cleanName(m.name) || "Jemand", format: "cards", count: Math.max(0, Math.min(4, m.count | 0)), bots: Math.max(0, Math.min(3, m.bots | 0)), cap: 4, ts: Date.now(), ch: m.live ? 0 : (r ? r.ch : 0), live: !!m.live, title: cleanText(m.title || "", 70).replace(/\n/g, " ") }); }
         this.sync();
       }
       return new Response("ok");
@@ -408,7 +421,7 @@ export class Lobby extends DurableObject {
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
   view() {
     const people = [...this.conns.values()].map(c => ({ name: c.name || null, busy: !!c.busy, act: c.act || "" }));
-    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < (r.by === "srv" ? 50000 : 30 * 60000)).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap, ch: r.ch ? Math.round((Date.now() - r.ch) / 1000) : null, live: !!r.live, title: r.title || "" }));
+    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < (r.by === "srv" ? 50000 : 30 * 60000)).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap, ch: r.ch ? Math.round((Date.now() - r.ch) / 1000) : null, live: !!r.live, title: r.title || "", bots: r.bots || 0 }));
     return { t: "online", people, rooms };
   }
   sync() { if (this.syncT) return; this.syncT = setTimeout(() => { this.syncT = null; const s = JSON.stringify(this.view()); for (const c of this.conns.values()) { try { c.ws.send(s); } catch (e) {} } }, 120); }
