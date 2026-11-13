@@ -812,6 +812,8 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .seatx{margin-left:auto;width:24px;height:24px;flex:none;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:900}
 .addbot{justify-content:center;color:#c4b5fd!important;font-weight:900!important;cursor:pointer}
 .oroom .watch{margin-left:6px;width:40px;padding:6px 0}
+
+#openRooms:not(:empty){margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -1037,25 +1039,26 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
   <button class="x" id="duelX">✕</button>
   <div id="duelEntry">
     <div class="mid">DUELL</div>
-    <div class="sub" style="margin:8px 0 10px">Tauziehen mit der Boxbirne: Wer schneller haut, schiebt sie zum Gegner. 1 gegen 1 oder 2 gegen 2.</div>
-    <div class="online mkonly" id="duelOnline" style="margin-bottom:10px"></div>
-    <button class="cta mkonly" id="quickDuel">⚡ Schnelles Duell</button>
-    <div class="modehint mkonly" style="margin:-2px 0 10px;text-align:center">Wartet jemand, kämpfst du sofort gegen ihn. Sonst wird ein Raum eröffnet und alle Online-Spieler eingeladen.</div>
-    <div class="seglbl mkonly">Duelle – mitmachen oder zuschauen</div>
-    <div id="openRooms" class="mkonly"></div>
-    <input class="field" id="duelName" maxlength="12" placeholder="Spitzname, nur Buchstaben" autocomplete="off">
-    <div class="seglbl mkonly">Jemanden herausfordern</div>
-    <div class="seg mkonly" id="fmtSeg"><button data-f="1v1" class="on">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
-    <button class="cta red mkonly" id="createRoom">RAUM ERSTELLEN &amp; LINK TEILEN ⚔️</button>
-    <div class="gap"></div>
-    <div class="hidden-el"><div id="joinLbl"></div><input id="joinCode"><button id="joinPlay"></button><button id="joinWatch"></button></div>
-    <div class="gap"></div>
-    <div class="seglbl mkonly">Keiner da? Kein Problem</div>
-    <button class="cta alt mkonly" id="botDuel">🤖 GEGEN BOT ÜBEN</button>
+    <div class="sub" style="margin:4px 0 12px">Tauziehen mit der Boxbirne: Wer schneller haut, schiebt sie zum Gegner.</div>
+
+    <section class="cmbox mkonly">
+      <div class="cmhead"><span class="cmic">🤖</span><span><b>Allein üben</b><small>Gegen einen Bot, sofort los, ohne Warten</small></span></div>
+      <button class="cta" id="botDuel">GEGEN BOT ÜBEN</button>
+    </section>
+
+    <section class="cmbox kurs mkonly">
+      <div class="cmhead"><span class="cmic">👥</span><span><b>Mit anderen spielen</b><small>Tritt bei einem offenen Duell an – oder eröffne selbst eins</small></span></div>
+      <div id="openRooms"></div>
+      <div class="cmrow"><span class="cmlbl">Dein Duell:</span>
+        <div class="seg cmseg" id="fmtSeg"><button data-f="1v1" class="on">1 gegen 1</button><button data-f="2v2">2 gegen 2</button></div></div>
+      <button class="cta alt" id="createRoom">➕ EIGENES DUELL ERÖFFNEN</button>
+    </section>
+
+    <div class="hidden-el"><div class="online" id="duelOnline"></div><button id="quickDuel"></button><input id="duelName"><div id="joinLbl"></div><input id="joinCode"><button id="joinPlay"></button><button id="joinWatch"></button></div>
   </div>
   <div id="duelLobby" style="display:none">
-    <div class="lhead"><div class="mid">WARTERAUM</div><button class="lcode" id="codeCopy" aria-label="Code kopieren"><small>Code</small><b id="roomCode">-----</b><span class="cp" id="codeCp">📋</span></button></div>
-    <div class="row2"><button class="cta alt sm" id="shareRoom">📤 Link teilen</button><button class="cta sm" id="challengeAll">📣 Alle einladen</button></div>
+    <div class="lhead"><div class="mid">WARTERAUM</div><button class="lcode hidden-el" id="codeCopy" aria-label="Code kopieren"><small>Code</small><b id="roomCode">-----</b><span class="cp" id="codeCp">📋</span></button></div>
+    <div class="cminv" style="margin:6px 0 10px"><button class="chipbtn" id="shareRoom">🔗 Link teilen</button><button class="chipbtn" id="challengeAll">📣 Alle einladen</button></div>
     <div class="teams">
       <div class="team A"><h4 id="teamAH">TEAM LILA</h4><div id="teamA"></div></div>
       <div class="vs">VS</div>
@@ -1103,7 +1106,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     </section>
 
     <section class="cmbox kurs">
-      <div class="cmhead"><span class="cmic">👥</span><span><b>Mit dem Kurs spielen</b><small>Setz dich an einen offenen Tisch – oder eröffne selbst einen</small></span></div>
+      <div class="cmhead"><span class="cmic">👥</span><span><b>Mit anderen spielen</b><small>Setz dich an einen offenen Tisch – oder eröffne selbst einen</small></span></div>
       <div class="pchips" id="cmPlaying" style="display:none"></div>
       <div id="cmOpen"></div>
       <button class="cta alt" id="cmCreate">➕ EIGENEN TISCH ERÖFFNEN</button>
@@ -2361,7 +2364,8 @@ const R={local:false,botState:null,ws:null,code:"",you:null,role:null,st:null,of
 function setDuelUI(on){ document.body.classList.toggle("duel",!!on); $("duelBar").style.display=on?"flex":"none"; resize(); }
 function serverNow(){ return Date.now()+R.off; }
 function genCode(){ const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<5;i++) s+=a[(Math.random()*a.length)|0]; return s; }
-function needName(){ const n=nick($("duelName").value); if(n.length<2){ toast("Bitte erst einen Spitznamen eingeben (mind. 2 Zeichen)."); $("duelName").focus(); return null; }
+function needName(then){ if(saved.name&&saved.name.length>=2) return saved.name; askName(then); return null; }
+function needNameOld(){ const n=nick($("duelName").value); if(n.length<2){ return null; }
   if(n!==saved.name){ saved.name=n; persist(); api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:saved.name,badge:myBadge(),kind:"profile"})}).catch(()=>{}); } return saved.name; }
 function openDuel(prefill){
   $("duelName").value=saved.name||""; $("duelEntry").style.display="block"; $("duelLobby").style.display="none"; $("duelX").style.display=""; $("duelEntry").classList.toggle("joinonly",!!prefill);
@@ -2530,12 +2534,12 @@ function renderPlaying(){
 function renderOpenRooms(){
   const box=$("openRooms"); if(!box) return; box.innerHTML="";
   const rooms=LB.rooms.filter(r=>r.format!=="cards"&&r.code!==R.code&&r.count<r.cap&&!r.live), live=LB.rooms.filter(r=>r.format!=="cards"&&r.code!==R.code&&r.live);
-  live.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · ${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} läuft gerade</small></span><button>👀 Zuschauen</button>`;
+  live.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · ${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} läuft gerade</small></span><button class="watch">👀</button>`;
     d.querySelector(".nm").textContent=r.title||`${r.name} kämpft`; d.querySelector("button").onclick=()=>watchOpen(r.code); box.appendChild(d); });
   if(!rooms.length&&live.length) return;
-  if(!rooms.length){ box.innerHTML='<div class="oempty">Gerade wartet niemand. Erstell selbst ein Duell und tipp auf „📣 Alle einladen“.</div>'; return; }
-  rooms.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>⚔️</span><span class="t"><span class="nm"></span><small>${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} · ${r.count}/${r.cap} dabei</small></span><button>Mitmachen</button>`;
-    d.querySelector(".nm").textContent=`${r.name} sucht Gegner`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
+  if(!rooms.length){ box.innerHTML='<div class="oempty">Gerade wartet niemand. Eröffne ein Duell – die anderen sehen es dann hier und können antreten.</div>'; return; }
+  rooms.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>⚔️</span><span class="t"><span class="nm"></span><small>${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} · ${r.count} von ${r.cap} dabei</small></span><button>Antreten</button>`;
+    d.querySelector(".nm").textContent=`Duell von ${r.name}`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
 }
 function watchOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ askName(()=>watchOpen(code)); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"spectator"); }
 function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ askName(()=>joinOpen(code)); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
@@ -3092,7 +3096,7 @@ $("customGo").onclick=addCustom; $("customInput").addEventListener("keydown",e=>
 let newFmt="1v1";
 document.querySelectorAll("#fmtSeg button").forEach(b=>b.onclick=()=>{ newFmt=b.dataset.f; document.querySelectorAll("#fmtSeg button").forEach(x=>x.classList.toggle("on",x===b)); });
 $("duelX").onclick=()=>{ if(R.ws) leaveRoom(); else { hide("duel"); openHome(); } };
-$("createRoom").onclick=()=>{ if(!needName()) return; const code=genCode(); connect(code,"player"); const once=setInterval(()=>{ if(R.st&&R.st.hostId===R.you){ clearInterval(once); rsend({t:"settings",format:newFmt,level:saved.level}); } },200); setTimeout(()=>clearInterval(once),5000); };
+$("createRoom").onclick=()=>{ if(!needName(()=>$("createRoom").click())) return; const code=genCode(); connect(code,"player"); const once=setInterval(()=>{ if(R.st&&R.st.hostId===R.you){ clearInterval(once); rsend({t:"settings",format:newFmt,level:saved.level}); } },200); setTimeout(()=>clearInterval(once),5000); };
 // Schnelles Duell: sofort zu jemandem, der wartet – sonst Raum eröffnen und alle einladen
 $("quickDuel").onclick=()=>{ if(!needName()) return; ensureAudio();
   const r=LB.rooms.filter(x=>x.format!=="cards"&&!x.live&&x.count<x.cap).sort((a,b)=>(b.cap-b.count===1)-(a.cap-a.count===1)||(a.ch==null)-(b.ch==null))[0];
@@ -3398,7 +3402,7 @@ $("cmJoin").onclick=()=>{ if(!needCardName(()=>$("cmJoin").click())) return; con
 let npNext=null;
 function askName(then){ npNext=then; $("npName").value=""; show("namePrompt"); setTimeout(()=>$("npName").focus(),150); }
 $("npName").addEventListener("input",e=>{ const v=e.target.value, f=v.normalize("NFC").replace(/[^\p{L} \-]/gu,"").replace(/ {2,}/g," ").slice(0,12); if(f!==v) e.target.value=f; });
-$("npOk").onclick=()=>{ const n=nick($("npName").value); if(n.length<2){ toast("Bitte mindestens 2 Buchstaben."); return; } saved.name=n; persist(); LB.lastKey=""; renderHome(); hide("namePrompt"); const f=npNext; npNext=null; if(f) f(); };
+$("npOk").onclick=()=>{ const n=nick($("npName").value); if(n.length<2){ toast("Bitte mindestens 2 Buchstaben."); return; } saved.name=n; persist(); LB.lastKey=""; api("score",{method:"POST",body:JSON.stringify({sid:saved.sid,name:saved.name,badge:myBadge(),kind:"profile"})}).catch(()=>{}); renderHome(); hide("namePrompt"); const f=npNext; npNext=null; if(f) f(); };
 $("npName").addEventListener("keydown",e=>{ if(e.key==="Enter") $("npOk").click(); });
 $("npX").onclick=()=>{ npNext=null; hide("namePrompt"); };
 function needCardName(then){ if(saved.name&&saved.name.length>=2) return true; askName(then); return false; }
