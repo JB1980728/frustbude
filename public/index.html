@@ -1048,9 +1048,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="seg mkonly" id="fmtSeg"><button data-f="1v1" class="on">🥊 1 gegen 1</button><button data-f="2v2">👥 2 gegen 2</button></div>
     <button class="cta red mkonly" id="createRoom">RAUM ERSTELLEN &amp; LINK TEILEN ⚔️</button>
     <div class="gap"></div>
-    <div class="seglbl" id="joinLbl">Oder mit Code beitreten</div>
-    <input class="field code" id="joinCode" maxlength="6" placeholder="CODE" autocomplete="off">
-    <div class="row2"><button class="cta sm" id="joinPlay">MITBOXEN 🥊</button><button class="cta alt sm" id="joinWatch">👀 ZUSCHAUEN</button></div>
+    <div class="hidden-el"><div id="joinLbl"></div><input id="joinCode"><button id="joinPlay"></button><button id="joinWatch"></button></div>
     <div class="gap"></div>
     <div class="seglbl mkonly">Keiner da? Kein Problem</div>
     <button class="cta alt mkonly" id="botDuel">🤖 GEGEN BOT ÜBEN</button>
@@ -1110,9 +1108,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
       <div id="cmOpen"></div>
       <button class="cta alt" id="cmCreate">➕ EIGENEN TISCH ERÖFFNEN</button>
       <button class="hidden-el" id="cmQuick"></button>
-      <details class="cmmore"><summary>Mit Code beitreten</summary>
-        <div class="cmjoin"><input class="field" id="cmCode" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="cta sm" id="cmJoin">Beitreten</button></div>
-      </details>
+<input type="hidden" id="cmCode"><button class="hidden-el" id="cmJoin"></button>
     </section>
 
     <div class="cmtips"><span>💡 Tipps: passende Karten blinken kurz, wenn du länger überlegst</span>
@@ -1124,7 +1120,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div id="cmSeats"></div>
     <button class="cta" id="cmStart">SPIEL STARTEN 🃏</button>
     <div class="cminv">
-      <button class="lcode" id="cmCodeBox" aria-label="Code kopieren"><small>Code</small><b id="cmCodeTxt">-----</b><span class="cp" id="cmCp">📋</span></button>
+      <button class="lcode hidden-el" id="cmCodeBox" aria-label="Code kopieren"><small>Code</small><b id="cmCodeTxt">-----</b><span class="cp" id="cmCp">📋</span></button>
       <button class="chipbtn" id="cmShare">🔗 Link teilen</button><button class="chipbtn" id="cmInvite">📣 Alle einladen</button>
     </div>
     <button class="cta alt sm hidden-el" id="cmBotFill"></button>
@@ -2541,8 +2537,8 @@ function renderOpenRooms(){
   rooms.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>⚔️</span><span class="t"><span class="nm"></span><small>${r.format==="2v2"?"2 gegen 2":"1 gegen 1"} · ${r.count}/${r.cap} dabei</small></span><button>Mitmachen</button>`;
     d.querySelector(".nm").textContent=`${r.name} sucht Gegner`; d.querySelector("button").onclick=()=>joinOpen(r.code); box.appendChild(d); });
 }
-function watchOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Zuschauen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"spectator"); }
-function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ hide("home"); openDuel(code); toast("Erst Spitznamen eingeben, dann „Mitboxen“.",2400); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
+function watchOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ askName(()=>watchOpen(code)); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"spectator"); }
+function joinOpen(code){ ensureAudio(); hideChallenge(); if(!saved.name||saved.name.length<2){ askName(()=>joinOpen(code)); return; } ["home","pick","results","help","stats","wall","profile","recap","zen"].forEach(hide); openDuel(code); connect(code,"player"); }
 function showChallenge(){ const c=LB.queue; if(!c||Date.now()>c.until) { LB.queue=null; return; } LB.queue=null; $("chTxt").textContent=c.format==="cards"?`🃏 ${c.name} sucht Mitspieler für Tool-Karten`:`⚔️ ${c.name} sucht Gegner (${c.format==="2v2"?"2 gegen 2":"1 gegen 1"})`; LB.chCode=c.code; LB.chFmt=c.format; $("chGo").textContent=c.format==="cards"?"🃏 Mitspielen":"⚔️ Mitmachen"; $("chBox").classList.add("on"); sfx.notify(); clearTimeout(LB.chT); }
 function hideChallenge(){ $("chBox").classList.remove("on"); }
 LB.dismissed=new Set();
@@ -3418,8 +3414,8 @@ addEventListener("resize",()=>{ if(CT.on) cRender(); });
 
 const roomParam=new URLSearchParams(location.search).get("room");
 const tableParam=new URLSearchParams(location.search).get("table");
-if(tableParam&&!roomParam){ const code=tableParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); hide("home"); if(saved.name&&saved.name.length>=2) joinTable(code); else { openCardsMenu(); $("cmCode").value=code; toast("Erst Spitznamen festlegen (Profil), dann „Beitreten“.",3000); } }
-if(roomParam){ hide("home"); const code=roomParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); openDuel(code); if(saved.name&&saved.name.length>=2) connect(code,"player"); }
+if(tableParam&&!roomParam){ const code=tableParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); joinTable(code); }
+if(roomParam){ const code=roomParam.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6); joinOpen(code); }
 else if(!saved.seenHelp) openHelp();
 if(COURSE_END && !saved.recapSeen && new Date()>=new Date(COURSE_END)){ saved.recapSeen=true; persist(); openRecap(); }
 requestAnimationFrame(loop);
