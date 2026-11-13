@@ -346,7 +346,7 @@ export class Table extends DurableObject {
     if (st.phase !== "lobby" || st.hostId !== c.id) return;
     if (m.t === "bots") { if (this.bots.length && this.players().length >= 4) this.bots = []; else this.fill(); this.sync(); return; }
     if (m.t === "start") {
-      if (this.players().length < 2) this.fill();
+      this.fill(); // freie Plätze übernehmen Bots
       const ps = this.players().slice(0, 4);
       this.g = CARDS.newGame(ps.map(p => ({ id: p.id, name: p.name, bot: !!p.isBot })));
       st.phase = "play"; st.round++; this.after(); return;

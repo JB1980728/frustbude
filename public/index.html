@@ -778,6 +778,28 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .proflv .xpbar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#a78bfa,#ffd23f)}
 
 .pchips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}.pchip{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:12px;font-weight:800;color:#e9d5ff}
+
+/* Tool-Karten-Menü: zwei klare Bereiche */
+.cmbox{margin:10px 0;padding:14px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);text-align:left}
+.cmbox.kurs{background:rgba(124,58,237,.12);border-color:rgba(167,139,250,.28)}
+.cmhead{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.cmhead b{display:block;font-size:17px;font-weight:900}.cmhead small{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-top:1px}
+.cmic{width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(255,255,255,.08)}
+.cmrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.cmlbl{font-size:13px;font-weight:800;color:#e9d5ff}
+.cmseg{flex:none;margin:0}.cmseg button{min-width:46px;padding:7px 12px}
+.cmbox .cta{margin:4px 0 0}
+.cmbox #cmOpen:not(:empty){margin-bottom:8px}
+.cmmore{margin-top:10px}.cmmore summary{cursor:pointer;font-size:12.5px;font-weight:800;color:#c4b5fd;text-align:center;list-style:none}
+.cmmore summary::-webkit-details-marker{display:none}.cmmore summary::after{content:" ▾"}.cmmore[open] summary::after{content:" ▴"}
+.cmmore .ghost{display:block;width:100%;margin:10px 0 4px;text-align:center}
+.cmtips{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 4px;font-size:12px;font-weight:700;color:var(--muted);text-align:left}
+
+.cminv{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;justify-content:center;margin:14px 0 6px}
+.cminv .lcode{flex:0 0 auto}
+.chipbtn{padding:9px 13px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-weight:900;font-size:13px;color:#fff}
+.chipbtn:active{transform:scale(.96)}
+.hidden-el{display:none!important}
 </style>
 </head>
 <body>
@@ -1046,33 +1068,54 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 </div></div>
 
 <!-- Duell: Tauziehen -->
+<!-- Spitzname kurz abfragen (wenn noch keiner gespeichert ist) -->
+<div class="overlay hidden" id="namePrompt" style="z-index:40;justify-content:center"><div class="card" style="max-width:340px">
+  <div class="mid" style="font-size:30px">WIE HEISST DU?</div>
+  <div class="sub" style="margin:6px 0 12px">Damit die anderen sehen, wer mitspielt. Ein Spitzname reicht, nur Buchstaben.</div>
+  <input class="field" id="npName" maxlength="12" placeholder="Spitzname" autocomplete="off">
+  <button class="cta" id="npOk">WEITER</button>
+  <button class="ghost" id="npX">Abbrechen</button>
+</div></div>
+
 <!-- ===================== Tool-Karten: Menü und Tisch ===================== -->
 <div class="overlay page hidden" id="cardsMenu"><div class="card">
   <img class="pg-logo" src="/logo.webp" alt="Frustbude">
   <button class="x" id="cmX">✕</button>
   <div id="cmEntry">
     <div class="mid" style="font-size:clamp(26px,8.5vw,40px);padding:0 34px">TOOL-KARTEN</div>
-    <div class="sub" style="margin-bottom:12px">Entspannt Karten legen – wie Uno, nur mit deinen Tools.</div>
-    <div class="seglbl">Gegen Bots spielen</div>
-    <div class="seg" id="cmBots"><button data-n="1">1 Bot</button><button data-n="2">2 Bots</button><button data-n="3">3 Bots</button></div>
-    <div class="seglbl" style="margin-top:10px">Tipps (passende Karten blinken kurz, wenn du überlegst)</div>
-    <div class="seg" id="cmTips"><button data-t="1">💡 Mit Tipps</button><button data-t="0">Ohne Tipps</button></div>
-    <button class="cta" id="cmSolo">LOSLEGEN 🃏</button>
-    <div class="seglbl" style="margin-top:14px">Mit anderen aus dem Kurs</div>
-    <div class="pchips" id="cmPlaying" style="display:none"></div>
-    <button class="cta" id="cmQuick">⚡ Schnellstart – freien Platz finden</button>
-    <div id="cmOpen"></div>
-    <button class="cta alt sm" id="cmCreate">TISCH ERSTELLEN &amp; EINLADEN</button>
-    <div class="cmjoin"><input class="field" id="cmCode" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="cta sm" id="cmJoin">Beitreten</button></div>
+    <div class="sub" style="margin-bottom:12px">Karten legen wie bei Uno – mit deinen Tools.</div>
+
+    <section class="cmbox">
+      <div class="cmhead"><span class="cmic">🤖</span><span><b>Allein spielen</b><small>Gegen Bots, sofort los, ohne Warten</small></span></div>
+      <div class="cmrow"><span class="cmlbl">Wie viele Bots?</span>
+        <div class="seg cmseg" id="cmBots"><button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button></div></div>
+      <button class="cta" id="cmSolo">GEGEN BOTS SPIELEN</button>
+    </section>
+
+    <section class="cmbox kurs">
+      <div class="cmhead"><span class="cmic">👥</span><span><b>Mit dem Kurs spielen</b><small>Du kommst automatisch an einen Tisch mit freiem Platz</small></span></div>
+      <div class="pchips" id="cmPlaying" style="display:none"></div>
+      <div id="cmOpen"></div>
+      <button class="cta alt" id="cmQuick">⚡ MITSPIELEN</button>
+      <details class="cmmore"><summary>Mit fester Gruppe oder Code spielen</summary>
+        <button class="ghost" id="cmCreate">➕ Eigenen Tisch eröffnen und Code teilen</button>
+        <div class="cmjoin"><input class="field" id="cmCode" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="cta sm" id="cmJoin">Beitreten</button></div>
+      </details>
+    </section>
+
+    <div class="cmtips"><span>💡 Tipps: passende Karten blinken kurz, wenn du länger überlegst</span>
+      <div class="seg cmseg" id="cmTips"><button data-t="1">An</button><button data-t="0">Aus</button></div></div>
   </div>
   <div id="cmLobby" style="display:none">
     <div class="mid" style="font-size:clamp(26px,8.5vw,40px);padding:0 34px">DEIN TISCH</div>
-    <div class="lhead"><button class="lcode" id="cmCodeBox" aria-label="Code kopieren"><small>Code</small><b id="cmCodeTxt">-----</b><span class="cp" id="cmCp">📋</span></button>
-      <button class="cta sm" id="cmShare">🔗 Teilen</button><button class="cta sm" id="cmInvite">📣 Alle einladen</button></div>
+    <div class="sub" id="cmHint" style="margin:4px 0 12px"></div>
     <div id="cmSeats"></div>
-    <div class="modehint" id="cmHint"></div>
-    <button class="cta alt sm" id="cmBotFill">🤖 Freie Plätze mit Bots füllen</button>
     <button class="cta" id="cmStart">SPIEL STARTEN 🃏</button>
+    <div class="cminv">
+      <button class="lcode" id="cmCodeBox" aria-label="Code kopieren"><small>Code</small><b id="cmCodeTxt">-----</b><span class="cp" id="cmCp">📋</span></button>
+      <button class="chipbtn" id="cmShare">🔗 Link teilen</button><button class="chipbtn" id="cmInvite">📣 Alle einladen</button>
+    </div>
+    <button class="cta alt sm hidden-el" id="cmBotFill"></button>
     <button class="ghost" id="cmLeave">Tisch verlassen</button>
   </div>
 </div></div>
@@ -3238,7 +3281,7 @@ function cLocalStep(){
 // ---------- Online-Tisch ----------
 function ctSend(o){ if(CT.ws&&CT.ws.readyState===1) CT.ws.send(JSON.stringify(o)); }
 function ctConnect(code){
-  if(!saved.name||saved.name.length<2){ toast("Erst einen Spitznamen festlegen (oben im Profil oder im Duell)."); return; }
+  if(!saved.name||saved.name.length<2){ askName(()=>ctConnect(code)); return; }
   ctClose(); CT.code=code; CT.local=false; CT.st=null; CT.view=null; CT.lastHand=new Set();
   let ws; try{ ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/table/"+code); }catch(e){ toast("Verbindung klappt gerade nicht."); return; }
   CT.ws=ws;
@@ -3262,9 +3305,9 @@ function cRenderLobby(){
   let h=""; for(let i=0;i<4;i++){ const p=ps[i]; h+=p?`<div class="cseat${p.id===CT.you?" me":""}">${p.isBot?"🤖":p.id===st.hostId?"👑":"🙂"} <span>${esc(p.name)}${p.id===CT.you?" (du)":""}</span></div>`:`<div class="cseat empty">Platz frei …</div>`; }
   $("cmSeats").innerHTML=h;
   const watch=st.people.filter(p=>p.role!=="player").length;
-  $("cmHint").textContent=host?(ps.length<2?"Lad Leute ein – oder füll mit Bots auf. Zu zweit geht’s auch.":`${ps.length} von 4 am Tisch. Freie Plätze bleiben beim Start einfach leer.`)+(watch?` · ${watch} schaut zu`:""):"Warte, bis der Gastgeber startet …";
-  $("cmBotFill").style.display=host?"":"none"; $("cmBotFill").textContent=ps.some(p=>p.isBot)&&ps.length>=4?"🤖 Bots wieder entfernen":"🤖 Freie Plätze mit Bots füllen";
-  $("cmStart").style.display=host?"":"none"; $("cmStart").textContent=ps.length<2?"STARTEN (mit Bot) 🃏":"SPIEL STARTEN 🃏";
+  $("cmHint").textContent=(host?`${ps.length} von 4 am Tisch. Starte, wann du willst – freie Plätze übernehmen Bots.`:`${ps.length} von 4 am Tisch. Gleich geht’s los – ${(ps.find(p=>p.id===st.hostId)||{}).name||"der Gastgeber"} startet das Spiel.`)+(watch?` · ${watch} schaut zu`:"");
+  $("cmBotFill").style.display="none";
+  $("cmStart").style.display=host?"":"none"; $("cmStart").textContent="SPIEL STARTEN 🃏";
   $("cmInvite").style.display=host?"":"none";
 }
 function cOpenTable(){ cTipsUI(); CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); LB.lastKey=""; }
@@ -3287,7 +3330,7 @@ function renderModePills(cardsN){
 }
 function renderCardTables(){ renderModePills();
   const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code), lv=LB.rooms.filter(r=>r.format==="cards"&&r.live&&r.code!==CT.code);
-  box.innerHTML=t.length||lv.length?"":'<div class="oempty">Gerade ist kein Tisch offen. „Schnellstart“ eröffnet einen.</div>';
+  box.innerHTML="";
   lv.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · Tool-Karten läuft gerade</small></span><button>👀 Zuschauen</button>`;
     d.querySelector(".nm").textContent=r.title||`${r.name} spielt`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
   t.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>🃏</span><span class="t"><span class="nm"></span><small>Tool-Karten · ${r.count}/4 am Tisch</small></span><button>Mitspielen</button>`;
@@ -3298,14 +3341,20 @@ $("cardsBtn").onclick=()=>{ ensureAudio(); modeIntro("cards",openCardsMenu); };
 $("cmX").onclick=()=>{ if(CT.code){ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); } hide("cardsMenu"); openHome(); };
 $("cmBots").querySelectorAll("button").forEach(b=>b.onclick=()=>{ CT.nBots=+b.dataset.n; $("cmBots").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); sfx.pop(); });
 $("cmSolo").onclick=()=>{ ensureAudio(); cStartLocal(CT.nBots); };
-$("cmCreate").onclick=()=>{ if(!needCardName()) return; ctConnect(genCode()); };
+$("cmCreate").onclick=()=>{ if(!needCardName(()=>$("cmCreate").click())) return; ctConnect(genCode()); };
 // Schnellstart: an den vollsten Tisch mit freiem Platz, sonst neuen Tisch eröffnen
-$("cmQuick").onclick=()=>{ if(!needCardName()) return; ensureAudio();
+$("cmQuick").onclick=()=>{ if(!needCardName(()=>$("cmQuick").click())) return; ensureAudio();
   const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap).sort((a,b)=>b.count-a.count)[0];
   if(t){ toast(`🃏 Du setzt dich zu ${t.name}.`); ctConnect(t.code); }
-  else { toast("🃏 Kein freier Platz – neuer Tisch eröffnet. Andere finden ihn per Schnellstart.",3200); ctConnect(genCode()); } };
-$("cmJoin").onclick=()=>{ if(!needCardName()) return; const c=$("cmCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(c.length<4){ toast("Bitte den Tisch-Code eingeben."); return; } ctConnect(c); };
-function needCardName(){ if(saved.name&&saved.name.length>=2) return true; toast("Erst einen Spitznamen festlegen – im Profil oder im Chat.",2600); return false; }
+  else { toast("🃏 Kein freier Platz – neuer Tisch eröffnet. Andere kommen über „Mitspielen“ dazu.",3200); ctConnect(genCode()); } };
+$("cmJoin").onclick=()=>{ if(!needCardName(()=>$("cmJoin").click())) return; const c=$("cmCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,""); if(c.length<4){ toast("Bitte den Tisch-Code eingeben."); return; } ctConnect(c); };
+let npNext=null;
+function askName(then){ npNext=then; $("npName").value=""; show("namePrompt"); setTimeout(()=>$("npName").focus(),150); }
+$("npName").addEventListener("input",e=>{ const v=e.target.value, f=v.normalize("NFC").replace(/[^\p{L} \-]/gu,"").replace(/ {2,}/g," ").slice(0,12); if(f!==v) e.target.value=f; });
+$("npOk").onclick=()=>{ const n=nick($("npName").value); if(n.length<2){ toast("Bitte mindestens 2 Buchstaben."); return; } saved.name=n; persist(); LB.lastKey=""; renderHome(); hide("namePrompt"); const f=npNext; npNext=null; if(f) f(); };
+$("npName").addEventListener("keydown",e=>{ if(e.key==="Enter") $("npOk").click(); });
+$("npX").onclick=()=>{ npNext=null; hide("namePrompt"); };
+function needCardName(then){ if(saved.name&&saved.name.length>=2) return true; askName(then); return false; }
 $("cmBotFill").onclick=()=>{ ctSend({t:"bots"}); sfx.pop(); };
 $("cmStart").onclick=()=>{ ensureAudio(); ctSend({t:"start"}); };
 $("cmLeave").onclick=()=>{ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); openCardsMenu(); };
