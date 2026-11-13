@@ -1097,14 +1097,11 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     </section>
 
     <section class="cmbox kurs">
-      <div class="cmhead"><span class="cmic">👥</span><span><b>Mit dem Kurs spielen</b><small>Einem Tisch beitreten oder selbst einen eröffnen</small></span></div>
+      <div class="cmhead"><span class="cmic">👥</span><span><b>Mit dem Kurs spielen</b><small>Setz dich an einen offenen Tisch – oder eröffne selbst einen</small></span></div>
       <div class="pchips" id="cmPlaying" style="display:none"></div>
       <div id="cmOpen"></div>
-      <div class="cm2">
-        <button class="cta alt sm" id="cmQuick">⚡ MITSPIELEN</button>
-        <button class="cta sm cmnew" id="cmCreate">➕ NEUER TISCH</button>
-      </div>
-      <div class="cmexp"><b>Mitspielen:</b> an einen Tisch mit freiem Platz · <b>Neuer Tisch:</b> eigenen Tisch eröffnen und andere einladen</div>
+      <button class="cta alt" id="cmCreate">➕ EIGENEN TISCH ERÖFFNEN</button>
+      <button class="hidden-el" id="cmQuick"></button>
       <details class="cmmore"><summary>Mit Code beitreten</summary>
         <div class="cmjoin"><input class="field" id="cmCode" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters"><button class="cta sm" id="cmJoin">Beitreten</button></div>
       </details>
@@ -2521,9 +2518,9 @@ function renderOnline(){
 }
 // „Gerade im Spiel“: wer spielt was, mit Zuschauen bei laufenden Tischen/Duellen
 function renderPlaying(){
-  const box=$("cmPlaying"); if(!box) return; const ps=LB.people.filter(p=>p.name&&p.act&&p.name!==saved.name);
+  const box=$("cmPlaying"); if(!box) return; const ps=LB.people.filter(p=>p.name&&p.act==="cardsBots"&&p.name!==saved.name);
   const cardsN=LB.people.filter(p=>p.act==="cards"||p.act==="cardsBots").length;
-  box.innerHTML=ps.length?ps.map(p=>`<span class="pchip">${esc(p.name)} · ${ACT_TXT[p.act]||"spielt"}</span>`).join(""):"";
+  box.innerHTML=ps.length?ps.map(p=>`<span class="pchip">🤖 ${esc(p.name)} spielt gerade gegen Bots</span>`).join(""):"";
   box.style.display=ps.length?"":"none"; renderModePills(cardsN);
 }
 function renderOpenRooms(){
@@ -3361,11 +3358,11 @@ function renderModePills(cardsN){
 }
 function renderCardTables(){ renderModePills();
   const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code), lv=LB.rooms.filter(r=>r.format==="cards"&&r.live&&r.code!==CT.code);
-  box.innerHTML="";
+  box.innerHTML=t.length||lv.length?"":'<div class="oempty">Gerade ist kein Tisch offen. Eröffne einen – die anderen sehen ihn dann hier und können sich dazusetzen.</div>';
   lv.forEach(r=>{ const d=document.createElement("div"); d.className="oroom live"; d.innerHTML=`<span class="dot"></span><span class="t"><span class="nm"></span><small>LIVE · Tool-Karten läuft gerade</small></span><button>👀 Zuschauen</button>`;
     d.querySelector(".nm").textContent=r.title||`${r.name} spielt`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
-  t.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>🃏</span><span class="t"><span class="nm"></span><small>Tool-Karten · ${r.count}/4 am Tisch</small></span><button>Mitspielen</button>`;
-    d.querySelector(".nm").textContent=`${r.name} sucht Mitspieler`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
+  t.forEach(r=>{ const d=document.createElement("div"); d.className="oroom"; d.innerHTML=`<span>🃏</span><span class="t"><span class="nm"></span><small>${r.count} von 4 Plätzen besetzt</small></span><button>Dazusetzen</button>`;
+    d.querySelector(".nm").textContent=`Tisch von ${r.name}`; d.querySelector("button").onclick=()=>joinTable(r.code); box.appendChild(d); });
 }
 function joinTable(code){ ensureAudio(); hideChallenge(); ["home","pick","results","help","stats","wall","profile","recap","zen","duel"].forEach(hide); show("cardsMenu"); ctConnect(code); }
 $("cardsBtn").onclick=()=>{ ensureAudio(); modeIntro("cards",openCardsMenu); };
