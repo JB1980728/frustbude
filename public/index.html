@@ -814,6 +814,8 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .oroom .watch{margin-left:6px;width:40px;padding:6px 0}
 
 #openRooms:not(:empty){margin-bottom:10px}
+
+body.timemode #weapons,body.timemode .sectionlbl:has(#wInfoBtn){display:none!important}
 </style>
 </head>
 <body>
@@ -1512,7 +1514,8 @@ let W=0,H=0,DPR=1,G={};
 let tools=TOOLS.slice();
 let mode="free";   // free | time | boss | duel
 let lv=LV[saved.level];
-let curIdx=0, cur=tools[0], weapon=W_BY.tomato;
+let curIdx=0, cur=tools[0], weapon=W_BY.tomato; const capTimes=[];
+if(!saved.t30v2){ saved.koBestLv={}; saved.t30v2=1; try{ localStorage.setItem("frustbude3",JSON.stringify(saved)); }catch(e){} } // 30 Sek. neu: nur Fäuste, alte Bestwerte zählen nicht mehr
 let stunMax=1.3, immuneUntil=0, chill=false, cdUntil=0, weak=null, weakT=3, raging=false, slipT=0, stickT=0, blindT=0;
 const W_ROLE={fist:"schnell",tomato:"Ziel leichter",banana:"stoppt Würfe",egg:"stoppt Wackeln",pie:"stoppt Macken",highfive:"doppelt",rocket:"Max-Schaden",love:"lädt OVERKILL"};
 let hp=100, hpMax=100, state="idle", theta=0, omega=0, dropY=0, dropV=0, squash=0, hurt=0, flash=0, blush=0, koT=0, stunT=0;
@@ -2114,11 +2117,12 @@ function drawItems(){
 function shuffleOrder(seed){ const r=mulberry(seed); const a=[...Array(BASE).keys()]; for(let i=a.length-1;i>0;i--){ const j=(r()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function startTime(){
   mode="time"; timeLeft=30; score=0; tKO=0; lastTick=30; toolOrder=shuffleOrder((Math.random()*1e9)|0); orderPos=1;
+  weapon=W_BY.fist; capTimes.length=0; document.body.classList.add("timemode");
   $("timer").style.display="block"; $("timer").classList.remove("warn"); select(toolOrder[0]); updateHUD();
   word("LOS!",W/2,H*.32,clamp(W*.2,60,120),"#4ade80",1); sfx.go();
 }
 function endTime(){
-  state="over"; items=[]; $("timer").style.display="none";
+  state="over"; items=[]; $("timer").style.display="none"; document.body.classList.remove("timemode");
   const lvk=saved.level==="hard"?"hard":"easy"; saved.koBestLv=saved.koBestLv||{}; const best=saved.koBestLv[lvk]||0;
   const rec=tKO>best; if(rec){ saved.koBestLv[lvk]=tKO; saved.timeKO=Math.max(saved.timeKO||0,tKO); persist(); postScore(lvk==="hard"?"koHard":"ko",tKO); }
   $("tKO").textContent=tKO; $("tScore").textContent=hits; $("tBest").textContent=(saved.koBestLv[lvk]||0)+(lvk==="hard"?" 🔥":" 😌");
@@ -2207,7 +2211,7 @@ function renderHome(){
   renderLevelUI();
 }
 function openHome(){ if(mode==="duel") return; renderHome(); show("home"); }
-function startFrom(fn){ ensureAudio(); enableMotion(); hide("home"); hide("modeIntro"); setDuelUI(false); $("timer").style.display="none"; items=[]; screenSplats=[]; stunT=0; immuneUntil=0; chill=false; lv=LV[saved.level]; fn(); if(!isUnlocked(weapon)) weapon=WEAPONS[0]; renderWeapons(); renderChips(); updateHUD(); }
+function startFrom(fn){ document.body.classList.remove("timemode"); ensureAudio(); enableMotion(); hide("home"); hide("modeIntro"); setDuelUI(false); $("timer").style.display="none"; items=[]; screenSplats=[]; stunT=0; immuneUntil=0; chill=false; lv=LV[saved.level]; fn(); if(!isUnlocked(weapon)) weapon=WEAPONS[0]; renderWeapons(); renderChips(); updateHUD(); }
 
 /* ===================== Anleitung ===================== */
 const HELP=[
@@ -2476,7 +2480,7 @@ function modeInfo(kind,o){
         :[["👆",`${tap} auf die Boxbirne`],["🛡️","Das Tool wirft Sachen zurück – tipp sie weg, bevor sie dich treffen"],["😵‍💫","Trifft dich etwas, bist du „Overloaded“: kurz nicht schlagen, OVERKILL −30 %, Uhr −2 Sek."]])
         .concat([["🎯","Grüne Zielscheibe auf der Boxbirne? Triff sie – dreifacher Schaden!"],["😡","Kurz vor dem K.O. rastet das Tool aus: Es glüht rot und wehrt sich stärker"],["🤪","Jedes Tool hat eine Macke – sie steht auf der Auswahlkarte (z. B. Wix verrutscht, Meet friert ein)"],["🔫","Waffe je nach Lage: 🥊 schnell · 🍅 Zielscheibe leichter · 🍌 stoppt Würfe · 🥚 stoppt Wackeln · 🥧 stoppt Macken · 🚀 viel Schaden · ❤️ lädt OVERKILL. Starke Waffen laden nach."],["💢","Ist der Kreis unten rechts voll: OVERKILL antippen – ein Treffer-Hagel, der viel, aber nicht alles wegnimmt"]])},
     time:{e:"⏱️",t:"30 SEKUNDEN",g:`So viele K.O.s wie möglich in 30 Sekunden! Sei schnell. Level: ${saved.level==="hard"?"🔥 Schwer – es wird zurückgeworfen":"😌 Leicht – nichts fliegt zurück"}.`,
-      l:[["👆",`${tap} auf die Boxbirne – ist sie K.O., kommt sofort die nächste`],["⚖️","Fair für alle: Hier sind alle Waffen frei und die Tools haben keine Macken"],["🎯","Grüne Zielscheibe? Triff sie – dreifacher Schaden!"],["🚀","Starke Waffen müssen kurz nachladen – Fäuste sind am schnellsten"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
+      l:[["👊",`Nur Fäuste: ${tap} so schnell du kannst – ist ein Tool K.O., kommt sofort das nächste`],["🎯","Grüne Zielscheibe treffen = dreifacher Schaden. Tempo UND Zielen zählen"],["⚖️","Fair für alle: keine Waffen, keine Tool-Macken, höchstens 15 Schläge pro Sekunde"]].concat(saved.level==="easy"?[]:[["🛡️","Fliegende Sachen wegtippen, sonst bist du kurz „Overloaded“ und verlierst OVERKILL-Ladung"]]).concat([["🏆","Du landest in der Rangliste für dein Level – leicht und schwer werden getrennt gewertet"]])},
     boss:{e:"👑",t:"ENDGEGNER",g:`Hau den Mega-Bug um, bevor er dich ${L.hearts}× trifft!`,
       l:[["🏃","Er läuft weg und springt – triff ihn trotzdem"],["🛡️","Seine Würfe antippen, bevor sie dich treffen"],["❤️",`Du hast ${L.hearts} Leben – jeder Treffer kostet eins`],["💢","OVERKILL-Kreis voll? Antippen!"]]},
     cards:{e:"🃏",t:"TOOL-KARTEN",g:"Zum Entspannen: Leg deine Karten ab wie bei Uno. Wer zuerst keine Karten mehr hat, gewinnt.",
@@ -2973,6 +2977,7 @@ canvas.addEventListener("pointerdown",e=>{
   if(!(state==="alive"||state==="boss")) return;
   if(stunT>0) return;
   if(hitItem(x,y)) return;
+  if(mode==="time"){ const now=performance.now(); while(capTimes.length&&now-capTimes[0]>1000) capTimes.shift(); if(capTimes.length>=15) return; capTimes.push(now); }
   fire(x,y); return;
   if(hitPop(x,y)) return;
   try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
@@ -2998,7 +3003,7 @@ window.addEventListener("keydown",e=>{
   if(k==="m"){ $("muteBtn").click(); return; }
   if(anyOpen()) return;
   if(e.code==="Space"){ e.preventDefault(); triggerRage("key"); return; }
-  const n=parseInt(e.key,10); if(n>=1&&n<=WEAPONS.length){ const w=WEAPONS[n-1]; if(isUnlocked(w)){ weapon=w; renderWeapons(); } else toast(`🔒 ${w.emoji} ${w.name} ist noch gesperrt.`); return; }
+  const n=parseInt(e.key,10); if(mode==="time"&&gameRunning()) return; if(n>=1&&n<=WEAPONS.length){ const w=WEAPONS[n-1]; if(isUnlocked(w)){ weapon=w; renderWeapons(); } else toast(`🔒 ${w.emoji} ${w.name} ist noch gesperrt.`); return; }
   if(!playable()) return;
   const [cx,cy]=targetCenter();
   if((k==="j"||k==="enter")&&!e.repeat) fire(cx+rand(-G.bw*.2,G.bw*.2),cy+rand(-G.bh*.2,G.bh*.2));
