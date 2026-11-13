@@ -776,6 +776,8 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .proflv b{color:#ffd23f}.proflv small{display:block;color:var(--muted);font-size:11.5px;margin-top:6px}
 .proflv .xpbar{display:block;height:8px;border-radius:5px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
 .proflv .xpbar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#a78bfa,#ffd23f)}
+
+.pchips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}.pchip{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:12px;font-weight:800;color:#e9d5ff}
 </style>
 </head>
 <body>
@@ -1057,6 +1059,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
     <div class="seg" id="cmTips"><button data-t="1">💡 Mit Tipps</button><button data-t="0">Ohne Tipps</button></div>
     <button class="cta" id="cmSolo">LOSLEGEN 🃏</button>
     <div class="seglbl" style="margin-top:14px">Mit anderen aus dem Kurs</div>
+    <div class="pchips" id="cmPlaying" style="display:none"></div>
     <button class="cta" id="cmQuick">⚡ Schnellstart – freien Platz finden</button>
     <div id="cmOpen"></div>
     <button class="cta alt sm" id="cmCreate">TISCH ERSTELLEN &amp; EINLADEN</button>
@@ -2419,11 +2422,14 @@ $("miBack").onclick=()=>{ hide("modeIntro"); miGo=null; if(R.ws||R.st) leaveRoom
 /* ===================== Treffpunkt: wer ist online, offene Duelle, Herausforderungen ===================== */
 const LB={ws:null,people:[],rooms:[],retry:1000,queue:null,lastKey:"",ann:""};
 function lbSend(o){ if(LB.ws&&LB.ws.readyState===1) LB.ws.send(JSON.stringify(o)); }
+// Was spielt man gerade? (für die Online-Liste)
+function curAct(){ if(CT.on) return CT.local?"cardsBots":"cards"; if(CT.ws) return "cards"; if(FT.on||R.ws) return "duel"; if(!gameRunning()) return ""; return mode==="boss"?"boss":mode==="time"?"time":chill?"tap":"free"; }
+const ACT_TXT={cards:"🃏 Tool-Karten",cardsBots:"🃏 Tool-Karten gegen Bots",duel:"⚔️ Duell",free:"🥊 Freies Spiel",boss:"👑 Endgegner",time:"⏱️ 30 Sekunden",tap:"👊 Draufhauen",zen:"🧘 Zen"};
 function isBusy(){ return FT.on||CT.on||gameRunning(); }
 function lbConnect(){
   let ws; try{ ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/api/lobby"); }catch(e){ return; }
   LB.ws=ws;
-  ws.onopen=()=>{ LB.retry=1000; LB.lastKey=""; ws.send(JSON.stringify({t:"hello",name:saved.name,sid:saved.sid,busy:isBusy()})); LB.ann=""; if(R.st) renderLobby(); };
+  ws.onopen=()=>{ LB.retry=1000; LB.lastKey=""; ws.send(JSON.stringify({t:"hello",name:saved.name,sid:saved.sid,busy:isBusy(),act:curAct()})); LB.ann=""; if(R.st) renderLobby(); };
   ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
     if(m.t==="online"){ LB.people=m.people||[]; LB.rooms=m.rooms||[]; LB.roomsAt=Date.now(); renderOnline(); renderOpenRooms(); renderCardTables(); checkChallenges(); }
     else if(m.t==="challenge"){ if(R.code===m.code||CT.code===m.code) return; LB.queue={...m,until:Date.now()+60000}; if(!isBusy()&&!R.ws&&!CT.ws) showChallenge(); }
@@ -2435,9 +2441,17 @@ function lbConnect(){
 }
 function renderOnline(){
   const el=$("homeOnline"), n=LB.people.length; if(!n){ el.textContent="Verbinde …"; return; }
-  const named=LB.people.filter(p=>p.name).map(p=>p.name+(p.busy?" 🎮":"")), others=n-named.length;
+  const named=LB.people.filter(p=>p.name).map(p=>p.name+(p.act?" "+(ACT_TXT[p.act]||"").split(" ")[0]:p.busy?" 🎮":"")), others=n-named.length;
+  renderPlaying();
   const txt=n<=1?"🟢 Gerade bist nur du online":`🟢 ${n} online: ${named.slice(0,5).join(", ")}${named.length>5?" …":""}${others>0?(named.length?" + ":"")+others+(others===1?" weitere Person":" weitere"):""}`;
   el.textContent=n<=1?"Nur du bist online":`${n} online · ${named.slice(0,4).join(", ")}${named.length>4||others>0?" …":""}`; if($("duelOnline")) $("duelOnline").textContent=txt;
+}
+// „Gerade im Spiel“: wer spielt was, mit Zuschauen bei laufenden Tischen/Duellen
+function renderPlaying(){
+  const box=$("cmPlaying"); if(!box) return; const ps=LB.people.filter(p=>p.name&&p.act&&p.name!==saved.name);
+  const cardsN=LB.people.filter(p=>p.act==="cards"||p.act==="cardsBots").length;
+  box.innerHTML=ps.length?ps.map(p=>`<span class="pchip">${esc(p.name)} · ${ACT_TXT[p.act]||"spielt"}</span>`).join(""):"";
+  box.style.display=ps.length?"":"none"; renderModePills(cardsN);
 }
 function renderOpenRooms(){
   const box=$("openRooms"); if(!box) return; box.innerHTML="";
@@ -2471,15 +2485,12 @@ function lbAnnounce(){
   // Laufende Kämpfe auch melden, damit andere zuschauen können
   else if(st&&st.phase!=="lobby"&&st.hostId===R.you){ const ps=st.people.filter(p=>p.role==="player"), nm=t=>ps.filter(p=>p.team===t).map(p=>(p.isBot?"🤖 ":"")+p.name).join(" & ")||"?";
     key=`${st.code}|${st.format}|${ps.filter(p=>!p.isBot).length}|live|${nm("A")} vs ${nm("B")}`; }
-  if(!key&&CT.ws&&CT.st&&CT.st.hostId===CT.you){ const ps=CT.st.people.filter(p=>p.role==="player"), n=ps.filter(p=>!p.isBot).length;
-    if(CT.st.phase==="lobby"){ if(n<4&&!CT.st.people.some(p=>p.isBot)) key=`${CT.st.code}|cards|${n}`; }
-    else key=`${CT.st.code}|cards|${n}|live|${ps.map(p=>(p.isBot?"🤖 ":"")+p.name).join(", ")}`; }
   if(key===LB.ann) return;
   if(LB.ann&&!key) lbSend({t:"close",code:LB.ann.split("|")[0]});
   if(key){ const [code,format,count,live,title]=key.split("|"); lbSend({t:"open",code,format,count:+count,live:!!live,title:title||""}); }
   LB.ann=key;
 }
-setInterval(()=>{ const b=isBusy(), key=`${saved.name}|${b}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b}); }
+setInterval(()=>{ const b=isBusy(), a=curAct(), key=`${saved.name}|${b}|${a}`; if(key!==LB.lastKey){ LB.lastKey=key; lbSend({t:"status",name:saved.name,sid:saved.sid,busy:b,act:a}); }
   if(!b&&!R.ws&&!CT.ws&&LB.queue) showChallenge(); checkChallenges(); lbAnnounce(); },1000);
 // Echtzeit: Lebenszeichen alle 8 Sekunden; Seite im Hintergrund = offline, wieder sichtbar = sofort online
 setInterval(()=>lbSend({t:"ping"}),8000);
@@ -3256,22 +3267,23 @@ function cRenderLobby(){
   $("cmStart").style.display=host?"":"none"; $("cmStart").textContent=ps.length<2?"STARTEN (mit Bot) 🃏":"SPIEL STARTEN 🃏";
   $("cmInvite").style.display=host?"":"none";
 }
-function cOpenTable(){ cTipsUI(); CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); lbSend({t:"status",name:saved.name,sid:saved.sid,busy:true}); }
+function cOpenTable(){ cTipsUI(); CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); LB.lastKey=""; }
 function cQuit(){
   clearTimeout(CT.botT); CT.on=false; CT.g=null; CT.view=null; hide("cards"); $("cOver").classList.add("hidden");
   if(!CT.local){ CT.code=""; ctClose(); CT.st=null; lbAnnounce(); }
-  CT.local=false; openHome(); lbSend({t:"status",name:saved.name,sid:saved.sid,busy:false});
+  CT.local=false; openHome(); LB.lastKey="";
 }
 function openCardsMenu(){
   $("cmEntry").style.display="block"; $("cmLobby").style.display="none"; hide("home");
   $("cmBots").querySelectorAll("button").forEach(b=>b.classList.toggle("on",+b.dataset.n===CT.nBots));
   renderCardTables(); cTipsUI(); show("cardsMenu");
 }
-function renderModePills(){
+function renderModePills(cardsN){
   const duelOpen=LB.rooms.filter(r=>r.format!=="cards"&&!r.live&&r.count<r.cap).length, duelLive=LB.rooms.filter(r=>r.format!=="cards"&&r.live).length, tables=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap).length;
   const dp=$("duelPill"), cp=$("cardsPill"); if(!dp) return;
   dp.textContent=duelLive?"● LIVE":duelOpen?`${duelOpen} wartet`:""; dp.classList.toggle("live",!!duelLive);
-  cp.textContent=tables?`${tables} Tisch${tables>1?"e":""} offen`:"";
+  const live=LB.rooms.filter(r=>r.format==="cards"&&r.live).length; if(cardsN==null) cardsN=LB.people.filter(p=>p.act==="cards"||p.act==="cardsBots").length;
+  cp.textContent=live?`● ${cardsN||live} spielen`:tables?`${tables} Tisch${tables>1?"e":""} offen`:cardsN?`● ${cardsN} ${cardsN>1?"spielen":"spielt"}`:""; cp.classList.toggle("live",!!(live||cardsN));
 }
 function renderCardTables(){ renderModePills();
   const box=$("cmOpen"); if(!box) return; const t=LB.rooms.filter(r=>r.format==="cards"&&!r.live&&r.count<r.cap&&r.code!==CT.code), lv=LB.rooms.filter(r=>r.format==="cards"&&r.live&&r.code!==CT.code);

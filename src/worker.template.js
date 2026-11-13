@@ -298,7 +298,16 @@ export class Table extends DurableObject {
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
   humans() { return [...this.conns.values()].filter(c => c.joined && c.role === "player"); }
   players() { return [...this.humans(), ...this.bots]; }
+  report(close) {
+    if (!this.env.LOBBY || !this.st.code) return;
+    const hum = this.humans(), host = this.conns.get(this.st.hostId);
+    const body = close ? { code: this.st.code, close: true } : { code: this.st.code, name: host ? host.name : (hum[0] ? hum[0].name : ""), count: hum.length, live: this.st.phase !== "lobby", title: this.players().map(p => (p.isBot ? "🤖 " : "") + p.name).join(", ") };
+    const key = JSON.stringify(body); if (!close && key === this.lastRep && Date.now() - (this.lastRepT || 0) < 20000) return; this.lastRep = key; this.lastRepT = Date.now();
+    try { this.ctx.waitUntil(this.env.LOBBY.get(this.env.LOBBY.idFromName("main")).fetch("https://lobby/report", { method: "POST", body: JSON.stringify(body) }).catch(() => {})); } catch (e) {}
+    if (!close && !this.repT) this.repT = setInterval(() => { if (![...this.conns.values()].some(x => x.joined)) { clearInterval(this.repT); this.repT = null; return; } this.lastRepT = 0; this.report(); }, 20000);
+  }
   sync() {
+    this.report();
     const people = [...[...this.conns.values()].filter(c => c.joined), ...this.bots].map(p => ({ id: p.id, name: p.name, badge: p.badge, role: p.role, isBot: !!p.isBot }));
     for (const c of this.conns.values()) if (c.joined) this.send(c, { t: "state", code: this.st.code, phase: this.st.phase, hostId: this.st.hostId, you: c.id, people, game: this.g ? CARDS.view(this.g, c.id) : null, ev: this.g ? this.g.ev : [] });
     if (this.g) this.g.ev = [];
@@ -359,7 +368,7 @@ export class Table extends DurableObject {
     if (st.hostId === c.id) { const p = this.humans()[0]; st.hostId = p ? p.id : null; }
     // Wer mitten im Spiel geht, wird von einem Bot ersetzt
     if (this.g && st.phase === "play" && this.g.hands[c.id]) { this.g.bots[c.id] = true; this.g.names[c.id] += " (Bot)"; if (CARDS.cur(this.g) === c.id) this.after(); }
-    if (![...this.conns.values()].some(x => x.joined)) { clearTimeout(this.botT); clearTimeout(this.turnT); this.g = null; this.bots = []; st.phase = "lobby"; return; }
+    if (![...this.conns.values()].some(x => x.joined)) { clearTimeout(this.botT); clearTimeout(this.turnT); this.g = null; this.bots = []; st.phase = "lobby"; this.report(true); clearInterval(this.repT); this.repT = null; return; }
     this.sync();
   }
 }
@@ -372,6 +381,17 @@ export class Lobby extends DurableObject {
   fresh() { const cut = Math.max(Date.now() - 23 * 3600000, 1794384789882); this.chat = this.chat.filter(x => x.ts > cut); return this.chat; }
   async fetch(req) {
     if (!this.loaded) { this.loaded = true; try { this.chat = (await this.ctx.storage.get("chat")) || []; } catch (e) { this.chat = []; } this.fresh(); }
+    // Kartentische melden sich selbst (unabhängig vom Handy des Gastgebers)
+    if (req.method === "POST" && new URL(req.url).pathname === "/report") {
+      let m = {}; try { m = await req.json(); } catch (e) {}
+      const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+      if (code.length >= 4) {
+        if (m.close) this.rooms.delete(code);
+        else { const r = this.rooms.get(code); this.rooms.set(code, { code, by: "srv", name: cleanName(m.name) || "Jemand", format: "cards", count: Math.max(0, Math.min(4, m.count | 0)), cap: 4, ts: Date.now(), ch: m.live ? 0 : (r ? r.ch : 0), live: !!m.live, title: cleanText(m.title || "", 70).replace(/\n/g, " ") }); }
+        this.sync();
+      }
+      return new Response("ok");
+    }
     if (req.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
     if (this.conns.size >= 300) return new Response("Voll", { status: 429 });
     const pair = new WebSocketPair(); const [client, server] = Object.values(pair); server.accept();
@@ -387,8 +407,8 @@ export class Lobby extends DurableObject {
   drop(c) { if (!this.conns.has(c.id)) return; this.conns.delete(c.id); for (const [k, r] of this.rooms) if (r.by === c.id) this.rooms.delete(k); this.sync(); }
   send(c, o) { try { c.ws.send(JSON.stringify(o)); } catch (e) {} }
   view() {
-    const people = [...this.conns.values()].map(c => ({ name: c.name || null, busy: !!c.busy }));
-    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < 30 * 60000).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap, ch: r.ch ? Math.round((Date.now() - r.ch) / 1000) : null, live: !!r.live, title: r.title || "" }));
+    const people = [...this.conns.values()].map(c => ({ name: c.name || null, busy: !!c.busy, act: c.act || "" }));
+    const rooms = [...this.rooms.values()].filter(r => Date.now() - r.ts < (r.by === "srv" ? 50000 : 30 * 60000)).map(r => ({ code: r.code, name: r.name, format: r.format, count: r.count, cap: r.cap, ch: r.ch ? Math.round((Date.now() - r.ch) / 1000) : null, live: !!r.live, title: r.title || "" }));
     return { t: "online", people, rooms };
   }
   sync() { if (this.syncT) return; this.syncT = setTimeout(() => { this.syncT = null; const s = JSON.stringify(this.view()); for (const c of this.conns.values()) { try { c.ws.send(s); } catch (e) {} } }, 120); }
@@ -398,7 +418,7 @@ export class Lobby extends DurableObject {
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
     const code = String(m.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
     if (m.t === "ping") return;
-    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; if (m.t === "hello") { this.send(c, this.view()); this.send(c, { t: "chatlog", msgs: this.fresh() }); } this.sync(); return; }
+    if (m.t === "hello" || m.t === "status") { c.name = cleanName(m.name) || ""; c.sid = cleanSid(m.sid); c.busy = !!m.busy; c.act = ["cards", "cardsBots", "duel", "free", "boss", "time", "tap", "zen"].includes(m.act) ? m.act : ""; if (m.t === "hello") { this.send(c, this.view()); this.send(c, { t: "chatlog", msgs: this.fresh() }); } this.sync(); return; }
     if (m.t === "chat") { const r = chatCheck(c, m.text); if (r.err !== undefined) { if (r.err) this.send(c, { t: "chatErr", msg: r.err }); return; }
       this.fresh(); this.chat.push(r.msg); if (this.chat.length > 150) this.chat.shift(); this.ctx.storage.put("chat", this.chat).catch(() => {}); const s = JSON.stringify(r.msg); for (const o of this.conns.values()) { try { o.ws.send(s); } catch (e) {} } return; }
     if (m.t === "open" && code.length >= 4) {
@@ -409,7 +429,7 @@ export class Lobby extends DurableObject {
     }
     if (m.t === "close" && code) { const r = this.rooms.get(code); if (r && r.by === c.id) { this.rooms.delete(code); this.sync(); } return; }
     if (m.t === "challenge" && code && now - c.lastCh > 20000) {
-      const r = this.rooms.get(code); if (!r || r.by !== c.id) return;
+      const r = this.rooms.get(code); if (!r || (r.by !== c.id && !(r.by === "srv" && r.format === "cards"))) return;
       c.lastCh = now; r.ch = now; this.sync(); const s = JSON.stringify({ t: "challenge", code, name: c.name || "Jemand", format: r.format, ts: now });
       for (const o of this.conns.values()) if (o !== c) { try { o.ws.send(s); } catch (e) {} }
       this.send(c, { t: "challenged", n: this.conns.size - 1 }); return;
