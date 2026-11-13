@@ -804,6 +804,9 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 .cm2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.cm2 .cta{margin:0;font-size:14px;padding:13px 8px}
 .cmnew{background:rgba(255,255,255,.08)!important;color:#fff!important;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25)!important}
 .cmexp{font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;margin-top:8px;line-height:1.4}.cmexp b{color:#e9d5ff}
+
+.cwatch{display:none;margin-left:2px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#e9d5ff;font-family:Nunito,system-ui;font-size:11.5px;font-weight:900}
+.cwatch.on{display:inline-block;animation:cwIn .4s ease-out}@keyframes cwIn{from{transform:scale(.6);opacity:0}}
 </style>
 </head>
 <body>
@@ -1125,7 +1128,7 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 </div></div>
 
 <div id="cards" class="hidden">
-  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle"><img src="/logo.webp" alt="Frustbude"><span>Tool-Karten</span></div><button class="cbtn ctip" id="cTip" aria-label="Tipps">💡</button><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
+  <div class="ctop"><button class="cbtn" id="cX" aria-label="Verlassen">✕</button><div class="ctitle"><img src="/logo.webp" alt="Frustbude"><span>Tool-Karten</span><button class="cwatch" id="cWatch" aria-label="Zuschauer"></button></div><button class="cbtn ctip" id="cTip" aria-label="Tipps">💡</button><button class="cbtn muteToggle" aria-label="Ton">🔊</button></div>
   <div id="cSeats"></div>
   <div class="ctable">
     <div class="cfelt"></div>
@@ -3289,7 +3292,7 @@ function cBotReact(ev){ if(!CT.local||!ev) return; ev.forEach(e=>{ if(Math.rando
   else if(e.k==="forgot"&&e.id==="me"){ const b=(CT.view?.players||[]).find(p=>p.bot); if(b){ id=b.id; emo="😂"; } }
   if(id) setTimeout(()=>cFloat(id,emo),500+Math.random()*700); }); }
 // ---------- Allein gegen Bots (läuft komplett im Browser) ----------
-function cStartLocal(nBots){
+function cStartLocal(nBots){ cWatchUI(null);
   CT.nBots=nBots; CT.local=true; CT.you="me"; CT.lastHand=new Set();
   const names=[...BOT_NAMES_C].sort(()=>Math.random()-.5).slice(0,nBots);
   CT.g=CARDS.newGame([{id:"me",name:saved.name||"Du"},...names.map((n,i)=>({id:"b"+i,name:n,bot:true}))]);
@@ -3317,6 +3320,7 @@ function ctConnect(code){
     if(m.t==="react"){ if(CT.on) cFloat(m.id,m.e,m.name); return; }
     if(m.t==="welcome"){ CT.you=m.you; if(m.role!=="player") toast("Der Tisch ist schon voll oder das Spiel läuft – du schaust zu."); }
     if(m.t==="state"){ CT.st=m; CT.you=m.you;
+      cWatchUI(m);
       if(m.game){ const prev=CT.view&&CT.view.turn; if(m.game.turnAt) CT.skew=0; CT.view=m.game; if(!CT.on){ cOpenTable(); sfx.shuffle(); } cEvents(m.ev); cRender(); if(m.game.turn===CT.you&&prev!==CT.you&&m.game.phase==="play") { cSnd.turn(); buzz(20); } }
       else { if(CT.on){ CT.on=false; hide("cards"); } CT.view=null; cRenderLobby(); }
       lbAnnounce(); }
@@ -3338,6 +3342,10 @@ function cRenderLobby(){
   $("cmStart").style.display=host?"":"none"; $("cmStart").textContent="SPIEL STARTEN 🃏";
   $("cmInvite").style.display=host?"":"none";
 }
+// Zuschauer dezent oben anzeigen (👀 2) – Tipp zeigt die Namen
+function cWatchUI(st){ const el=$("cWatch"); const w=CT.local||!st?[]:st.people.filter(p=>p.role!=="player"&&p.id!==CT.you); CT.watchers=w;
+  el.textContent=w.length?`👀 ${w.length}`:""; el.classList.toggle("on",!!w.length); }
+$("cWatch").onclick=()=>{ const w=CT.watchers||[]; if(w.length) cMsg(`👀 Es schaut zu: ${w.map(p=>p.name).join(", ")}`,2400); };
 function cOpenTable(){ cTipsUI(); CT.on=true; hide("cardsMenu"); hide("home"); $("cOver").classList.add("hidden"); $("cPick").classList.add("hidden"); show("cards"); LB.lastKey=""; }
 function cQuit(){
   clearTimeout(CT.botT); CT.on=false; CT.g=null; CT.view=null; hide("cards"); $("cOver").classList.add("hidden");
