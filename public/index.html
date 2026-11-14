@@ -816,6 +816,16 @@ kbd{display:inline-block;min-width:20px;padding:1px 6px;border-radius:6px;backgr
 #openRooms:not(:empty){margin-bottom:10px}
 
 body.timemode #weapons,body.timemode .sectionlbl:has(#wInfoBtn),body.timemode #tools,body.timemode .sectionlbl:has(#toolsHint),body.timemode #koPill>span:last-child{display:none!important}
+
+/* Ergebnis 30 Sekunden: eigener Bildschirm, großes Ergebnis */
+#timeEnd{background:#0d0618}
+#timeEnd::before{content:"";position:fixed;inset:-20%;pointer-events:none;background:radial-gradient(40% 30% at 15% 10%,rgba(168,85,247,.32),transparent 70%),radial-gradient(45% 35% at 50% 100%,rgba(20,184,166,.15),transparent 70%)}
+#timeEnd .card{position:relative}
+.tres{margin:6px 0 4px}
+.tmain{display:flex;flex-direction:column;align-items:center;padding:10px 0 12px}
+.tmain b{font-family:"Luckiest Guy",var(--comic);font-size:76px;line-height:1;background:linear-gradient(180deg,#fff7c2,#ffe14d 40%,#ff9f1c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(2px 0 0 #5b1aa8) drop-shadow(-2px 0 0 #5b1aa8) drop-shadow(0 2px 0 #5b1aa8) drop-shadow(0 5px 0 #2a0752)}
+.tmain span{font-weight:900;color:var(--muted);font-size:13px;margin-top:4px}
+.trow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.trow .stat span i{font-style:normal;opacity:.8}
 </style>
 </head>
 <body>
@@ -930,12 +940,15 @@ body.timemode #weapons,body.timemode .sectionlbl:has(#wInfoBtn),body.timemode #t
 <div class="overlay hidden" id="timeEnd"><div class="card">
   <div class="big">ZEIT UM!</div>
   <div class="sub" id="timeSub">Starke Leistung.</div>
-  <div class="stats">
-    <div class="stat"><b id="tKO">0</b><span>K.O.s</span></div>
-    <div class="stat"><b id="tScore">0</b><span>Treffer</span></div>
-    <div class="stat"><b id="tBest">0</b><span>Rekord (K.O.s)</span></div>
+  <div class="tres">
+    <div class="tmain"><b id="tKO">0</b><span>K.O.s in 30 Sekunden</span></div>
+    <div class="trow">
+      <div class="stat"><b id="tBest">0</b><span>Dein Rekord <i id="tLv"></i></span></div>
+      <div class="stat"><b id="tPlace">–</b><span id="tPlaceL">Platz in der Rangliste</span></div>
+    </div>
+    <div class="fine" id="tScoreL" style="margin-top:6px">Treffer: <span id="tScore">0</span></div>
   </div>
-  <div class="fine" id="tRankHint" style="margin:-4px 0 12px"></div>
+  <div class="fine" id="tRankHint" style="margin:6px 0 12px"></div>
   <button class="cta" id="tAgain">NOCHMAL! 🔁</button>
   <button class="ghost" id="tMenu">🏠 Hauptmenü</button>
 </div></div>
@@ -2122,12 +2135,16 @@ function startTime(){
   word("LOS!",W/2,H*.32,clamp(W*.2,60,120),"#4ade80",1); sfx.go();
 }
 function endTime(){
-  state="over"; items=[]; $("timer").style.display="none"; document.body.classList.remove("timemode");
+  state="over"; items=[]; $("timer").style.display="none";
   const lvk=saved.level==="hard"?"hard":"easy"; saved.koBestLv=saved.koBestLv||{}; const best=saved.koBestLv[lvk]||0;
   const rec=tKO>best; if(rec){ saved.koBestLv[lvk]=tKO; saved.timeKO=Math.max(saved.timeKO||0,tKO); persist(); postScore(lvk==="hard"?"koHard":"ko",tKO); }
-  $("tKO").textContent=tKO; $("tScore").textContent=hits; $("tBest").textContent=(saved.koBestLv[lvk]||0)+(lvk==="hard"?" 🔥":" 😌");
+  $("tKO").textContent=tKO; $("tScore").textContent=hits; $("tBest").textContent=saved.koBestLv[lvk]||0; $("tLv").textContent=lvk==="hard"?"(Schwer)":"(Leicht)";
+  $("tPlace").textContent="…"; $("tPlaceL").textContent="Platz in der Rangliste";
+  // Platz in der Rangliste nachladen (nach dem Speichern des Rekords)
+  setTimeout(async()=>{ try{ const d=await api("leaderboard"), list=(d&&d[lvk==="hard"?"timeHard":"time"])||[], i=list.findIndex(r=>r.name===saved.name);
+    $("tPlace").textContent=!saved.name?"–":i>=0?`${i+1}.`:"–"; $("tPlaceL").textContent=!saved.name?"Ohne Spitzname keine Rangliste":i>=0?`von ${list.length} in der Rangliste`:"noch nicht in den Top 15"; }catch(e){ $("tPlace").textContent="–"; } },1200);
   $("timeSub").textContent=rec&&tKO>0?"🏆 Neuer Rekord! Der Frust hatte keine Chance.":pick(["Starke Leistung. Die Tools zittern.","Nicht schlecht! Noch eine Runde?","Frust abgebaut, Puls erhöht. Perfekt."]);
-  $("tRankHint").textContent = saved.name ? `Level ${lv.label} · Dein K.O.-Rekord steht in der Rangliste als „${saved.name}“.` : "Tipp: Leg im Profil einen Spitznamen an, dann landet dein Rekord in der Rangliste.";
+  $("tRankHint").textContent = saved.name ? `Gewertet wird dein bester Lauf als „${saved.name}“.` : "Tipp: Leg im Profil einen Spitznamen an, dann landet dein Rekord in der Rangliste.";
   sfx.whistle(); confetti(W/2,H*.6,60); checkBadges(true); setTimeout(()=>show("timeEnd"),500);
 }
 
@@ -2210,7 +2227,7 @@ function renderHome(){
   $("resumeBtn").style.display = "none";
   renderLevelUI();
 }
-function openHome(){ if(mode==="duel") return; renderHome(); show("home"); }
+function openHome(){ if(mode==="duel") return; document.body.classList.remove("timemode"); renderHome(); show("home"); }
 function startFrom(fn){ document.body.classList.remove("timemode"); ensureAudio(); enableMotion(); hide("home"); hide("modeIntro"); setDuelUI(false); $("timer").style.display="none"; items=[]; screenSplats=[]; stunT=0; immuneUntil=0; chill=false; lv=LV[saved.level]; fn(); if(!isUnlocked(weapon)) weapon=WEAPONS[0]; renderWeapons(); renderChips(); updateHUD(); }
 
 /* ===================== Anleitung ===================== */
@@ -3085,7 +3102,7 @@ document.querySelectorAll("#statsMain button").forEach(b=>b.onclick=()=>openStat
 $("helpX").onclick=closeHelp; $("helpPrev").onclick=()=>{ helpIdx=Math.max(0,helpIdx-1); renderHelp(); };
 $("helpNext").onclick=()=>{ if(helpIdx<HELP.length-1){ helpIdx++; renderHelp(); } else closeHelp(); };
 $("tAgain").onclick=()=>{ hide("timeEnd"); startTime(); renderChips(); };
-$("tMenu").onclick=()=>{ hide("timeEnd"); mode="free"; state="idle"; openHome(); };
+$("tMenu").onclick=()=>{ hide("timeEnd"); document.body.classList.remove("timemode"); mode="free"; state="idle"; openHome(); };
 $("bossRetry").onclick=()=>{ hide("bossLost"); screenSplats=[]; startBoss(); BossMusic.start(); };
 $("bossMenu").onclick=()=>{ hide("bossLost"); screenSplats=[]; mode="free"; B=null; state="idle"; koRound=0; openHome(); };
 $("zenSkip").onclick=showQuote; $("zenNext").onclick=()=>{ $("quoteTxt").textContent=nextQuote(); sfx.pop(); };
